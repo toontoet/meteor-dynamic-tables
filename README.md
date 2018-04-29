@@ -9,8 +9,8 @@ If you aren't having any problems using Tabular Tables, and don't explicitly nee
 That being said...:
 
 1. Allows multiple tables with the same table definition,
-    - for example if you display a list of folders (in an accordion) and want to allow multiple panels of the accordion to be open at the same time, you would need a dynamic set of tables with the same definition
-    - this could be accomplished with Tabular Tables, but required a lot of hacking, and does not persist well between server failovers or reconnects.
+     - for example if you display a list of folders (in an accordion) and want to allow multiple panels of the accordion to be open at the same time, you would need a dynamic set of tables with the same definition
+     - this could be accomplished with Tabular Tables, but required a lot of hacking, and does not persist well between server failovers or reconnects.
 2. Allows templates in the header - for example if you want to use a checkbox column with a checkbox + dropdown in the header to allow for bulk actions
 3. Allows custom per-column search rules, when displaying data across joins
 4. Allows for a boilerplate advanced search modal, for fields potentially not displayed in the table
