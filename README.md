@@ -30,6 +30,8 @@ That being said...:
 
 ## Usage
 
+`meteor add znewsham:dynamic-tables`
+
 ### Dependencies
 
 This package requires:
