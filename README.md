@@ -9,22 +9,22 @@ If you aren't having any problems using Tabular Tables, and don't explicitly nee
 That being said...:
 
 1. Allows multiple tables with the same table definition,
-  * for example if you display a list of folders (in an accordion) and want to allow multiple panels of the accordion to be open at the same time, you would need a dynamic set of tables with the same definition
-  * this could be accomplished with Tabular Tables, but required a lot of hacking, and does not persist well between server failovers or reconnects.
+    - for example if you display a list of folders (in an accordion) and want to allow multiple panels of the accordion to be open at the same time, you would need a dynamic set of tables with the same definition
+    - this could be accomplished with Tabular Tables, but required a lot of hacking, and does not persist well between server failovers or reconnects.
 2. Allows templates in the header - for example if you want to use a checkbox column with a checkbox + dropdown in the header to allow for bulk actions
 3. Allows custom per-column search rules, when displaying data across joins
 4. Allows for a boilerplate advanced search modal, for fields potentially not displayed in the table
 5. Allows for client side export of data to CSV
-   - columns potentially not shown in the table
-   - rows not in the currently visible dataset
+     - columns potentially not shown in the table
+     - rows not in the currently visible dataset
 6. Requires a specified publication
-   - takes as arguments a {selector} and {options} - which can be passed directly to a find
-   - all permissions must be handled here.
-   - the publication must return either a single cursor, or an array of cursors, the first of which must be the cursor for the documents (e.g., any joins must follow)
-   - complex publications can be accomplished by specifying an array of composite publication names - which utilise `publishComposite`
-   - I'm actively working on reducing some of this complexity.
+     - takes as arguments a {selector} and {options} - which can be passed directly to a find
+     - all permissions must be handled here.
+     - the publication must return either a single cursor, or an array of cursors, the first of which must be the cursor for the documents (e.g., any joins must follow)
+     - complex publications can be accomplished by specifying an array of composite publication names - which utilise `publishComposite`
+     - I'm actively working on reducing some of this complexity.
 7. Potential performance benefits caused by highly selective rendering of rows based on modified data
-   - I'm actively working on improving this further by caching rendered templates between page changes and rendering specific columns on data change.
+     - I'm actively working on improving this further by caching rendered templates between page changes and rendering specific columns on data change.
 8. Beyond this it has a very similar API to Tabular Tables
 
 
@@ -135,10 +135,11 @@ Having read the above, you're sure you need this package? These packages play fa
 1. Use DynamicTable template instead of tabular
 2. Define an id in the arguments you provide to DynamicTable
 3. Define a publication that accepts a selector and options
-   - ensure this publication is secure, as anyone could call it, not just the DynamicTable component
+     - ensure this publication is secure, as anyone could call it, not just the DynamicTable component
 4. Make your table definition available as a template helper
 
 Optional:
+
 5. If you previously used a changeSelector, move that code to the selector argument of the DynamicTable (changeSelector will continue to be available for a while)
 
 ## Advanced Search Usage
