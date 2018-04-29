@@ -75,9 +75,10 @@ Template.dynamicTableAdvancedSearchModal.events({
     const collection = Template.instance().data.collection;
     const schema = collection.simpleSchema();
     const search = {};
-    Template.instance().$(".field-set").each(() => {
-      let val = $(this).find(".form-control").val();
-      const fieldName = $(this).find(".form-control").attr("name");
+    Template.instance().$(".field-set").each(function eachField() {
+      const $formControl = $(this).find(".form-control")
+      let val = $formControl.val();
+      const fieldName = $formControl.attr("name");
       const field = _.findWhere(Template.instance().fields, { field: fieldName });
       const isNumeric = schema._schema[fieldName] && (
         (schema._schema[fieldName].type.choices && schema._schema[fieldName].type.choices.find(choice => choice === Number)) ||
@@ -95,10 +96,10 @@ Template.dynamicTableAdvancedSearchModal.events({
           _.extend(search, field.search(val, comparator));
         }
         else if (comparator) {
-          search[$(this).find(".form-control").attr("name")] = { [comparator]: val };
+          search[fieldName] = { [comparator]: val };
         }
         else {
-          search[$(this).find(".form-control").attr("name")] = val;
+          search[fieldName] = val;
         }
       }
     });
