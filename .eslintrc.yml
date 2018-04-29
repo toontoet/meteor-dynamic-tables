@@ -1,0 +1,45 @@
+---
+parser: babel-eslint
+extends: airbnb
+rules:
+  prefer-destructuring: ["off"]
+  object-shorthand: ["error", "always", {avoidQuotes: false}]
+  no-underscore-dangle: ["off"]
+  no-continue: ["off"]
+  import/no-unresolved: ["off"]
+  import/no-absolute-path: ["off"]
+  import/extensions: ["off"]
+  import/prefer-default-export: ["off"]
+  quotes: ["warn", "double"]
+  indent: ["error", 2, { "MemberExpression": 0 }]
+  max-len: ["warn", 125]
+  brace-style: ["error", "stroustrup"]
+  comma-dangle: [2, 'never']
+  no-plusplus: 0
+  no-param-reassign: 0
+  no-console: 0
+  no-mixed-operators: 0
+  consistent-return: 0
+
+env:
+  browser: true
+  node: true
+  es6: true
+  meteor: true
+  mongo: true
+  jquery: true
+ecmaFeatures:
+  arrowFunctions: true
+  blockBindings: true
+  classes: true
+  defaultParams: true
+  forOf: true
+  jsx: true
+  objectLiteralShorthandMethods: true
+  objectLiteralShorthandProperties: true
+  spread: true
+  superInFunctions: true
+
+parserOptions:
+  sourceType: "module"
+  allowImportExportEverywhere: true

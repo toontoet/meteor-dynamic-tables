@@ -1,0 +1,7 @@
+<template name="DynamicTable">
+  {{! without the div, the firstNode of the template is the table, when it then gets nested inside the datatables wrapper, all this.$(selector) queries fail}}
+  <div>
+    <table id="{{id}}" class="{{class}}" style="{{style}}">
+    </table>
+  </div>
+</template>

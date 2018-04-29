@@ -1,0 +1,64 @@
+<template name="dynamicTableExportModal">
+  <div class="modal fade in" id="dynamicTableExportModal" role="dialog" aria-labelledby="modal-tabularExportModal" aria-hidden="false" style="display: none;">
+    <div class="modal-dialog modal-large-height">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="modal-dynamicTableExportModal">
+            Export
+          </h4>
+        </div>
+        <div class="modal-body">
+          <div class="container-fluid" style="height: 100%">
+            <div class="col-md-4 col-sm-4">
+              <div class="row">
+                <label for="dynamicTableExportModal-limit">Records</label>
+                <select id="dynamicTableExportModal-limit" class="limit">
+                  <option value="">All</option>
+                  {{#if selectedIds}}
+                    <option value="selected" selected="selected">Selected</option>
+                  {{/if}}
+                  <option value="current">Visible</option>
+                </select>
+              </div>
+              <div class="row">
+                <label for="dynamicTableExportModal-sort">Sort</label>
+                <select id="dynamicTableExportModal-sort" class="sort">
+                  <option value="current">Current</option>
+                  {{#each field in sortableFields}}
+                    <option value="{{field.field}}">{{field.label}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-4 col-sm-4">
+              {{#each field in fields}}
+                {{#unless op @index "%" 2}}
+                  <div class="row">
+                    <label for="dynamicTableExportModal-field-{{field.field}}">{{field.label}}
+                      <input type="checkbox" data-target="{{field.field}}" id="dynamicTableExportModal-field-{{field.field}}" {{checked (enableField field)}} />
+                    </label>
+                  </div>
+                {{/unless}}
+              {{/each}}
+            </div>
+            <div class="col-md-4 col-sm-4">
+              {{#each field in fields}}
+                {{#if op @index "%" 2}}
+                  <div class="row">
+                    <label for="dynamicTableExportModal-field-{{field.field}}">{{field.label}}
+                      <input type="checkbox" data-target="{{field.field}}" id="dynamicTableExportModal-field-{{field.field}}" {{checked (enableField field)}} />
+                    </label>
+                  </div>
+                {{/if}}
+              {{/each}}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-inverse">Export</button>
+          <button type="button" class="btn btn-default">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
