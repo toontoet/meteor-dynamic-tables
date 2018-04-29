@@ -7,7 +7,7 @@ Template.dynamicTableAdvancedSearchModal.helpers({
   }
 });
 
-Template.dynamicTableAdvancedSearchModal.onCreated(() => {
+Template.dynamicTableAdvancedSearchModal.onCreated(function onCreated() => {
   const collection = Template.instance().data.collection;
   const schema = collection.simpleSchema && collection.simpleSchema();
   const search = Template.instance().data.search;
