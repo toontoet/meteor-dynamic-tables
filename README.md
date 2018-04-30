@@ -32,6 +32,8 @@ That being said...:
 
 `meteor add znewsham:dynamic-tables`
 
+See [this example](https://bitbucket.org/znewsham/table-bulk-demo) of the usage of this table component and a bulk checkbox component
+
 ### Dependencies
 
 This package requires:
