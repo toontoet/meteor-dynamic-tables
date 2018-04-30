@@ -14,8 +14,13 @@ function doAdvancedSearch(extraOptions) {
     beforeRender: options.advancedSearch.beforeRender,
     collection: options.advancedSearch.collection || this.data.table.collection,
     fields: options.advancedSearch.fields || _.compact(options.columns.map(column => column.data).filter(d => d !== "_id")),
+    columns: options.columns,
     callback: options.advancedSearch.callback || ((search) => {
       templateInstance.advancedSearch.set(search);
+      const query = templateInstance.query.get();
+      query.options.skip = 0;
+      templateInstance.query.set(query);
+      templateInstance.dataTable.api().page(0).draw(false);
     }),
     search: this.advancedSearch.get()
   }, _.isObject(extraOptions) ? extraOptions : {}));
@@ -96,13 +101,24 @@ function setup() {
         column.defaultContent = "";
       }
 
-      column.createdCell = function createdCell(td, data, rowData, row, col) {
+      column.createdCell = function createdCell(td, UNUSED, rowData, row, col) {
         if (column.tmplContext && rowData) {
           rowData = column.tmplContext(rowData);
         }
+        if (self.blaze[`${row}-${col}`]) {
+          if (self.blaze[`${row}-${col}`].name === column.tmpl.viewName) {
+            td.parentElement.replaceChild(self.blaze[`${row}-${col}`].cell, td);
+            self.blaze[`${row}-${col}`].tmpl.dataVar.set(rowData);
+            return self.blaze[`${row}-${col}`].tmpl;
+          }
+          delete self.blaze[`${row}-${col}`];
+        }
         const ret = Blaze.renderWithData(column.tmpl, rowData, td, self.view);
-        self.dataTable.api().cell(td).blaze = ret;
-        self.blaze[`${row}-${col}`] = ret;
+        self.blaze[`${row}-${col}`] = {
+          name: column.tmpl.viewName,
+          cell: td,
+          tmpl: ret
+        };
         return ret;
       };
 
@@ -217,15 +233,15 @@ Template.DynamicTable.onRendered(function onRendered() {
     // NOTE: if we have a changeSelector method specified, use it.
     // TODO: left in for compatibility - to be removed.
     const selector = currentData.table.changeSelector ? currentData.table.changeSelector(currentData.selector || {}) : (currentData.selector || {});
-    const advancedSearchButton = currentData.table.advancedSearch.buttonHtml ? $(currentData.table.advancedSearch.buttonHtml) : $("<buton>").addClass("advanced-search-button")
-    .addClass("btn btn-default")
-    .html("<i class='fa fa-search'></i>")
-    .css("margin-top", "-10px");
     const tableSpec = _.extend({
       serverSide: true,
       initComplete() {
         const table = templateInstance.data.table;
         if (table.advancedSearch) {
+          const advancedSearchButton = currentData.table.advancedSearch.buttonHtml ? $(currentData.table.advancedSearch.buttonHtml) : $("<buton>").addClass("advanced-search-button")
+          .addClass("btn btn-default")
+          .html("<i class='fa fa-search'></i>")
+          .css("margin-top", "-10px");
           templateInstance.$(".dataTables_filter>label").append(advancedSearchButton);
         }
         if (table.search && table.search.onEnterOnly) {
@@ -268,6 +284,7 @@ Template.DynamicTable.onRendered(function onRendered() {
         });
       },
       ajax(data, callback) {
+        templateInstance.completeStart = new Date().getTime();
         // NOTE: the "ajax" call triggers a subscription rerun, iff queryOptions or querySelector has changed
         const queryOptions = ajaxOptions(data, options, currentData);
         const querySelector = ajaxSelector(data, selector, currentData);
@@ -334,6 +351,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       const count = Tracker.nonreactive(() => cursor.count());
       const docs = Tracker.nonreactive(() => cursor.fetch());
       templateInstance.handle = cursor.observeChanges({
+        _suppress_initial: true,
         // NOTE: the entire autorun block reruns when data is added/removed
         addedBefore() {},
 
@@ -352,13 +370,11 @@ Template.DynamicTable.onRendered(function onRendered() {
             const rowData = currentData.table.collection.findOne({ _id });
             try {
               templateInstance.dataTable.api().row(rowIndex).data(currentData.table.collection.findOne({ _id }));
-              $(templateInstance.dataTable.api().row(rowIndex).node()).find("td,th").each(function perRow() {
-                const cell = templateInstance.dataTable.api().cell(this);
-                const cellIndex = cell.index();
-                if (currentData.table.columns[cellIndex.column].tmpl) {
-                  const data = currentData.table.columns[cellIndex.column].tmplContext ? currentData.table.columns[cellIndex.column].tmplContext(rowData) : rowData;
-                  Blaze.remove(templateInstance.blaze[`${cellIndex.row}-${cellIndex.column}`]);
-                  currentData.table.columns[cellIndex.column].createdCell(this, data, rowData, cellIndex.row, cellIndex.column);
+              $(templateInstance.dataTable.api().row(rowIndex).node()).find("td,th").each(function perRow(cellIndex) {
+                if (currentData.table.columns[cellIndex].tmpl) {
+                  Blaze.remove(templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl);
+                  delete templateInstance.blaze[`${rowIndex}-${cellIndex}`];
+                  currentData.table.columns[cellIndex].createdCell(this, null, rowData, rowIndex, cellIndex);
                 }
               });
             }

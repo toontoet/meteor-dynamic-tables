@@ -9,7 +9,31 @@
         </div>
         <div class="modal-body">
           <div class="container-fluid" style="height: 100%">
-            {{#autoForm collection=collection id="dynamicTableAdvancedSearchModalForm"}}
+            {{#if autoForm}}
+              {{#autoForm collection=collection id="dynamicTableAdvancedSearchModalForm"}}
+                {{#each field in availableSearchOptions}}
+                  <div class="row field-set">
+                    <div class="col-md-5">
+                      <label for="dynamicTableAdvancedSearchModalForm-{{field.field}}">{{field.label}}</label>
+                    </div>
+                    <div class="col-md-2">
+                      <select style="width: 100%" class="comparator" data-target="{{field.field}}" id="dynamicTableAdvancedSearchModalForm-{{field.field}}-comparator">
+                        {{#each option in field.comparators}}
+                          <option value="{{option.operator}}" {{selected (op option.operator '==' field.comparator)}}>{{option.label}}</option>
+                        {{/each}}
+                      </select>
+                    </div>
+                    <div class="col-md-5">
+                      {{#if field.type}}
+                        {{> afFieldInput required=false type=field.type options=field.options name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=field.value}}
+                      {{else}}
+                        {{> afFieldInput required=false name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=field.value}}
+                      {{/if}}
+                    </div>
+                  </div>
+                {{/each}}
+              {{/autoForm}}
+            {{else}}
               {{#each field in availableSearchOptions}}
                 <div class="row field-set">
                   <div class="col-md-5">
@@ -18,20 +42,25 @@
                   <div class="col-md-2">
                     <select style="width: 100%" class="comparator" data-target="{{field.field}}" id="dynamicTableAdvancedSearchModalForm-{{field.field}}-comparator">
                       {{#each option in field.comparators}}
-                        <option value="{{option.operator}}" {{selected (op option.operator '==' field.comparator)}}>{{option.label}}</option>
+                        <option value="{{option.operator}}" {{selected option.operator field.comparator}}>{{option.label}}</option>
                       {{/each}}
                     </select>
                   </div>
                   <div class="col-md-5">
-                    {{#if field.type}}
-                      {{> afFieldInput required=false type=field.type options=field.options name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=field.value}}
+                    {{#if select field}}
+                      <select id="{{concat "dynamicTableAdvancedSearchModalForm-" field.field}}" name="{{field.field}}" class="form-control">
+                        <option value="">Select an option</option>
+                        {{#each option in field.options}}
+                          <option value="{{option.value}}" {{selected option.value field.value}}>{{option.label}}</option>
+                        {{/each}}
+                      </select>
                     {{else}}
-                      {{> afFieldInput required=false name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=field.value}}
+                      <input type="{{field.type}}" value="{{field.value}}" id="{{concat "dynamicTableAdvancedSearchModalForm-" field.field}}" name="{{field.field}}" class="form-control" />
                     {{/if}}
                   </div>
                 </div>
               {{/each}}
-            {{/autoForm}}
+            {{/if}}
           </div>
         </div>
         <div class="modal-footer">

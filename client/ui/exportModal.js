@@ -61,22 +61,28 @@ function CSVLineFromDocument(doc, exportOptions, columns, fieldNames, selector) 
 }
 
 Template.dynamicTableExportModal.helpers({
+  isEven(index) {
+    return index % 2 === 0;
+  },
+  checked(bool) {
+    return bool ? { checked: "checked" } : {};
+  },
   enableField(field) {
     return field.enabled !== false;
   },
   sortableFields() {
     const collection = Template.instance().data.collection;
-    const schema = collection.simpleSchema();
+    const schema = collection.simpleSchema && collection.simpleSchema();
     return Template.instance().data.columns
     .filter(col => col.sortable !== false && col.data)
     .map(col => ({ field: col.data, label: schema.label(col.data) }));
   },
   fields() {
     const collection = Template.instance().data.collection;
-    const schema = collection.simpleSchema || collection.simpleSchema();
+    const schema = collection.simpleSchema && collection.simpleSchema();
     return Template.instance().data.export.fields.map((field) => {
       if (typeof field === "string") {
-        return { field, label: schema.label(field) };
+        return { field, label: (schema && schema.label(field)) || field };
       }
       return { field: field.field, label: field.label || (schema && schema.label(field.field)) || field.field };
     });
@@ -94,7 +100,9 @@ Template.dynamicTableExportModal.events({
     const templateInstance = Template.instance();
     const data = templateInstance.data;
     const selector = { $and: [data.selector, data.advancedSearch || {}] };
-    const fieldNames = _.toArray(templateInstance.$("input:checked").map(() => $(this).data("target")));
+    const fieldNames = _.toArray(templateInstance.$("input:checked").map(function perCheckbox() {
+      return $(this).data("target");
+    }));
     const options = {
       fields: _.object(fieldNames, _.times(fieldNames.length, () => true))
     };

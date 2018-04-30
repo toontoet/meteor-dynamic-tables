@@ -28,6 +28,7 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
   let recordsTotal = countPublicationCursor.count();
   let initializing = true;
   const countHandle = countPublicationCursor.observeChanges({
+    _suppress_initial: true,
     addedBefore() {
       if (!initializing) {
         recordsTotal++;
@@ -38,6 +39,7 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
     }
   });
   const dataHandle = publicationCursor.observeChanges({
+    _suppress_initial: true,
     addedBefore: (_id, doc, beforeId) => {
       if (!initializing) {
         publishedIds.splice(publishedIds.indexOf(beforeId), 0, _id);
@@ -59,7 +61,10 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
   this.added("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
 
   initializing = false;
-  this.onStop(() => dataHandle.stop(), countHandle.stop());
+  this.onStop(() => {
+    dataHandle.stop();
+    countHandle.stop();
+  });
   return {
     find() {
       return publicationCursor;

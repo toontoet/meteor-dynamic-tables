@@ -36,13 +36,13 @@ That being said...:
 
 This package requires:
 
-- [aldeed:autoform](https://github.com/aldeed/meteor-autoform)
 - [file-saver](https://github.com/eligrey/FileSaver.js/)
 - [peppelg:bootstrap-3-modal](https://github.com/PeppeL-G/bootstrap-3-modal/)
 - [reywood:publish-composite](https://github.com/englue/meteor-publish-composite/)
 
 And likes to have (but does not require):
-
+- bootstrap3
+- [aldeed:autoform](https://github.com/aldeed/meteor-autoform)
 - [aldeed:simple-schema](https://github.com/aldeed/meteor-simple-schema)
 
 ### Basic Usage

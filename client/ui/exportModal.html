@@ -32,24 +32,24 @@
             </div>
             <div class="col-md-4 col-sm-4">
               {{#each field in fields}}
-                {{#unless op @index "%" 2}}
-                  <div class="row">
-                    <label for="dynamicTableExportModal-field-{{field.field}}">{{field.label}}
-                      <input type="checkbox" data-target="{{field.field}}" id="dynamicTableExportModal-field-{{field.field}}" {{checked (enableField field)}} />
-                    </label>
-                  </div>
-                {{/unless}}
-              {{/each}}
-            </div>
-            <div class="col-md-4 col-sm-4">
-              {{#each field in fields}}
-                {{#if op @index "%" 2}}
+                {{#if isEven @index}}
                   <div class="row">
                     <label for="dynamicTableExportModal-field-{{field.field}}">{{field.label}}
                       <input type="checkbox" data-target="{{field.field}}" id="dynamicTableExportModal-field-{{field.field}}" {{checked (enableField field)}} />
                     </label>
                   </div>
                 {{/if}}
+              {{/each}}
+            </div>
+            <div class="col-md-4 col-sm-4">
+              {{#each field in fields}}
+                {{#unless isEven @index}}
+                  <div class="row">
+                    <label for="dynamicTableExportModal-field-{{field.field}}">{{field.label}}
+                      <input type="checkbox" data-target="{{field.field}}" id="dynamicTableExportModal-field-{{field.field}}" {{checked (enableField field)}} />
+                    </label>
+                  </div>
+                {{/unless}}
               {{/each}}
             </div>
           </div>

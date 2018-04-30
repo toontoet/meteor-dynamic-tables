@@ -2,6 +2,18 @@ import "./advancedSearchModal.html";
 
 
 Template.dynamicTableAdvancedSearchModal.helpers({
+  autoform() {
+    return window.AutoForm;
+  },
+  concat(...args) {
+    return args.slice(0, -1).join("");
+  },
+  selected(a, b) {
+    return a === b ? { selected: "selected" } : {};
+  },
+  select(field) {
+    return field.type === "select";
+  },
   availableSearchOptions() {
     return Template.instance().fields;
   }
@@ -18,7 +30,13 @@ Template.dynamicTableAdvancedSearchModal.onCreated(function onCreated() {
       };
     }
     if (!field.label) {
-      field.label = schema.label(field.field);
+      const column = _.findWhere(this.data.columns, { data: field.field });
+      if (column && column.title) {
+        field.label = column.title;
+      }
+      else {
+        field.label = schema ? schema.label(field.field) : field.field;
+      }
     }
     if (!field.type) {
       if (field.options) {
@@ -40,7 +58,7 @@ Template.dynamicTableAdvancedSearchModal.onCreated(function onCreated() {
           { label: "Greater than", operator: "$gt" }
         ];
       }
-      else if (schema._schema[field.field].type === String || (schema._schema[field.field].type === Array && schema._schema[`${field.field}.$`].type === String)) {
+      else if (schema && schema._schema[field.field].type === String || (schema && schema._schema[field.field].type === Array && schema._schema[`${field.field}.$`].type === String)) {
         field.comparators = [
           { label: "Exact Match", operator: "" },
           { label: "Not equal to", operator: "$ne" },
@@ -73,14 +91,14 @@ Template.dynamicTableAdvancedSearchModal.events({
   },
   "click .btn-inverse"() {
     const collection = Template.instance().data.collection;
-    const schema = collection.simpleSchema();
+    const schema = collection.simpleSchema && collection.simpleSchema();
     const search = {};
     Template.instance().$(".field-set").each(function eachField() {
-      const $formControl = $(this).find(".form-control")
+      const $formControl = $(this).find(".form-control");
       let val = $formControl.val();
       const fieldName = $formControl.attr("name");
       const field = _.findWhere(Template.instance().fields, { field: fieldName });
-      const isNumeric = schema._schema[fieldName] && (
+      const isNumeric = schema && schema._schema[fieldName] && (
         (schema._schema[fieldName].type.choices && schema._schema[fieldName].type.choices.find(choice => choice === Number)) ||
         schema._schema[fieldName].type === Number ||
         schema._schema[fieldName].type === Date ||

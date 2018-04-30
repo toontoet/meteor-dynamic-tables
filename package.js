@@ -8,7 +8,8 @@ Package.describe({
 });
 
 Npm.depends({
-  "file-saver": "1.3.8"
+  "file-saver": "1.3.8",
+  "datatables.net": "2.1.1"
 });
 
 Package.onUse((api) => {
