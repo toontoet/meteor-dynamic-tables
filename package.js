@@ -15,8 +15,8 @@ Npm.depends({
 Package.onUse((api) => {
   api.versionsFrom(["METEOR@1.4"]);
   api.use([
-    "peppelg:bootstrap-3-modal",
-    "reywood:publish-composite",
+    "peppelg:bootstrap-3-modal@1.0.4",
+    "reywood:publish-composite@1.5.2",
     "check",
     "ecmascript",
     "underscore",
