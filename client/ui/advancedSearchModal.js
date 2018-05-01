@@ -108,7 +108,7 @@ Template.dynamicTableAdvancedSearchModal.events({
       if (val) {
         const comparator = $(this).find(".comparator").val();
         if (isNumeric) {
-          val = !Number.isNaN(parseInt(val, 10)) ? parseInt(val, 10) : val;
+          val = (!Number.isNaN(parseInt(val, 10)) && `${parseInt(val, 10)}` === val) ? parseInt(val, 10) : val;
         }
         if (field && field.search) {
           _.extend(search, field.search(val, comparator));
