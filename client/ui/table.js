@@ -16,6 +16,12 @@ function doAdvancedSearch(extraOptions) {
     fields: options.advancedSearch.fields || _.compact(options.columns.map(column => column.data).filter(d => d !== "_id")),
     columns: options.columns,
     callback: options.advancedSearch.callback || ((search) => {
+      if(_.keys(search).length){
+        templateInstance.$(".advanced-search-button").addClass("hasSearch");
+      }
+      else {
+        templateInstance.$(".advanced-search-button").removeClass("hasSearch");
+      }
       templateInstance.advancedSearch.set(search);
       const query = templateInstance.query.get();
       query.options.skip = 0;
