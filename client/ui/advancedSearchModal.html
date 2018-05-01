@@ -25,9 +25,9 @@
                     </div>
                     <div class="col-md-5">
                       {{#if field.type}}
-                        {{> afFieldInput required=false type=field.type options=field.options name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=field.value}}
+                        {{> afFieldInput required=false type=field.type options=field.options name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=field.value style="width: 100%"}}
                       {{else}}
-                        {{> afFieldInput required=false name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=field.value}}
+                        {{> afFieldInput required=false name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=field.value style="width: 100%"}}
                       {{/if}}
                     </div>
                   </div>
