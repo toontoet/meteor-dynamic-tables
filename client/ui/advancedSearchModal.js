@@ -2,6 +2,12 @@ import "./advancedSearchModal.html";
 
 
 Template.dynamicTableAdvancedSearchModal.helpers({
+  value(field) {
+    if (_.isFunction(field.value)) {
+      return field.value(Template.instance().data.search);
+    }
+    return field.value;
+  },
   autoform() {
     return window.AutoForm;
   },
@@ -72,8 +78,12 @@ Template.dynamicTableAdvancedSearchModal.onCreated(function onCreated() {
         ];
       }
     }
-    field.comparator = _.isObject(search[field.field]) ? _.keys(search[field.field])[0] : "";
-    field.value = _.isObject(search[field.field]) ? _.values(search[field.field])[0] : search[field.field];
+    if (!field.comparator) {
+      field.comparator = _.isObject(search[field.field]) ? _.keys(search[field.field])[0] : "";
+    }
+    if (!field.value) {
+      field.value = _.isObject(search[field.field]) ? _.values(search[field.field])[0] : search[field.field];
+    }
     return field;
   });
   if (Template.instance().data.beforeRender) {
@@ -111,7 +121,10 @@ Template.dynamicTableAdvancedSearchModal.events({
           val = (!Number.isNaN(parseInt(val, 10)) && `${parseInt(val, 10)}` === val) ? parseInt(val, 10) : val;
         }
         if (field && field.search) {
-          _.extend(search, field.search(val, comparator));
+          if (!search.$and) {
+            search.$and = [];
+          }
+          search.$and.push(field.search(val, comparator));
         }
         else if (comparator) {
           search[fieldName] = { [comparator]: val };

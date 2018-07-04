@@ -25,9 +25,9 @@
                     </div>
                     <div class="col-md-5">
                       {{#if field.type}}
-                        {{> afFieldInput required=false type=field.type options=field.options name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=field.value style="width: 100%"}}
+                        {{> afFieldInput required=false type=field.type options=field.options name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=(value field) style="width: 100%"}}
                       {{else}}
-                        {{> afFieldInput required=false name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=field.value style="width: 100%"}}
+                        {{> afFieldInput required=false name=field.field  id=(concat "dynamicTableAdvancedSearchModalForm-" field.field) value=(value field) style="width: 100%"}}
                       {{/if}}
                     </div>
                   </div>
@@ -51,11 +51,11 @@
                       <select id="{{concat "dynamicTableAdvancedSearchModalForm-" field.field}}" name="{{field.field}}" class="form-control">
                         <option value="">Select an option</option>
                         {{#each option in field.options}}
-                          <option value="{{option.value}}" {{selected option.value field.value}}>{{option.label}}</option>
+                          <option value="{{option.value}}" {{selected option.value (value field)}}>{{option.label}}</option>
                         {{/each}}
                       </select>
                     {{else}}
-                      <input type="{{field.type}}" value="{{field.value}}" id="{{concat "dynamicTableAdvancedSearchModalForm-" field.field}}" name="{{field.field}}" class="form-control" />
+                      <input type="{{field.type}}" value="{{value field}}" id="{{concat "dynamicTableAdvancedSearchModalForm-" field.field}}" name="{{field.field}}" class="form-control" />
                     {{/if}}
                   </div>
                 </div>
