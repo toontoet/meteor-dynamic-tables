@@ -1,3 +1,4 @@
+import { ReactiveVar } from "meteor/reactive-var";
 import { Modal } from "meteor/peppelg:bootstrap-3-modal";
 import "./table.html";
 import "./exportModal.js";
@@ -95,8 +96,8 @@ function setup() {
   const currentData = this.data;
 
   // NOTE: allow for subscription managers.
-  if (!currentData.subscriptionManager) {
-    currentData.subscriptionManager = Meteor;
+  if (!currentData.table.sub) {
+    currentData.table.sub = Meteor;
   }
 
   // NOTE: ensure we have clean data.
@@ -227,6 +228,15 @@ Template.DynamicTable.onRendered(function onRendered() {
   }
   this.autorun(() => {
     const currentData = Template.currentData();
+    if (JSON.stringify(Tracker.nonreactive(() => templateInstance.selector.get())) !== JSON.stringify(currentData.selector)) {
+      templateInstance.selector.set(currentData.selector);
+      if (templateInstance.dataTable) {
+        templateInstance.dataTable.api().ajax.reload();
+      }
+    }
+  });
+  this.autorun(() => {
+    const currentData = Template.instance().data;// NOTE: intentionally not reactive.
     setup.call(self);
     // NOTE: we want all fields defined in columns + all extraFields
     const fields = _.union(_.unique(_.compact(_.pluck(self.columns, "data"))), currentData.table.extraFields);
@@ -239,7 +249,6 @@ Template.DynamicTable.onRendered(function onRendered() {
 
     // NOTE: if we have a changeSelector method specified, use it.
     // TODO: left in for compatibility - to be removed.
-    const selector = currentData.table.changeSelector ? currentData.table.changeSelector(currentData.selector || {}) : (currentData.selector || {});
     const tableSpec = _.extend({
       serverSide: true,
       initComplete() {
@@ -290,6 +299,9 @@ Template.DynamicTable.onRendered(function onRendered() {
         });
       },
       ajax(data, callback) {
+        const _selector = Tracker.nonreactive(() => templateInstance.selector.get());
+        const selector = currentData.table.changeSelector ? currentData.table.changeSelector(_selector || {}) : (_selector || {});
+
         templateInstance.completeStart = new Date().getTime();
         // NOTE: the "ajax" call triggers a subscription rerun, iff queryOptions or querySelector has changed
         const queryOptions = ajaxOptions(data, options, self.columns);
@@ -307,7 +319,7 @@ Template.DynamicTable.onRendered(function onRendered() {
     if (templateInstance.dataTable) {
       templateInstance.dataTable.api().destroy();
     }
-    templateInstance.dataTable = templateInstance.$(`#${Template.currentData().id}`).dataTable(tableSpec);
+    templateInstance.dataTable = templateInstance.$(`#${currentData.id}`).dataTable(tableSpec);
   });
 
   // NOTE: initialize the subscription according to the query options/selector
@@ -325,10 +337,15 @@ Template.DynamicTable.onRendered(function onRendered() {
     // NOTE: we dont want to rerun this since we're setting it just below
     Tracker.nonreactive(() => {
       if (templateInstance.sub.get()) {
-        templateInstance.sub.get().stop();
+        if (templateInstance.sub.get().stop) {
+          templateInstance.sub.get().stop();
+        }
+        else {
+          currentData.table.sub.clear();
+        }
       }
     });
-    templateInstance.sub.set(currentData.subscriptionManager.subscribe(
+    templateInstance.sub.set(currentData.table.sub.subscribe(
       "simpleTablePublication",
       currentData.id,
       currentData.table.publication,
@@ -409,6 +426,7 @@ Template.DynamicTable.onCreated(function onCreated() {
   this.options = new ReactiveVar({});
   this.query = new ReactiveVar(false);
   this.advancedSearch = new ReactiveVar({});
+  this.incomingSelector = new ReactiveVar({});
   this.blaze = {};
 });
 
