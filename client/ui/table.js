@@ -165,7 +165,7 @@ function ajaxOptions(data, options, currentData) {
     pageOptions.sort = {};
     data.order.forEach((order, index) => {
       if (currentData.table.columns[order.column] && currentData.table.columns[order.column].data) {
-        pageOptions.sort[currentData.table.columns[order.column].data] = (index + 1) * (order.dir === "desc" ? -1 : 1);
+        pageOptions.sort[currentData.table.columns[order.column].data] = 1 * (order.dir === "desc" ? -1 : 1);
       }
     });
   }
