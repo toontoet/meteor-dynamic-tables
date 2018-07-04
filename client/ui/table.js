@@ -436,7 +436,12 @@ Template.DynamicTable.onCreated(function onCreated() {
 //       destroy the data table and empty the actual table element
 Template.DynamicTable.onDestroyed(function onDestroyed() {
   if (this.sub.get()) {
-    this.sub.get().stop();
+    if (this.sub.get().stop) {
+      this.sub.get().stop();
+    }
+    else {
+      Template.instance().data.table.sub.clear();
+    }
   }
   if (this.handle) {
     this.handle.stop();
