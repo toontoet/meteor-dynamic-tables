@@ -16,6 +16,12 @@ function doAdvancedSearch(extraOptions) {
     fields: options.advancedSearch.fields || _.compact(options.columns.map(column => column.data).filter(d => d !== "_id")),
     columns: options.columns,
     callback: options.advancedSearch.callback || ((search) => {
+      if(_.keys(search).length){
+        templateInstance.$(".advanced-search-button").addClass("hasSearch");
+      }
+      else {
+        templateInstance.$(".advanced-search-button").removeClass("hasSearch");
+      }
       templateInstance.advancedSearch.set(search);
       const query = templateInstance.query.get();
       query.options.skip = 0;
@@ -31,6 +37,7 @@ function doAdvancedSearch(extraOptions) {
 */
 function doExport(extraOptions) {
   const query = this.query.get();
+  const templateInstance = this;
   const advancedSearch = this.advancedSearch.get();
   if (!query) {
     return;
@@ -40,7 +47,7 @@ function doExport(extraOptions) {
 
   const table = this.data.table;
   if (!table.export.fields) {
-    table.export.fields = table.columns.filter(column => column.data && column.data !== "_id").map(column => ({
+    table.export.fields = this.columns.filter(column => column.data && column.data !== "_id").map(column => ({
       field: column.data
     }));
   }
@@ -50,7 +57,7 @@ function doExport(extraOptions) {
       field = { field };
     }
     if (!field.label) {
-      const column = _.findWhere(table.columns, { data: field.field });
+      const column = _.findWhere(this.columns, { data: field.field });
       if (column) {
         field.label = column.titleFn ? column.titleFn() : column.title;
       }
@@ -76,7 +83,7 @@ function doExport(extraOptions) {
     skip: queryOptions.skip || 0,
     limit: queryOptions.limit,
     sort: queryOptions.sort,
-    columns: table.columns
+    columns: this.columns
   }, _.isObject(extraOptions) ? extraOptions : {}));
 }
 
@@ -94,8 +101,8 @@ function setup() {
 
   // NOTE: ensure we have clean data.
   currentData.table.extraFields = currentData.table.extraFields || [];
-  currentData.table.columns = currentData.table.columns || [];
-  currentData.table.columns.forEach((column) => {
+  self.columns = (currentData.table.columns || []).map(c => _.extend({}, c));
+  self.columns.forEach((column) => {
     if (column.tmpl) {
       if (!column.defaultContent) {
         column.defaultContent = "";
@@ -154,7 +161,7 @@ function setup() {
   @param options Object - the global options of the data subscription
   @param currentData Object - the arguments passed into the template.
 */
-function ajaxOptions(data, options, currentData) {
+function ajaxOptions(data, options, columns) {
   const pageOptions = {
     skip: data.start
   };
@@ -164,8 +171,8 @@ function ajaxOptions(data, options, currentData) {
   if (data.order) {
     pageOptions.sort = {};
     data.order.forEach((order, index) => {
-      if (currentData.table.columns[order.column] && currentData.table.columns[order.column].data) {
-        pageOptions.sort[currentData.table.columns[order.column].data] = 1 * (order.dir === "desc" ? -1 : 1);
+      if (columns[order.column] && columns[order.column].data) {
+        pageOptions.sort[columns[order.column].data] = 1 * (order.dir === "desc" ? -1 : 1);
       }
     });
   }
@@ -178,23 +185,23 @@ function ajaxOptions(data, options, currentData) {
   @param selector Object - the selector for the raw query (no search)
   @param currentData Object - the arguments passed into the template.
 */
-function ajaxSelector(data, selector, currentData) {
+function ajaxSelector(data, selector, columns, caseInsensitive) {
   const querySelector = _.extend({}, selector);
   if (data.search && data.search.value !== "") {
     querySelector.$or = [];
-    const search = (data.search.regex || currentData.table.search.caseInsensitive) ? {
+    const search = (data.search.regex || caseInsensitive) ? {
       $regex: data.search.value
     } : data.search.value;
 
-    if (currentData.table.search.caseInsensitive) {
+    if (caseInsensitive) {
       search.$options = "i";
     }
 
-    currentData.table.columns.forEach((column) => {
+    columns.forEach((column) => {
       if (_.isFunction(column.search)) {
         querySelector.$or = _.union(querySelector.$or, column.search(search, Meteor.userId()));
       }
-      else if (column.data && (!column.searchable || column.searchable !== false)) {
+      else if (column.data && column.searchable !== false) {
         querySelector.$or.push({ [column.data]: search });
       }
     });
@@ -222,7 +229,7 @@ Template.DynamicTable.onRendered(function onRendered() {
     const currentData = Template.currentData();
     setup.call(self);
     // NOTE: we want all fields defined in columns + all extraFields
-    const fields = _.union(_.unique(_.compact(_.pluck(currentData.table.columns, "data"))), currentData.table.extraFields);
+    const fields = _.union(_.unique(_.compact(_.pluck(self.columns, "data"))), currentData.table.extraFields);
     const options = _.extend({ fields: _.object(fields, _.times(fields.length, () => true)) }, currentData.table.subscriptionOptions || {});
 
     // NOTE: if we have a hard limit (e.g., no paging specified)
@@ -265,8 +272,7 @@ Template.DynamicTable.onRendered(function onRendered() {
         }
       },
       headerCallback(headerRow) {
-        const table = templateInstance.data.table;
-        const columns = table.columns;
+        const columns = self.columns;
 
         $(headerRow).find("td,th").each((index, headerCell) => {
           if (columns[index].titleTmpl) {
@@ -286,8 +292,8 @@ Template.DynamicTable.onRendered(function onRendered() {
       ajax(data, callback) {
         templateInstance.completeStart = new Date().getTime();
         // NOTE: the "ajax" call triggers a subscription rerun, iff queryOptions or querySelector has changed
-        const queryOptions = ajaxOptions(data, options, currentData);
-        const querySelector = ajaxSelector(data, selector, currentData);
+        const queryOptions = ajaxOptions(data, options, self.columns);
+        const querySelector = ajaxSelector(data, selector, self.columns, currentData.table.search.caseInsensitive);
         const query = {
           options: queryOptions,
           selector: querySelector
@@ -297,7 +303,7 @@ Template.DynamicTable.onRendered(function onRendered() {
           templateInstance.ajaxCallback = callback;
         }
       }
-    }, currentData.table);
+    }, currentData.table, { columns: templateInstance.columns });
     if (templateInstance.dataTable) {
       templateInstance.dataTable.api().destroy();
     }
@@ -371,10 +377,10 @@ Template.DynamicTable.onRendered(function onRendered() {
             try {
               templateInstance.dataTable.api().row(rowIndex).data(currentData.table.collection.findOne({ _id }));
               $(templateInstance.dataTable.api().row(rowIndex).node()).find("td,th").each(function perRow(cellIndex) {
-                if (currentData.table.columns[cellIndex].tmpl) {
+                if (templateInstance.columns[cellIndex].tmpl) {
                   Blaze.remove(templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl);
                   delete templateInstance.blaze[`${rowIndex}-${cellIndex}`];
-                  currentData.table.columns[cellIndex].createdCell(this, null, rowData, rowIndex, cellIndex);
+                  templateInstance.columns[cellIndex].createdCell(this, null, rowData, rowIndex, cellIndex);
                 }
               });
             }
