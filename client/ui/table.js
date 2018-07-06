@@ -310,6 +310,7 @@ Template.DynamicTable.onRendered(function onRendered() {
     }, currentData.table, { columns: templateInstance.columns });
     if (templateInstance.dataTable) {
       templateInstance.dataTable.api().destroy();
+      templateInstance.$(`#${currentData.id}`).html("");
     }
     templateInstance.dataTable = templateInstance.$(`#${currentData.id}`).dataTable(tableSpec);
   });
