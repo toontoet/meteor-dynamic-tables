@@ -150,4 +150,4 @@ export function simpleTablePublicationArray(tableId, publicationName, compositeP
 }
 
 Meteor.publishComposite("simpleTablePublication", simpleTablePublication);
-Meteor.publishComposite("simpleTablePublicationArray", simpleTablePublicationArray);
+Meteor.publish("simpleTablePublicationArray", simpleTablePublicationArray);
