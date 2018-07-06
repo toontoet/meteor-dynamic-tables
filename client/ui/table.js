@@ -227,15 +227,7 @@ Template.DynamicTable.onRendered(function onRendered() {
     });
   }
   this.autorun(() => {
-    const currentData = Template.currentData();
-    if (JSON.stringify(Tracker.nonreactive(() => templateInstance.selector.get())) !== JSON.stringify(currentData.selector)) {
-      templateInstance.selector.set(currentData.selector);
-      if (templateInstance.dataTable) {
-        templateInstance.dataTable.api().ajax.reload();
-      }
-    }
-  });
-  this.autorun(() => {
+    templateInstance.tableId.get();
     const currentData = Template.instance().data;// NOTE: intentionally not reactive.
     setup.call(self);
     // NOTE: we want all fields defined in columns + all extraFields
@@ -357,6 +349,7 @@ Template.DynamicTable.onRendered(function onRendered() {
 
   // NOTE: wait for the subscription and then fetch and observe the data.
   this.autorun(() => {
+    templateInstance.tableId.get();
     const currentData = templateInstance.data;
     const query = templateInstance.query.get();
     if (!query) {
@@ -421,12 +414,27 @@ Template.DynamicTable.onRendered(function onRendered() {
   });
 });
 Template.DynamicTable.onCreated(function onCreated() {
+  const self = this;
   this.sub = new ReactiveVar(null);
   this.selector = new ReactiveVar({});
   this.options = new ReactiveVar({});
   this.query = new ReactiveVar(false);
   this.advancedSearch = new ReactiveVar({});
   this.incomingSelector = new ReactiveVar({});
+  this.tableId = new ReactiveVar("");
+
+  this.autorun(() => {
+    const currentData = Template.currentData();
+    if (Tracker.nonreactive(() => self.tableId.get()) !== currentData.id) {
+      self.tableId.set(currentData.id);
+    }
+    if (JSON.stringify(Tracker.nonreactive(() => self.selector.get())) !== JSON.stringify(currentData.selector)) {
+      self.selector.set(currentData.selector);
+      if (self.dataTable) {
+        self.dataTable.api().ajax.reload();
+      }
+    }
+  });
   this.blaze = {};
 });
 
