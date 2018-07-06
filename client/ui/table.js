@@ -338,14 +338,26 @@ Template.DynamicTable.onRendered(function onRendered() {
         }
       }
     });
-    templateInstance.sub.set(currentData.table.sub.subscribe(
-      "simpleTablePublication",
-      currentData.id,
-      currentData.table.publication,
-      currentData.table.compositePublicationNames,
-      _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
-      queryOptions
-    ));
+    if (currentData.table.useArrayPublication) {
+      templateInstance.sub.set(currentData.table.sub.subscribe(
+        "simpleTablePublicationArray",
+        currentData.id,
+        currentData.table.publication,
+        currentData.table.compositePublicationNames,
+        _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
+        queryOptions
+      ));
+    }
+    else {
+      templateInstance.sub.set(currentData.table.sub.subscribe(
+        "simpleTablePublication",
+        currentData.id,
+        currentData.table.publication,
+        currentData.table.compositePublicationNames,
+        _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
+        queryOptions
+      ));
+    }
   });
 
   // NOTE: wait for the subscription and then fetch and observe the data.
