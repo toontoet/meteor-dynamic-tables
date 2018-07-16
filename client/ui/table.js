@@ -227,15 +227,7 @@ Template.DynamicTable.onRendered(function onRendered() {
     });
   }
   this.autorun(() => {
-    const currentData = Template.currentData();
-    if (JSON.stringify(Tracker.nonreactive(() => templateInstance.selector.get())) !== JSON.stringify(currentData.selector)) {
-      templateInstance.selector.set(currentData.selector);
-      if (templateInstance.dataTable) {
-        templateInstance.dataTable.api().ajax.reload();
-      }
-    }
-  });
-  this.autorun(() => {
+    templateInstance.tableId.get();
     const currentData = Template.instance().data;// NOTE: intentionally not reactive.
     setup.call(self);
     // NOTE: we want all fields defined in columns + all extraFields
@@ -318,6 +310,7 @@ Template.DynamicTable.onRendered(function onRendered() {
     }, currentData.table, { columns: templateInstance.columns });
     if (templateInstance.dataTable) {
       templateInstance.dataTable.api().destroy();
+      templateInstance.$(`#${currentData.id}`).html("");
     }
     templateInstance.dataTable = templateInstance.$(`#${currentData.id}`).dataTable(tableSpec);
   });
@@ -345,18 +338,31 @@ Template.DynamicTable.onRendered(function onRendered() {
         }
       }
     });
-    templateInstance.sub.set(currentData.table.sub.subscribe(
-      "simpleTablePublication",
-      currentData.id,
-      currentData.table.publication,
-      currentData.table.compositePublicationNames,
-      _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
-      queryOptions
-    ));
+    if (currentData.table.useArrayPublication) {
+      templateInstance.sub.set(currentData.table.sub.subscribe(
+        "simpleTablePublicationArray",
+        currentData.id,
+        currentData.table.publication,
+        currentData.table.compositePublicationNames,
+        _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
+        queryOptions
+      ));
+    }
+    else {
+      templateInstance.sub.set(currentData.table.sub.subscribe(
+        "simpleTablePublication",
+        currentData.id,
+        currentData.table.publication,
+        currentData.table.compositePublicationNames,
+        _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
+        queryOptions
+      ));
+    }
   });
 
   // NOTE: wait for the subscription and then fetch and observe the data.
   this.autorun(() => {
+    templateInstance.tableId.get();
     const currentData = templateInstance.data;
     const query = templateInstance.query.get();
     if (!query) {
@@ -421,12 +427,27 @@ Template.DynamicTable.onRendered(function onRendered() {
   });
 });
 Template.DynamicTable.onCreated(function onCreated() {
+  const self = this;
   this.sub = new ReactiveVar(null);
   this.selector = new ReactiveVar({});
   this.options = new ReactiveVar({});
   this.query = new ReactiveVar(false);
   this.advancedSearch = new ReactiveVar({});
   this.incomingSelector = new ReactiveVar({});
+  this.tableId = new ReactiveVar("");
+
+  this.autorun(() => {
+    const currentData = Template.currentData();
+    if (Tracker.nonreactive(() => self.tableId.get()) !== currentData.id) {
+      self.tableId.set(currentData.id);
+    }
+    if (JSON.stringify(Tracker.nonreactive(() => self.selector.get())) !== JSON.stringify(currentData.selector)) {
+      self.selector.set(currentData.selector);
+      if (self.dataTable) {
+        self.dataTable.api().ajax.reload();
+      }
+    }
+  });
   this.blaze = {};
 });
 
@@ -436,7 +457,12 @@ Template.DynamicTable.onCreated(function onCreated() {
 //       destroy the data table and empty the actual table element
 Template.DynamicTable.onDestroyed(function onDestroyed() {
   if (this.sub.get()) {
-    this.sub.get().stop();
+    if (this.sub.get().stop) {
+      this.sub.get().stop();
+    }
+    else {
+      Template.instance().data.table.sub.clear();
+    }
   }
   if (this.handle) {
     this.handle.stop();
