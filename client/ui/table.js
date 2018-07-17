@@ -3,7 +3,7 @@ import { Modal } from "meteor/peppelg:bootstrap-3-modal";
 import "./table.html";
 import "./exportModal.js";
 import "./advancedSearchModal.js";
-import { TableInformation } from "../db.js";
+import { getTableRecordsCollection } from "../db.js";
 
 /**
   @this Template.instance()
@@ -97,7 +97,7 @@ function setup() {
 
   // NOTE: allow for subscription managers.
   if (!currentData.table.sub) {
-    currentData.table.sub = Meteor;
+    currentData.table.sub = currentData.table.collection._connection || Meteor;
   }
 
   // NOTE: ensure we have clean data.
@@ -369,7 +369,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       return;
     }
     const queryOptions = query.options;
-    const tableInfo = TableInformation.findOne({ _id: currentData.id });
+    const tableInfo = getTableRecordsCollection(currentData.table.sub).findOne({ _id: currentData.id });
     if (templateInstance.sub.get() && templateInstance.sub.get().ready() && tableInfo) {
       if (templateInstance.handle) {
         templateInstance.handle.stop();
