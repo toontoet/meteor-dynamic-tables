@@ -30,7 +30,16 @@
                 </select>
               </div>
             </div>
-            <div class="col-md-4 col-sm-4">
+            <div class="col-md-8 col-sm-8">
+              <label for="dynamicTableExportModalselected-fields">Fields to Export</label>
+              <select id="dynamicTableExportModalselected-fields" style="width: 100%">
+                {{#each field in fields}}
+                  <option value="{{field.field}}">{{field.label}}</option>
+                {{/each}}
+              </select>
+            </div>
+
+            <!--<div class="col-md-4 col-sm-4">
               {{#each field in fields}}
                 {{#if isEven @index}}
                   <div class="row">
@@ -51,7 +60,41 @@
                   </div>
                 {{/unless}}
               {{/each}}
-            </div>
+            </div>-->
+            {{#autoForm collection=collection id="dynamicTableExportModalForm"}}
+              {{#each field in fields}}
+                {{#if field.filters}}
+                  <div class="row">
+                    <div class="col-md-12 col-sm-12">
+                      <h4>Filter {{field.label}}</h4>
+                    </div>
+                    {{#each filter in field.filters}}
+                    <div class="col-md-3 col-sm-3">
+                      <label>{{filter.label}}</label>
+                    </div>
+                    <div class="col-md-2 col-sm-2">
+                      {{#if filter.comparators}}
+                        <select style="width: 100%" class="comparator" data-target="{{field.field}}-{{filter.field}}" id="dynamicTableExportModalForm-{{field.field}}-{{filter.field}}-comparator">
+                          {{#each option in filter.comparators}}
+                            <option value="{{option.operator}}">{{option.label}}</option>
+                          {{/each}}
+                        </select>
+                      {{else}}
+                        <input type="hidden"  data-target="{{field.field}}-{{filter.field}}" id="dynamicTableExportModalForm-{{field.field}}-{{filter.field}}-comparator" value="{{op filter.comparator '||' ''}}" />
+                      {{/if}}
+                    </div>
+                    <div class="col-md-7 col-sm-7">
+                      {{#if filter.type}}
+                        {{> afFieldInput required=false type=filter.type options=filter.options name=filter.field  id=(concat "dynamicTableExportModalForm-" field.field "-" filter.field) style="width: 100%"}}
+                      {{else}}
+                        {{> afFieldInput required=false name=filter.field  id=(concat "dynamicTableExportModalForm-" field.field "-" filter.field) style="width: 100%"}}
+                      {{/if}}
+                    </div>
+                    {{/each}}
+                  </div>
+                {{/if}}
+              {{/each}}
+            {{/autoForm}}
           </div>
         </div>
         <div class="modal-footer">
