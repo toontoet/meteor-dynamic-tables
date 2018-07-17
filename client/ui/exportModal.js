@@ -82,7 +82,7 @@ function CSVLineFromDocument(doc, exportOptions, columns, fieldNames, selector) 
   .map((val) => {
     // NOTE: if the resulting value contains commas, we need to escape any present quotes and then quote the entire field
     if (val.indexOf(",") !== -1) {
-      val = val.split("\"").join("\\\"");
+      val = val.split("\"").join("\"\"");
       val = `"${val}"`;
     }
     return val;
