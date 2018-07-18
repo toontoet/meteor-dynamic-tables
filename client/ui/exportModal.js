@@ -209,7 +209,7 @@ Template.dynamicTableExportModal.events({
       if (sub.ready()) {
         try {
           comp.stop();
-          const tableInfo = getTableRecordsCollection(data.collection).findOne({ _id: `${data.tableId}-export` });
+          const tableInfo = getTableRecordsCollection(data.collection._connection).findOne({ _id: `${data.tableId}-export` });
           const records = data.collection.find({ _id: { $in: tableInfo._ids } }, _.omit(options, "skip")).fetch();
           const fileName = `${data.export.fileName || "export"}.csv`;
           const csvHeaders = _.flatten(_.filter(data.export.fields, field => fieldNames.indexOf(field.field) !== -1).map((field) => {
