@@ -369,7 +369,20 @@ Template.DynamicTable.onRendered(function onRendered() {
       return;
     }
     const queryOptions = query.options;
-    const tableInfo = getTableRecordsCollection(currentData.table.collection._connection).findOne({ _id: currentData.id });
+    let tableInfo = getTableRecordsCollection(currentData.table.collection._connection).findOne({ _id: currentData.id });
+    if (!tableInfo && Meteor.status().status === "offline") {
+      const options = _.extend({}, query.options);
+      delete options.limit;
+      delete options.skip;
+      options.fields = { _id: true };
+      const data = currentData.table.collection.find(query.selector, options).fetch();
+
+      tableInfo = {
+        recordsFiltered: data.length,
+        recordsTotal: data.length,
+        _ids: data.slice(queryOptions.skip || 0, (queryOptions.skip || 0) + (queryOptions.limit || 10000000)).map (i => i. _id)
+      };
+    }
     if (templateInstance.sub.get() && templateInstance.sub.get().ready() && tableInfo) {
       if (templateInstance.handle) {
         templateInstance.handle.stop();
