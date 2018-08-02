@@ -94,7 +94,7 @@ function doExport(extraOptions) {
 function setup() {
   const self = this;
   const currentData = this.data;
-
+  self.query.set(null);
   // NOTE: allow for subscription managers.
   if (!currentData.table.sub) {
     currentData.table.sub = currentData.table.collection._connection || Meteor;
