@@ -395,7 +395,12 @@ Template.DynamicTable.onRendered(function onRendered() {
         //       a future optimization would be to just re-render the cell that has changed.
         changed(_id) {
           if (!initializing) {
-            const rowIndex = tableInfo._ids.indexOf(_id);
+            // NOTE: we can't rely on tableInfo._ids being in order as we might run the sort locally.
+            // const rowIndex = tableInfo._ids.indexOf(_id);
+
+            const rowsData = _.toArray(templateInstance.dataTable.api().data());
+            const rowIndex = rowsData.indexOf(_.findWhere(rowsData, { _id }));
+
             const rowData = currentData.table.collection.findOne({ _id });
             try {
               templateInstance.dataTable.api().row(rowIndex).data(currentData.table.collection.findOne({ _id }));
