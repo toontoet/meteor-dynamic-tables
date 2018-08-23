@@ -390,7 +390,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       let initializing = true;
       // NOTE: tableInfo._ids already contains the ids of the documents to find - so no skip
       const cursor = Tracker.nonreactive(() => currentData.table.collection.find({ _id: { $in: tableInfo._ids } }, _.omit(queryOptions, "skip")));
-      const count = Tracker.nonreactive(() => cursor.count());
+      const count = cursor.count(); // MUST BE REACTIVE to track document removals
       const docs = Tracker.nonreactive(() => cursor.fetch());
       templateInstance.handle = cursor.observeChanges({
         _suppress_initial: true,
