@@ -1,6 +1,6 @@
 import FileSaver from "file-saver";
 import "./exportModal.html";
-import { TableInformation } from "../db.js";
+import { getTableRecordsCollection } from "../db.js";
 // NOTE: recursive function to collapse arrays and return clean CSVable strings.
 function valueFunction(value, exportOptions) {
   if (typeof value === "string") {
@@ -81,7 +81,7 @@ function CSVLineFromDocument(doc, exportOptions, columns, fieldNames, selector) 
   }))
   .map((val) => {
     // NOTE: if the resulting value contains commas, we need to escape any present quotes and then quote the entire field
-    if (val.indexOf(",") !== -1) {
+    if (val.indexOf(",") !== -1 || val.indexOf("\n") !== -1) {
       val = val.split("\"").join("\"\"");
       val = `"${val}"`;
     }
@@ -209,7 +209,7 @@ Template.dynamicTableExportModal.events({
       if (sub.ready()) {
         try {
           comp.stop();
-          const tableInfo = TableInformation.findOne({ _id: `${data.tableId}-export` });
+          const tableInfo = getTableRecordsCollection(data.collection._connection).findOne({ _id: `${data.tableId}-export` });
           const records = data.collection.find({ _id: { $in: tableInfo._ids } }, _.omit(options, "skip")).fetch();
           const fileName = `${data.export.fileName || "export"}.csv`;
           const csvHeaders = _.flatten(_.filter(data.export.fields, field => fieldNames.indexOf(field.field) !== -1).map((field) => {
