@@ -1,195 +1,3 @@
-export function simpleTablePublication(tableId, publicationName, compositePublicationNames, selector, options) {
-  check(tableId, String);
-  check(publicationName, String);
-  check(selector, Object);
-  check(options, Object);
-  check(Meteor.default_server.publish_handlers[publicationName], Function);
-  const publicationResult = Meteor.default_server.publish_handlers[publicationName].call(this, selector, options);
-  let publicationCursor;
-  if (_.isArray(publicationResult)) {
-    publicationCursor = publicationResult[0];
-  }
-  else {
-    publicationCursor = publicationResult;
-  }
-  const countPublicationResult = Meteor.default_server.publish_handlers[publicationName].call(
-    this,
-    selector,
-    { fields: { _id: true }, sort: options.sort }
-  );
-  let countPublicationCursor;
-  if (_.isArray(countPublicationResult)) {
-    countPublicationCursor = countPublicationResult[0];
-  }
-  else {
-    countPublicationCursor = countPublicationResult;
-  }
-  let publishedIds = publicationCursor.map(row => row._id);
-  let recordsTotal = countPublicationCursor.count();
-  let initializing = true;
-
-  console.log(publicationCursor.count());
-  let updateCount = () => {
-    recordsTotal = countPublicationCursor.count();
-    this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-  };
-  const hasSortableFields = _.keys(options.fields || {}).length === 0 || _.intersection(_.keys(options.fields || {}), _.keys(options.sort || {})).length === _.keys(options.sort || {}).length;
-
-  if (options.throttleRefresh) {
-    updateCount = _.throttle(Meteor.bindEnvironment(updateCount), options.throttleRefresh);
-  }
-  let dataHandle;
-  if (hasSortableFields) {
-    dataHandle = publicationCursor.observeChanges({
-      _suppress_initial: true,
-      added: (_id) => {
-        if (!initializing) {
-          publishedIds.push(_id);
-          recordsTotal++;
-          this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-        }
-      },
-      removed: (_id) => {
-        publishedIds = _.without(publishedIds, _id);
-        recordsTotal--;
-        this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-      }
-    });
-  }
-  else {
-    dataHandle = publicationCursor.observeChanges({
-      _suppress_initial: true,
-      addedBefore: (_id, doc, beforeId) => {
-        if (!initializing) {
-          publishedIds.splice(publishedIds.indexOf(beforeId), 0, _id);
-          recordsTotal++;
-          this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-        }
-      },
-      movedBefore: (_id, beforeId) => {
-        publishedIds = _.without(publishedIds, _id);
-        publishedIds.splice(publishedIds.indexOf(beforeId), 0, _id);
-        this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-      },
-      removed: (_id) => {
-        publishedIds = _.without(publishedIds, _id);
-        recordsTotal--;
-        this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-      }
-    });
-  }
-  this.added("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-  const interval = Meteor.setInterval(updateCount, 10000);
-
-  initializing = false;
-  this.onStop(() => {
-    dataHandle.stop();
-    Meteor.clearInterval(interval);
-  });
-  return {
-    find() {
-      return publicationCursor;
-    },
-    children: (compositePublicationNames || []).map((pubName) => {
-      check(Meteor.default_server.publish_handlers[pubName], Function);
-      return {
-        find(play) {
-          return Meteor.default_server.publish_handlers[pubName].call(this, play);
-        }
-      };
-    })
-  };
-}
-export function simpleTablePublicationArray(tableId, publicationName, selector, options) {
-  check(tableId, String);
-  check(publicationName, String);
-  check(selector, Object);
-  check(options, Object);
-  check(Meteor.default_server.publish_handlers[publicationName], Function);
-  const publicationResult = Meteor.default_server.publish_handlers[publicationName].call(this, selector, options);
-  let publicationCursor;
-  if (_.isArray(publicationResult)) {
-    publicationCursor = publicationResult[0];
-  }
-  else {
-    publicationCursor = publicationResult;
-  }
-  console.log(publicationCursor.count());
-  const countPublicationResult = Meteor.default_server.publish_handlers[publicationName].call(
-    this,
-    selector,
-    { fields: { _id: true }, sort: options.sort }
-  );
-  let countPublicationCursor;
-  if (_.isArray(countPublicationResult)) {
-    countPublicationCursor = countPublicationResult[0];
-  }
-  else {
-    countPublicationCursor = countPublicationResult;
-  }
-  let publishedIds = publicationCursor.map(row => row._id);
-  let recordsTotal = countPublicationCursor.count();
-  let initializing = true;
-  let updateCount = () => {
-    recordsTotal = countPublicationCursor.count();
-    this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-  };
-  const hasSortableFields = _.keys(options.fields || {}).length === 0 || _.intersection(_.keys(options.fields || {}), _.keys(options.sort || {})).length === _.keys(options.sort || {}).length;
-
-  if (options.throttleRefresh) {
-    updateCount = _.throttle(Meteor.bindEnvironment(updateCount), options.throttleRefresh);
-  }
-  let dataHandle;
-  if (hasSortableFields) {
-    dataHandle = publicationCursor.observeChanges({
-      _suppress_initial: true,
-      added: (_id) => {
-        if (!initializing) {
-          publishedIds.push(_id);
-          recordsTotal++;
-          this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-        }
-      },
-      removed: (_id) => {
-        publishedIds = _.without(publishedIds, _id);
-        recordsTotal--;
-        this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-      }
-    });
-  }
-  else {
-    dataHandle = publicationCursor.observeChanges({
-      _suppress_initial: true,
-      addedBefore: (_id, doc, beforeId) => {
-        if (!initializing) {
-          publishedIds.splice(publishedIds.indexOf(beforeId), 0, _id);
-          recordsTotal++;
-          this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-        }
-      },
-      movedBefore: (_id, beforeId) => {
-        publishedIds = _.without(publishedIds, _id);
-        publishedIds.splice(publishedIds.indexOf(beforeId), 0, _id);
-        this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-      },
-      removed: (_id) => {
-        publishedIds = _.without(publishedIds, _id);
-        recordsTotal--;
-        this.changed("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-      }
-    });
-  }
-  this.added("tableInformation", tableId, { _ids: publishedIds, recordsFiltered: recordsTotal, recordsTotal });
-  const interval = Meteor.setInterval(updateCount, 10000);
-
-  initializing = false;
-  this.onStop(() => {
-    dataHandle.stop();
-    Meteor.clearInterval(interval);
-  });
-  return publicationResult;
-}
-
 function getDataHandleAndInterval(tableId, publicationCursor, options, canOverride) {
   const hasSortableFields = _.keys(options.fields || {}).length === 0 || _.intersection(_.keys(options.fields || {}), _.keys(options.sort || {})).length === _.keys(options.sort || {}).length;
 
@@ -281,6 +89,7 @@ function getDataHandleAndInterval(tableId, publicationCursor, options, canOverri
   }
   return { dataHandle, interval, recordIds };
 }
+
 function getPublicationCursor(publicationName, selector, options) {
   const publicationResult = Meteor.default_server.publish_handlers[publicationName].call(this, selector, options);
   let publicationCursor;
@@ -290,6 +99,7 @@ function getPublicationCursor(publicationName, selector, options) {
   // doing so fixes a potential issue with cursors returning results with a bad sort
   // e.g., one where multiple valid sorts are possible. In this case, the table
   // information can return one set of ids and the cursor a different set of documents
+  // NOT compatible with the composite publication.
   let canOverride = options.overridePublication === undefined ? undefined : options.overridePublication;
   if (_.isArray(publicationResult)) {
     publicationCursor = publicationResult[0];
@@ -305,7 +115,44 @@ function getPublicationCursor(publicationName, selector, options) {
   }
   return { publicationResult, publicationCursor, canOverride };
 }
+
+export function simpleTablePublication(tableId, publicationName, compositePublicationNames, selector, options) {
+  check(tableId, String);
+  check(publicationName, String);
+  check(selector, Object);
+  check(options, Object);
+  check(Meteor.default_server.publish_handlers[publicationName], Function);
+  const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, options);
+  const { dataHandle, interval, recordIds } = getDataHandleAndInterval.call(this, tableId, publicationCursor, options, false);
+
+  this.onStop(() => {
+    dataHandle.stop();
+    if (interval) {
+      Meteor.clearInterval(interval);
+    }
+    recordIds.splice(0, recordIds.length);
+  });
+  return {
+    find() {
+      return publicationCursor;
+    },
+    children: (compositePublicationNames || []).map((pubName) => {
+      check(Meteor.default_server.publish_handlers[pubName], Function);
+      return {
+        find(play) {
+          return Meteor.default_server.publish_handlers[pubName].call(this, play);
+        }
+      };
+    })
+  };
+}
+
 export function simpleTablePublicationArrayNew(tableId, publicationName, selector, options) {
+  check(tableId, String);
+  check(publicationName, String);
+  check(selector, Object);
+  check(options, Object);
+  check(Meteor.default_server.publish_handlers[publicationName], Function);
   const { publicationResult, publicationCursor, canOverride } = getPublicationCursor.call(this, publicationName, selector, options);
   const { dataHandle, interval, recordIds } = getDataHandleAndInterval.call(this, tableId, publicationCursor, options, canOverride);
   this.onStop(() => {

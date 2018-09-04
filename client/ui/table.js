@@ -172,8 +172,13 @@ function ajaxOptions(data, options, columns) {
   if (data.order) {
     pageOptions.sort = {};
     data.order.forEach((order, index) => {
-      if (columns[order.column] && columns[order.column].data) {
-        pageOptions.sort[columns[order.column].data] = 1 * (order.dir === "desc" ? -1 : 1);
+      if (columns[order.column] && (columns[order.column].data || columns[order.column].sortField)) {
+        if (columns[order.column].sortField) {
+          pageOptions.sort[columns[order.column].sortField] = 1 * (order.dir === "desc" ? -1 : 1);
+        }
+        else {
+          pageOptions.sort[columns[order.column].data] = 1 * (order.dir === "desc" ? -1 : 1);
+        }
       }
     });
   }
@@ -392,7 +397,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       let initializing = true;
       // NOTE: tableInfo._ids already contains the ids of the documents to find - so no skip
       const cursor = Tracker.nonreactive(() => currentData.table.collection.find({ _id: { $in: tableInfo._ids } }, _.omit(queryOptions, "skip")));
-      const count = Tracker.nonreactive(() => cursor.count());
+      const count = cursor.count(); // MUST BE REACTIVE to track document removals and additions in the case that we hit this line before all data is really added.
       const docs = Tracker.nonreactive(() => cursor.fetch());
       templateInstance.handle = cursor.observeChanges({
         _suppress_initial: true,
@@ -410,7 +415,12 @@ Template.DynamicTable.onRendered(function onRendered() {
         //       a future optimization would be to just re-render the cell that has changed.
         changed(_id) {
           if (!initializing) {
-            const rowIndex = tableInfo._ids.indexOf(_id);
+            // NOTE: we can't rely on tableInfo._ids being in order as we might run the sort locally.
+            // const rowIndex = tableInfo._ids.indexOf(_id);
+
+            const rowsData = _.toArray(templateInstance.dataTable.api().data());
+            const rowIndex = rowsData.indexOf(_.findWhere(rowsData, { _id }));
+
             const rowData = currentData.table.collection.findOne({ _id });
             try {
               templateInstance.dataTable.api().row(rowIndex).data(currentData.table.collection.findOne({ _id }));
