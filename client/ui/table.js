@@ -172,8 +172,13 @@ function ajaxOptions(data, options, columns) {
   if (data.order) {
     pageOptions.sort = {};
     data.order.forEach((order, index) => {
-      if (columns[order.column] && columns[order.column].data) {
-        pageOptions.sort[columns[order.column].data] = 1 * (order.dir === "desc" ? -1 : 1);
+      if (columns[order.column] && (columns[order.column].data || columns[order.column].sortField)) {
+        if (columns[order.column].sortField) {
+          pageOptions.sort[columns[order.column].sortField] = 1 * (order.dir === "desc" ? -1 : 1);
+        }
+        else {
+          pageOptions.sort[columns[order.column].data] = 1 * (order.dir === "desc" ? -1 : 1);
+        }
       }
     });
   }
@@ -390,7 +395,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       let initializing = true;
       // NOTE: tableInfo._ids already contains the ids of the documents to find - so no skip
       const cursor = Tracker.nonreactive(() => currentData.table.collection.find({ _id: { $in: tableInfo._ids } }, _.omit(queryOptions, "skip")));
-      const count = cursor.count(); // MUST BE REACTIVE to track document removals
+      const count = cursor.count(); // MUST BE REACTIVE to track document removals and additions in the case that we hit this line before all data is really added.
       const docs = Tracker.nonreactive(() => cursor.fetch());
       templateInstance.handle = cursor.observeChanges({
         _suppress_initial: true,
