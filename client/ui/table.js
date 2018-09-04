@@ -338,12 +338,14 @@ Template.DynamicTable.onRendered(function onRendered() {
         }
       }
     });
-    if (currentData.table.useArrayPublication) {
+    if (
+      currentData.table.useArrayPublication ||
+      (currentData.table.useArrayPublication === undefined && (!currentData.table.compositePublicationNames || currentData.table.compositePublicationNames.length === 0))
+    ) {
       templateInstance.sub.set(currentData.table.sub.subscribe(
         "simpleTablePublicationArray",
         currentData.id,
         currentData.table.publication,
-        currentData.table.compositePublicationNames,
         _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
         queryOptions
       ));
