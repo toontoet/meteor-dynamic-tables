@@ -21,12 +21,19 @@ That being said...:
      - takes as arguments a {selector} and {options} - which can be passed directly to a find
      - all permissions must be handled here.
      - the publication must return either a single cursor, or an array of cursors, the first of which must be the cursor for the documents (e.g., any joins must follow)
-     - complex publications can be accomplished by specifying an array of composite publication names - which utilise `publishComposite`
+     - complex publications can be accomplished by specifying an array of `compositecompositePublicationNames`- which utilise `publishComposite`
      - I'm actively working on reducing some of this complexity.
 7. Potential performance benefits caused by highly selective rendering of rows based on modified data
      - I'm actively working on improving this further by caching rendered templates between page changes and rendering specific columns on data change.
 8. Beyond this it has a very similar API to Tabular Tables
 
+## performance
+
+There are three main performance improvements over Tabular Tables. First, there is no additional rountrip between client and server - tabular tables works by publishing an "information" collection for each table with the list of documentIds to return, the client the subscribes to those documents. While this package also returns the documentIDs as paret of an information collection, it does it at the same time as running the main publication.
+
+Additionally, as tabular tables uses one publication for fetching the documentIds and another for fetching the documents themselves, any security work (e.g., checking a users permissions) must be done in both places. This package only requires it in one place, where it is called exactly once.
+
+Finally, by selectively re-rendering rows on data change (rather than re-rendering the entire page), we achieve performance improvements relative to tabular tables. This is particularly important when your rows use templates.
 
 ## Usage
 
