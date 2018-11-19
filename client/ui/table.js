@@ -19,7 +19,7 @@ function doAdvancedSearch(extraOptions) {
     fields: options.advancedSearch.fields || _.compact(options.columns.map(column => column.data).filter(d => d !== "_id")),
     columns: options.columns,
     callback: options.advancedSearch.callback || ((search) => {
-      if(_.keys(search).length){
+      if (_.keys(search).length) {
         templateInstance.$(".advanced-search-button").addClass("hasSearch");
       }
       else {
@@ -90,6 +90,18 @@ function doExport(extraOptions) {
   }, _.isObject(extraOptions) ? extraOptions : {}));
 }
 
+function filterModalCallback(columnIndex, options, operator, sortDirection) {
+  const order = this.dataTable.api().order();
+  const existing = _.find(order, col => col[0] === columnIndex);
+  if (existing) {
+    existing[1] = sortDirection === 1 ? "asc" : "desc";
+  }
+  else {
+    order.push([columnIndex, sortDirection === 1 ? "asc" : "desc"]);
+  }
+  this.dataTable.api().order(order);
+  this.dataTable.api().draw();
+}
 /**
   @this Template.instance()
 */
@@ -303,7 +315,8 @@ Template.DynamicTable.onRendered(function onRendered() {
               {
                 column: columns[index],
                 columnIndex: index,
-                table: currentData.table
+                table: currentData.table,
+                filterModalCallback: filterModalCallback.bind(self)
               },
               headerCell
             );
