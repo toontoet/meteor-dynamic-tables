@@ -1,0 +1,12 @@
+<template name="dynamicTableHeaderCell">
+  {{#if column.title}}
+    {{column.title}}
+  {{else}}
+    {{#if column.titleFn}}
+      {{column.titleFn}}
+    {{/if}}
+  {{/if}}
+  {{#if column.filterModal}}
+    <i style="cursor: hand; margin-top: 5px;" class="pull-right fa fa-filter"></i>
+  {{/if}}
+</template>

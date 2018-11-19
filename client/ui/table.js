@@ -2,7 +2,9 @@ import { ReactiveVar } from "meteor/reactive-var";
 import { Modal } from "meteor/peppelg:bootstrap-3-modal";
 import "./table.html";
 import "./exportModal.js";
+import "./components/filterModal/filterModal.js";
 import "./advancedSearchModal.js";
+import "./components/headerCell/headerCell.js";
 import { getTableRecordsCollection } from "../db.js";
 
 /**
@@ -285,7 +287,26 @@ Template.DynamicTable.onRendered(function onRendered() {
             if (headerCell.__blazeViewInstance) {
               Blaze.remove(headerCell.__blazeViewInstance);
             }
-            headerCell.__blazeViewInstance = Blaze.renderWithData(columns[index].titleTmpl, columns[index].titleTmplContext ? columns[index].titleTmplContext() : {}, headerCell);
+            headerCell.__blazeViewInstance = Blaze.renderWithData(
+              columns[index].titleTmpl,
+              columns[index].titleTmplContext ? columns[index].titleTmplContext() : {},
+              headerCell
+            );
+          }
+          else if (columns[index].filterModal) {
+            headerCell.innerHTML = "";
+            if (headerCell.__blazeViewInstance) {
+              Blaze.remove(headerCell.__blazeViewInstance);
+            }
+            headerCell.__blazeViewInstance = Blaze.renderWithData(
+              Template.dynamicTableHeaderCell,
+              {
+                column: columns[index],
+                columnIndex: index,
+                table: currentData.table
+              },
+              headerCell
+            );
           }
           else {
             const titleFunction = columns[index] && columns[index].titleFn;

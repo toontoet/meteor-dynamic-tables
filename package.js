@@ -36,3 +36,10 @@ Package.onUse((api) => {
   api.mainModule("server/main.js", "server");
   api.mainModule("client/main.js", "client");
 });
+
+Package.onTest((api) => {
+  api.use("znewsham:blaze-explorer");
+  api.use("znewsham:dynamic-table");
+  api.addFiles("client/ui/components/filterModal/filterModal.test.js", "client");
+  api.mainModule("dynamic-table-tests.js", "client");
+});

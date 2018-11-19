@@ -1,0 +1,52 @@
+<template name="dynamicTableFilterModal">
+  <div class="dynamic-table-filter">
+    {{#if sort.enabled}}
+      <section class="dynamic-table-filter-sort">
+        <label>Sort</label>
+        {{#if isNumeric}}
+          <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">0-9</button>
+          <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">9-0</button>
+        {{else}}
+          {{#if isString}}
+            <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">A-Z</button>
+            <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">Z-A</button>
+          {{/if}}
+        {{/if}}
+      </section>
+    {{/if}}
+    {{#if filter.enabled}}
+      {{#if filter.operator.enabled}}
+        <section class="dynamic-table-filter-operator">
+          <label>Display</label>
+          {{#if isNumeric}}
+          {{else}}
+            <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$in" {{checkedIf filter.operator.selected "$in"}} /> With Value</label>
+            <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$nin" {{checkedIf filter.operator.selected "$nin"}} /> Without Value</label>
+          {{/if}}
+        </section>
+      {{/if}}
+      {{#if filter.search.enabled}}
+        <section class="dynamic-table-filter-search">
+          <label>Filter</label>
+          <input type="search" class="input-dynamic-table-search" placeholder="Search..." />
+        </section>
+      {{/if}}
+      {{#if hasSelectedOptions}}
+        <section class="dynamic-table-filter-selected">
+          <label>Selected</label>
+          {{#each option in selectedOptions}}
+            <label><input class="input-dynamic-table-option-selected" type="checkbox" value="{{option}}" checked="checked" /> <span class="dynamic-table-option-value">{{option}}</span></label>
+          {{/each}}
+        </section>
+      {{/if}}
+      {{#if hasOptions}}
+        <section class="dynamic-table-filter-options">
+          <label>Options{{#if searching}}...{{/if}}</label>
+          {{#each option in options}}
+            <label><input class="input-dynamic-table-option" type="checkbox" value="{{option}}" {{checkedIf selectedOptions option}} /> <span class="dynamic-table-option-value">{{option}}</span></label>
+          {{/each}}
+        </section>
+      {{/if}}
+    {{/if}}
+  </div>
+</template>
