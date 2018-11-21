@@ -48,7 +48,7 @@ ComponentCollection.getCollection("dynamic-tables")
   },
   filter: {
     enabled: true,
-    selected: ["test1", "test2"],
+    selectedOptions: ["test1", "test2"],
     options: ["test1", "test2", "test3"]
   }
 })

@@ -7,6 +7,7 @@ import "./advancedSearchModal.js";
 import "./components/headerCell/headerCell.js";
 import { getTableRecordsCollection } from "../db.js";
 
+
 /**
   @this Template.instance()
 */
@@ -90,17 +91,53 @@ function doExport(extraOptions) {
   }, _.isObject(extraOptions) ? extraOptions : {}));
 }
 
-function filterModalCallback(columnIndex, options, operator, sortDirection) {
+function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirection) {
   const order = this.dataTable.api().order();
   const existing = _.find(order, col => col[0] === columnIndex);
+  let fieldName = this.columns[columnIndex].data;
+  if (this.columns[columnIndex].filterModal && this.columns[columnIndex].filterModal.field && this.columns[columnIndex].filterModal.field.name) {
+    fieldName = this.columns[columnIndex].filterModal.field.name;
+  }
+  let changed = false;
   if (existing) {
+    changed = existing[1] !== (sortDirection === 1 ? "asc" : "desc");
     existing[1] = sortDirection === 1 ? "asc" : "desc";
   }
   else {
     order.push([columnIndex, sortDirection === 1 ? "asc" : "desc"]);
+    changed = true;
   }
   this.dataTable.api().order(order);
-  this.dataTable.api().draw();
+  const advancedSearch = this.advancedSearch.get();
+
+  if (fieldName && optionsOrQuery) {
+    let newAdvancedSearchField;
+    if (_.isArray(optionsOrQuery) && optionsOrQuery.length) {
+      if (operator === "$not$all") {
+        newAdvancedSearchField = { $not: { $all: optionsOrQuery } };
+      }
+      else {
+        newAdvancedSearchField = { [operator]: optionsOrQuery };
+      }
+    }
+    else if (!_.isArray(optionsOrQuery) && optionsOrQuery !== "") {
+      newAdvancedSearchField = operator === "$regex" ? { $regex: `^${optionsOrQuery}` } : { $not: new RegExp(`^${optionsOrQuery}`) };
+    }
+    if (JSON.stringify(advancedSearch[fieldName]) !== JSON.stringify(newAdvancedSearchField)) {
+      advancedSearch[fieldName] = newAdvancedSearchField;
+      this.advancedSearch.set(advancedSearch);
+      changed = true;
+    }
+  }
+  else if (fieldName && advancedSearch[fieldName]) {
+    delete advancedSearch[fieldName];
+    this.advancedSearch.set(advancedSearch);
+    changed = true;
+  }
+  if (changed) {
+    this.dataTable.loading.set(true);
+    this.dataTable.api().draw();
+  }
 }
 /**
   @this Template.instance()
@@ -299,6 +336,7 @@ Template.DynamicTable.onRendered(function onRendered() {
             if (headerCell.__blazeViewInstance) {
               Blaze.remove(headerCell.__blazeViewInstance);
             }
+            headerCell.innerHTML = "";
             headerCell.__blazeViewInstance = Blaze.renderWithData(
               columns[index].titleTmpl,
               columns[index].titleTmplContext ? columns[index].titleTmplContext() : {},
@@ -306,16 +344,18 @@ Template.DynamicTable.onRendered(function onRendered() {
             );
           }
           else if (columns[index].filterModal) {
-            headerCell.innerHTML = "";
             if (headerCell.__blazeViewInstance) {
               Blaze.remove(headerCell.__blazeViewInstance);
             }
+            headerCell.innerHTML = "";
             headerCell.__blazeViewInstance = Blaze.renderWithData(
               Template.dynamicTableHeaderCell,
               {
                 column: columns[index],
                 columnIndex: index,
                 table: currentData.table,
+                dataTable: templateInstance.dataTable,
+                advancedSearch: templateInstance.advancedSearch.get(),
                 filterModalCallback: filterModalCallback.bind(self)
               },
               headerCell
@@ -351,7 +391,11 @@ Template.DynamicTable.onRendered(function onRendered() {
       templateInstance.dataTable.api().destroy();
       templateInstance.$(`#${currentData.id}`).html("");
     }
+    tableSpec.drawCallback = () => {
+      templateInstance.dataTable.loading.set(false);
+    };
     templateInstance.dataTable = templateInstance.$(`#${currentData.id}`).dataTable(tableSpec);
+    templateInstance.dataTable.loading = new ReactiveVar(true);
   });
 
   // NOTE: initialize the subscription according to the query options/selector
@@ -497,6 +541,18 @@ Template.DynamicTable.onCreated(function onCreated() {
   this.incomingSelector = new ReactiveVar({});
   this.tableId = new ReactiveVar("");
 
+  this.documentMouseDown = (e) => {
+    const filterModalWrapper = $("#dynamic-table-filter-modal")[0];
+    if (filterModalWrapper) {
+      if ($(filterModalWrapper).has(e.target).length  ) {
+        return;
+      }
+      Blaze.remove(filterModalWrapper.__blazeTemplate);
+      filterModalWrapper.innerHTML = "";
+    }
+  };
+
+  document.addEventListener("mousedown", this.documentMouseDown);
   this.autorun(() => {
     const currentData = Template.currentData();
     if (Tracker.nonreactive(() => self.tableId.get()) !== currentData.id) {
@@ -517,6 +573,7 @@ Template.DynamicTable.onCreated(function onCreated() {
 //       stop the observer
 //       destroy the data table and empty the actual table element
 Template.DynamicTable.onDestroyed(function onDestroyed() {
+  document.removeEventListener("mousedown", this.documentMouseDown);
   if (this.sub.get()) {
     if (this.sub.get().stop) {
       this.sub.get().stop();

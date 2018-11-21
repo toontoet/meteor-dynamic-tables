@@ -19,6 +19,26 @@ div.dynamic-table-filter .btn-dynamic-table-sort {
   width: 47%;
   margin: 2px;
 }
-div.dynamic-table-filter .btn-dynamic-table-sort.btn-dynamic-table-selected {
+div.dynamic-table-filter .btn-dynamic-table-operator {
+  width: 47%;
+  margin: 2px;
+}
+div.dynamic-table-filter .btn-dynamic-table-selected {
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dynamic-table-filter-selected>.inner,.dynamic-table-filter-options>.inner {
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.dynamic-table-filter-footer {
+  height: 30px;
+}
+
+.dynamic-table-filter-footer>button.btn-danger {
+  float: left;
+}
+.dynamic-table-filter-footer>button.btn-default {
+  float: right;
 }
