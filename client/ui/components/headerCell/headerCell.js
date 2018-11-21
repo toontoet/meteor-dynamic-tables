@@ -68,7 +68,7 @@ Template.dynamicTableHeaderCell.events({
     }
     let sort = templInstance.data.column.filterModal.sort;
     if (!sort) {
-      sort = templInstance.data.column.sortable ? {
+      sort = templInstance.data.column.sortable !== false ? {
         enabled: true,
         direction: columnOrder ? (columnOrder[1] === "asc" ? 1 : -1) : undefined
       } : undefined;

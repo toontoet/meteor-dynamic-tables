@@ -5,6 +5,10 @@ import "./exportModal.js";
 import "./components/filterModal/filterModal.js";
 import "./advancedSearchModal.js";
 import "./components/headerCell/headerCell.js";
+import "./components/rawRender/rawRender.js";
+import "./components/tableCell/tableCell.js";
+import "./components/singleValueTextEditor/singleValueTextEditor.js";
+import "./components/select2ValueEditor/select2ValueEditor.js";
 import { getTableRecordsCollection } from "../db.js";
 
 
@@ -155,26 +159,45 @@ function setup() {
   currentData.table.extraFields = currentData.table.extraFields || [];
   self.columns = (currentData.table.columns || []).map(c => _.extend({}, c));
   self.columns.forEach((column) => {
-    if (column.tmpl) {
+    if (column.tmpl || column.editTmpl) {
       if (!column.defaultContent) {
         column.defaultContent = "";
       }
+      const templateName = (column.tmpl && column.tmpl.viewName) || "Template.dynamicTableRawRender";
 
       column.createdCell = function createdCell(td, UNUSED, rowData, row, col) {
+        const rawRowData = rowData;
+        const rawContent = td.innerHTML;
+        td.innerHTML = "";
         if (column.tmplContext && rowData) {
           rowData = column.tmplContext(rowData);
         }
+        const editRowData = {
+          doc: rawRowData,
+          column,
+          collection: currentData.table.collection
+        };
         if (self.blaze[`${row}-${col}`]) {
-          if (self.blaze[`${row}-${col}`].name === column.tmpl.viewName) {
+          if (self.blaze[`${row}-${col}`].name === templateName) {
             td.parentElement.replaceChild(self.blaze[`${row}-${col}`].cell, td);
-            self.blaze[`${row}-${col}`].tmpl.dataVar.set(rowData);
+            self.blaze[`${row}-${col}`].tmpl.dataVar.set({
+              templateName: templateName.split(".")[1],
+              templateData: column.tmpl ? rowData : rawContent,
+              editTemplateName: column.editTmpl && column.editTmpl.viewName.split(".")[1],
+              editTemplateData: column.editTmplContext ? column.editTmplContext(editRowData) : editRowData
+            });
             return self.blaze[`${row}-${col}`].tmpl;
           }
           delete self.blaze[`${row}-${col}`];
         }
-        const ret = Blaze.renderWithData(column.tmpl, rowData, td, self.view);
+        const ret = Blaze.renderWithData(Template.dynamicTableTableCell, {
+          templateName: templateName.split(".")[1],
+          templateData: column.tmpl ? rowData : rawContent,
+          editTemplateName: column.editTmpl && column.editTmpl.viewName.split(".")[1],
+          editTemplateData: column.editTmplContext ? column.editTmplContext(editRowData) : editRowData
+        }, td, self.view);
         self.blaze[`${row}-${col}`] = {
-          name: column.tmpl.viewName,
+          name: templateName,
           cell: td,
           tmpl: ret
         };
@@ -287,8 +310,10 @@ Template.DynamicTable.onRendered(function onRendered() {
     const currentData = Template.instance().data;// NOTE: intentionally not reactive.
     setup.call(self);
     // NOTE: we want all fields defined in columns + all extraFields
-    const fields = _.union(_.unique(_.compact(_.pluck(self.columns, "data"))), currentData.table.extraFields);
-    const options = _.extend({ fields: _.object(fields, _.times(fields.length, () => true)) }, currentData.table.subscriptionOptions || {});
+    let fields = _.union(_.unique(_.compact(_.pluck(self.columns, "data"))), currentData.table.extraFields);
+    fields = fields.filter(field => !field.includes(".") || !fields.includes(field.split(".")[0]));
+    const fieldsObject = _.object(fields, _.times(fields.length, () => true));
+    const options = _.extend({ fields: fieldsObject }, currentData.table.subscriptionOptions || {});
 
     // NOTE: if we have a hard limit (e.g., no paging specified)
     if (currentData.table.limit) {
@@ -503,9 +528,15 @@ Template.DynamicTable.onRendered(function onRendered() {
             try {
               templateInstance.dataTable.api().row(rowIndex).data(currentData.table.collection.findOne({ _id }));
               $(templateInstance.dataTable.api().row(rowIndex).node()).find("td,th").each(function perRow(cellIndex) {
-                if (templateInstance.columns[cellIndex].tmpl) {
-                  Blaze.remove(templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl);
+                if (templateInstance.columns[cellIndex].tmpl || templateInstance.columns[cellIndex].editTmpl) {
+                  try {
+                    Blaze.remove(templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl);
+                  }
+                  catch (e) {
+                    // do nothing, this happens when you edit in the same tab as you are viewing (I think)
+                  }
                   delete templateInstance.blaze[`${rowIndex}-${cellIndex}`];
+                  this.innerHTML = templateInstance.dataTable.api().cell(rowIndex, cellIndex).render("render");
                   templateInstance.columns[cellIndex].createdCell(this, null, rowData, rowIndex, cellIndex);
                 }
               });
@@ -540,6 +571,7 @@ Template.DynamicTable.onCreated(function onCreated() {
   this.advancedSearch = new ReactiveVar({});
   this.incomingSelector = new ReactiveVar({});
   this.tableId = new ReactiveVar("");
+  this.columnCount = new ReactiveVar();
 
   this.documentMouseDown = (e) => {
     const filterModalWrapper = $("#dynamic-table-filter-modal")[0];
@@ -553,10 +585,33 @@ Template.DynamicTable.onCreated(function onCreated() {
   };
 
   document.addEventListener("mousedown", this.documentMouseDown);
+  /*let oldColCount;
+  this.autorun((comp) => {
+    const colCount = this.columnCount.get();
+    if (comp.firstRun) {
+      return;
+    }
+    if (oldColCount === undefined) {
+      oldColCount = colCount;
+      return;
+    }
+    Tracker.afterFlush(() => {
+      this.tableId.dep.changed();
+    });
+    /*const oldColumns = this.data.table.columns;
+    const newColumns = Tracker.nonreactive(() => Template.currentData().table.columns);
+    if (newColumns.length > oldColumns.length) {
+      const missingColumn = newColumns.find(nc => !_.find(oldColumns, oc => oc._id ? oc._id === nc._id : oc.data === nc.data));
+      debugger;
+    }
+  }); */
   this.autorun(() => {
     const currentData = Template.currentData();
     if (Tracker.nonreactive(() => self.tableId.get()) !== currentData.id) {
       self.tableId.set(currentData.id);
+    }
+    if (Tracker.nonreactive(() => self.columnCount.get()) !== currentData.table.columns.length) {
+      self.columnCount.set(currentData.table.columns.length);
     }
     if (JSON.stringify(Tracker.nonreactive(() => self.selector.get())) !== JSON.stringify(currentData.selector)) {
       self.selector.set(currentData.selector);
