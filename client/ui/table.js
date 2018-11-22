@@ -148,7 +148,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
 */
 function setup() {
   const self = this;
-  const currentData = this.data;
+  const currentData = Tracker.nonreactive(() => Template.currentData());
   self.query.set(null);
   // NOTE: allow for subscription managers.
   if (!currentData.table.sub) {
@@ -307,7 +307,7 @@ Template.DynamicTable.onRendered(function onRendered() {
   }
   this.autorun(() => {
     templateInstance.tableId.get();
-    const currentData = Template.instance().data;// NOTE: intentionally not reactive.
+    const currentData = Tracker.nonreactive(() => Template.currentData());// NOTE: intentionally not reactive.
     setup.call(self);
     // NOTE: we want all fields defined in columns + all extraFields
     let fields = _.union(_.unique(_.compact(_.pluck(self.columns, "data"))), currentData.table.extraFields);
@@ -414,7 +414,7 @@ Template.DynamicTable.onRendered(function onRendered() {
     }, currentData.table, { columns: templateInstance.columns });
     if (templateInstance.dataTable) {
       templateInstance.dataTable.api().destroy();
-      templateInstance.$(`#${currentData.id}`).html("");
+      templateInstance.$(`#${currentData.id}`).find("thead").html("");
     }
     tableSpec.drawCallback = () => {
       templateInstance.dataTable.loading.set(false);
@@ -585,7 +585,7 @@ Template.DynamicTable.onCreated(function onCreated() {
   };
 
   document.addEventListener("mousedown", this.documentMouseDown);
-  /*let oldColCount;
+  let oldColCount;
   this.autorun((comp) => {
     const colCount = this.columnCount.get();
     if (comp.firstRun) {
@@ -597,14 +597,17 @@ Template.DynamicTable.onCreated(function onCreated() {
     }
     Tracker.afterFlush(() => {
       this.tableId.dep.changed();
+      if (self.dataTable) {
+        self.dataTable.api().ajax.reload();
+      }
     });
     /*const oldColumns = this.data.table.columns;
     const newColumns = Tracker.nonreactive(() => Template.currentData().table.columns);
     if (newColumns.length > oldColumns.length) {
       const missingColumn = newColumns.find(nc => !_.find(oldColumns, oc => oc._id ? oc._id === nc._id : oc.data === nc.data));
       debugger;
-    }
-  }); */
+    }*/
+  });
   this.autorun(() => {
     const currentData = Template.currentData();
     if (Tracker.nonreactive(() => self.tableId.get()) !== currentData.id) {
