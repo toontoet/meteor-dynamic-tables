@@ -17,13 +17,14 @@ Template.CustomizableTable.events({
   "click a.add-column"(e, templInstance) {
     e.preventDefault();
     const columns = templInstance.selectedColumns.get();
-    columns.push({
-      data: $(e.currentTarget).data("column"),
-      title: $(e.currentTarget).data("column"),
-      render(val) {
-        return (val && val.length) || 0;
-      }
-    });
+    const columnData = $(e.currentTarget).data("column");
+    const column = _.findWhere(columns, { data: columnData });
+    if (column) {
+      columns.splice(columns.indexOf(column), 1);
+    }
+    else {
+      columns.push(_.findWhere(templInstance.data.columns, { data: columnData }));
+    }
     templInstance.selectedColumns.set(columns);
   }
 });

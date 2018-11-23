@@ -16,11 +16,12 @@ Template.dynamicTableTableCell.helpers({
 
 
 Template.dynamicTableTableCell.events({
-  "click span"(e) {
-    const td = $(e.currentTarget).closest("td");
-    const tr = td.closest("tr");
-    td.width(td.width());
-    Template.instance().editing.set(true);
+  "click span"(e, templInstance) {
+    if (templInstance.data.editable) {
+      const td = $(e.currentTarget).closest("td");
+      td.width(td.width());
+      templInstance.editing.set(true);
+    }
   }
 });
 
