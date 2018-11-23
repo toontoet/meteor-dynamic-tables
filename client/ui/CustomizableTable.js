@@ -1,6 +1,7 @@
 import "./CustomizableTable.html";
 import "./table.js";
-import { getValue } from "../inlineSave.js";
+import "./components/manageFieldsModal/manageFieldsModal.js";
+import { getValue, getPosition } from "../inlineSave.js";
 
 Template.CustomizableTable.helpers({
   readyToRender() {
@@ -9,11 +10,71 @@ Template.CustomizableTable.helpers({
   buildTable() {
     const table = _.extend({}, Template.instance().data.table);
     table.columns = Template.instance().selectedColumns.get();
+    table.colReorder = {
+      fnReorderCallback: Template.instance().fnReorderCallback
+    };
     return table;
   }
 });
 
+function changed(newColumns) {
+  const custom = this.data.custom;
+  if (_.isString(custom)) {
+    Meteor.users.update(
+      { _id: Meteor.userId() },
+      { $set: { [custom]: { columns: newColumns.map(col => ({ data: col.data, id: col.id })) } } }
+    );
+  }
+}
+
 Template.CustomizableTable.events({
+  "click a.manage-fields"(e, templInstance) {
+    e.preventDefault();
+    const manageFieldsOptions = {
+      availableColumns: templInstance.data.columns,
+      selectedColumns: templInstance.selectedColumns.get(),
+      changeCallback(column, add) {
+        const columns = templInstance.selectedColumns.get();
+        if (add) {
+          columns.push(column);
+        }
+        else {
+          const actualColumn = columns.find((col) => {
+            if (column.id) {
+              return column.id === col.id;
+            }
+            return column.data === col.data;
+          });
+          columns.splice(columns.indexOf(actualColumn), 1);
+        }
+        changed.call(templInstance, columns);
+        templInstance.selectedColumns.set(columns);
+        manageFieldsOptions.selectedColumns = columns;
+        $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageFieldsOptions);
+      }
+    };
+    const bounds = getPosition(e.currentTarget);
+    const div = $("#dynamic-table-manage-fields-modal").length ? $("#dynamic-table-manage-fields-modal") : $("<div>");
+    div.attr("id", "dynamic-table-manage-fields-modal")
+    .html("")
+    .css("position", "absolute")
+    .css("top", bounds.top)
+    .css("left", bounds.left);
+
+    if (div[0].__blazeTemplate) {
+      Blaze.remove(div[0].__blazeTemplate);
+    }
+    div[0].__blazeTemplate = Blaze.renderWithData(
+      Template.dynamicTableManageFieldsModal,
+      manageFieldsOptions,
+      div[0]
+    );
+    document.body.appendChild(div[0]);
+    const tooFar = (bounds.left + div.width()) - $(window).width();
+    if (tooFar > 0) {
+      div.css("left", (bounds.left - (tooFar + 5)) + "px");
+    }
+  },
   "click a.add-column"(e, templInstance) {
     e.preventDefault();
     const columns = templInstance.selectedColumns.get();
@@ -30,13 +91,18 @@ Template.CustomizableTable.events({
 });
 
 function filterColumns(columns, selectedColumnDataOrIds, savedSort, savedAdvancedSelector) {
-  const columnsToUse = columns.filter(c => c.required || selectedColumnDataOrIds.includes(c._id || c.data));
-
-  return columnsToUse;
+  return selectedColumnDataOrIds.map((c) => {
+    return columns.find(col => col.id === c || col.data === c);
+  });
 }
 
 Template.CustomizableTable.onCreated(function onCreated() {
   this.selectedColumns = new ReactiveVar([]);
+  this.fnReorderCallback = () => {
+    const columns = this.$("table").dataTable().api().context[0].aoColumns;
+    changed.call(this, columns.map(col => ({ data: col.data, id: col.id })));
+  };
+  let stop = false;
   if (this.data.custom) {
     if (_.isString(this.data.custom)) {
       Tracker.autorun(() => {
@@ -44,13 +110,16 @@ Template.CustomizableTable.onCreated(function onCreated() {
           return;
         }
         const custom = getValue(Tracker.nonreactive(() => Meteor.user()), this.data.custom);
-        this.selectedColumns.set(filterColumns(this.data.columns, custom.columns));
+        if (custom) {
+          this.selectedColumns.set(filterColumns(this.data.columns, custom.columns.map(c => c.id || c.data)));
+          stop = true;
+        }
       });
     }
-    else if (_.isArray(this.data.custom)) {
+    if (!stop && _.isArray(this.data.custom)) {
       this.selectedColumns.set(filterColumns(this.data.columns, this.data.custom));
     }
-    else if (_.isFunction(this.data.columnSelector)) {
+    else if (!stop && _.isFunction(this.data.columnSelector)) {
       const result = this.data.columnSelector(this.data.columns, (asyncResult) => {
         this.selectedColumns.set(asyncResult.columns);
       });
@@ -64,10 +133,10 @@ Template.CustomizableTable.onCreated(function onCreated() {
       }
     }
   }
-  else if (this.data.table.columns) {
+  if (!stop && this.data.table.columns) {
     this.selectedColumns.set(this.data.table.columns);
   }
-  else {
+  else if (!stop) {
     this.selectedColumns.set(this.data.columns);
   }
 });

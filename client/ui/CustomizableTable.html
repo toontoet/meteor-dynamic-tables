@@ -1,7 +1,6 @@
 <template name="CustomizableTable">
   {{#if readyToRender}}
-    <a class="add-column" href="#" data-column="diagrams">Add Diagrams Column</a>
-    <a class="add-column" href="#" data-column="videos">Add Videos Column</a>
+    <a style="float: right" class="manage-fields" href="#">Manage Fields</a>
     {{> DynamicTable id=id table=buildTable class=class selector=selector style=style}}
   {{/if}}
 </template>

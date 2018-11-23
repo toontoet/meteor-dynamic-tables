@@ -1,0 +1,11 @@
+<template name="dynamicTableManageFieldsModal">
+  <div class="dynamic-table-manage-fields">
+    <ul>
+      {{#each column in availableColumns}}
+        <li data-id="{{column.id}}" data-data="{{column.data}}" class="{{#if selected column}}dynamic-table-manage-fields-selected{{/if}}">
+          {{title column}}
+        </li>
+      {{/each}}
+    </ul>
+  </div>
+</template>

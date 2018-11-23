@@ -1,0 +1,23 @@
+div.dynamic-table-manage-fields {
+  width: 200px;
+  background-color: #fff;
+  border: 1px solid #000;
+  border-radius: 5px;
+  padding: 5px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+div.dynamic-table-manage-fields ul {
+  margin-left: 0px;
+}
+.dynamic-table-manage-fields li {
+  margin-bottom: 2px;
+  cursor: pointer;
+  list-style: none;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  padding: 10px;
+}
+.dynamic-table-manage-fields li.dynamic-table-manage-fields-selected {
+  background-color: #eee;
+}

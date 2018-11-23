@@ -178,7 +178,7 @@ function setup() {
           collection: currentData.table.collection
         };
         if (self.blaze[`${row}-${col}`]) {
-          if (self.blaze[`${row}-${col}`].name === templateName) {
+          if (self.blaze[`${row}-${col}`].name === templateName && self.blaze[`${row}-${col}`].idOrData === (column.id || column.data)) {
             td.parentElement.replaceChild(self.blaze[`${row}-${col}`].cell, td);
             self.blaze[`${row}-${col}`].tmpl.dataVar.set({
               editable: !!column.editTmpl,
@@ -199,6 +199,7 @@ function setup() {
           editTemplateData: column.editTmplContext ? column.editTmplContext(editRowData) : editRowData
         }, td, self.view);
         self.blaze[`${row}-${col}`] = {
+          idOrData: column.id || column.data,
           name: templateName,
           cell: td,
           tmpl: ret
@@ -533,7 +534,12 @@ Template.DynamicTable.onRendered(function onRendered() {
               $(templateInstance.dataTable.api().row(rowIndex).node()).find("td,th").each((cellIndex) => {
                 if (templateInstance.columns[cellIndex].tmpl || templateInstance.columns[cellIndex].editTmpl) {
                   let changed = false;
-                  if (templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl) {
+                  const templateName = (templateInstance.columns[cellIndex].tmpl && templateInstance.columns[cellIndex].tmpl.viewName) || "Template.dynamicTableRawRender";
+                  if (
+                    templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl &&
+                    templateInstance.blaze[`${rowIndex}-${cellIndex}`].name === templateName &&
+                    templateInstance.blaze[`${rowIndex}-${cellIndex}`].idOrData === (templateInstance.columns[cellIndex].id || templateInstance.columns[cellIndex].data)
+                  ) {
                     const oldData = templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl.dataVar.get();
                     if (templateInstance.columns[cellIndex].tmpl) {
                       const newData = templateInstance.columns[cellIndex].tmplContext ? templateInstance.columns[cellIndex].tmplContext(rowData) : rowData;
@@ -613,11 +619,19 @@ Template.DynamicTable.onCreated(function onCreated() {
   this.documentMouseDown = (e) => {
     const filterModalWrapper = $("#dynamic-table-filter-modal")[0];
     if (filterModalWrapper) {
-      if ($(filterModalWrapper).has(e.target).length  ) {
+      if ($(filterModalWrapper).has(e.target).length) {
         return;
       }
       Blaze.remove(filterModalWrapper.__blazeTemplate);
       filterModalWrapper.innerHTML = "";
+    }
+    const manageFieldsWrapper = $("#dynamic-table-manage-fields-modal")[0];
+    if (manageFieldsWrapper) {
+      if ($(manageFieldsWrapper).has(e.target).length) {
+        return;
+      }
+      Blaze.remove(manageFieldsWrapper.__blazeTemplate);
+      manageFieldsWrapper.innerHTML = "";
     }
   };
 
@@ -636,14 +650,19 @@ Template.DynamicTable.onCreated(function onCreated() {
       const missingColumn = oldColumns.find(nc => !_.find(columns, oc => oc._id ? oc._id === nc._id : oc.data === nc.data));
       const index = oldColumns.indexOf(missingColumn);
       this.$("thead").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
-      this.$("tr").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
+      this.$("tbody>tr").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
+      this.dataTable.api().context[0].aoColumns.splice(index, 1);
+      this.dataTable.api().context[0].aoData[0].anCells.splice(index, 1);
+      this.blaze = {};
     }
+    else {
       Tracker.afterFlush(() => {
         this.tableId.dep.changed();
         if (self.dataTable) {
           self.dataTable.api().ajax.reload();
         }
       });
+    }
     oldColumns = columns;
   });
   this.autorun(() => {
