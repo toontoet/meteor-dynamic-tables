@@ -1,6 +1,6 @@
 <template name="CustomizableTable">
   {{#if readyToRender}}
     <a style="float: right" class="manage-fields" href="#">Manage Fields</a>
-    {{> DynamicTable id=id table=buildTable class=class selector=selector style=style}}
+    {{> DynamicTable id=id table=buildTable class=class selector=selector style=style modifyFilterCallback=modifyFilterCallback advancedFilter=advancedFilter}}
   {{/if}}
 </template>

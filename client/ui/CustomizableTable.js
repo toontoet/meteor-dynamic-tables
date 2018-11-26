@@ -3,29 +3,50 @@ import "./table.js";
 import "./components/manageFieldsModal/manageFieldsModal.js";
 import { getValue, getPosition } from "../inlineSave.js";
 
+
+function changed(newColumns, newFilter, newOrder) {
+  const custom = this.data.custom;
+  if (_.isString(custom)) {
+    const $set = {
+      [`${custom}.columns`]: newColumns.map(col => ({ data: col.data, id: col.id }))
+    };
+
+    if (newFilter) {
+      $set[`${custom}.filter`] = JSON.stringify(newFilter);
+    }
+    if (newOrder) {
+      $set[`${custom}.order`] = newOrder;
+    }
+    Meteor.users.update(
+      { _id: Meteor.userId() },
+      { $set }
+    );
+  }
+}
+
 Template.CustomizableTable.helpers({
+  advancedFilter() {
+    return Template.instance().advancedFilter.get();
+  },
+  modifyFilterCallback() {
+    const templInstance = Template.instance();
+    return (newFilter, newOrder) => {
+      changed.call(templInstance, templInstance.selectedColumns.get(), newFilter, newOrder);
+    };
+  },
   readyToRender() {
     return Template.instance().selectedColumns.get().length;
   },
   buildTable() {
     const table = _.extend({}, Template.instance().data.table);
     table.columns = Template.instance().selectedColumns.get();
+    table.order = Template.instance().order.get() || table.order;
     table.colReorder = {
       fnReorderCallback: Template.instance().fnReorderCallback
     };
     return table;
   }
 });
-
-function changed(newColumns) {
-  const custom = this.data.custom;
-  if (_.isString(custom)) {
-    Meteor.users.update(
-      { _id: Meteor.userId() },
-      { $set: { [custom]: { columns: newColumns.map(col => ({ data: col.data, id: col.id })) } } }
-    );
-  }
-}
 
 Template.CustomizableTable.events({
   "click a.manage-fields"(e, templInstance) {
@@ -98,6 +119,8 @@ function filterColumns(columns, selectedColumnDataOrIds, savedSort, savedAdvance
 
 Template.CustomizableTable.onCreated(function onCreated() {
   this.selectedColumns = new ReactiveVar([]);
+  this.order = new ReactiveVar();
+  this.advancedFilter = new ReactiveVar();
   this.fnReorderCallback = () => {
     const columns = this.$("table").dataTable().api().context[0].aoColumns;
     changed.call(this, columns.map(col => ({ data: col.data, id: col.id })));
@@ -112,6 +135,8 @@ Template.CustomizableTable.onCreated(function onCreated() {
         const custom = getValue(Tracker.nonreactive(() => Meteor.user()), this.data.custom);
         if (custom) {
           this.selectedColumns.set(filterColumns(this.data.columns, custom.columns.map(c => c.id || c.data)));
+          this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
+          this.order.set(custom.order);
           stop = true;
         }
       });

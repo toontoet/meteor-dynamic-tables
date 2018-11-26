@@ -139,6 +139,9 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     changed = true;
   }
   if (changed) {
+    if (this.data.modifyFilterCallback) {
+      this.data.modifyFilterCallback(advancedSearch, order);
+    }
     this.dataTable.loading.set(true);
     this.dataTable.api().draw();
   }
@@ -611,7 +614,7 @@ Template.DynamicTable.onCreated(function onCreated() {
   this.selector = new ReactiveVar({});
   this.options = new ReactiveVar({});
   this.query = new ReactiveVar(false);
-  this.advancedSearch = new ReactiveVar({});
+  this.advancedSearch = new ReactiveVar(this.data.advancedFilter || {});
   this.incomingSelector = new ReactiveVar({});
   this.tableId = new ReactiveVar("");
   this._columns = new ReactiveVar([]);
@@ -647,8 +650,9 @@ Template.DynamicTable.onCreated(function onCreated() {
       return;
     }
     if (columns.length < oldColumns.length) {
-      const missingColumn = oldColumns.find(nc => !_.find(columns, oc => oc._id ? oc._id === nc._id : oc.data === nc.data));
-      const index = oldColumns.indexOf(missingColumn);
+      const context = this.dataTable.api().context[0];
+      const missingColumn = context.aoColumns.find(nc => !_.find(columns, oc => oc._id ? oc._id === nc._id : oc.data === nc.data));
+      const index = missingColumn.idx;
       this.$("thead").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.$("tbody>tr").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.dataTable.api().context[0].aoColumns.splice(index, 1);
