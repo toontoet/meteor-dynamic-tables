@@ -2,6 +2,16 @@
 
 Provides more flexible functionality than [Tabular Tables](https://github.com/aldeed/meteor-tabular) at the cost of more configuration.
 
+## New in version 2.0
+
+1. Reorder columns
+2. Allow the addition and removal of columns (though these must be defined)
+3. Allow per-column advanced filtering and sorting
+4. Save configurations (columns, sort, filter) on the user object for use later.
+5. Inline editing either using a generic template, or a custom provided one.
+6. More finegrained reactivity to improve render perforamnce
+
+
 ## Key differences to Tabular Tables
 
 If you aren't having any problems using Tabular Tables, and don't explicitly need the items mentioned below, you should probably use Tabular Tables - I wrote this package to deal with some (possibly very specific) use cases that Tabular Tables couldn't handle - I then extended it to handle some other elements (e.g., advanced search and export). The simple configuration, test coverage and widespread use of Tabular Tables should make it more attractive to most developers.
@@ -260,6 +270,154 @@ additionally, you can use the rendered search button
 ```
 
 To trigger an export call `$("#myTableId").data("do-export")();`
+
+## CustomizableTable Usage
+Start with a standard definition as per "Basic Usage", but instead of using `DynamicTable` use `CustomizableTable`.
+
+- The `table` argument is the only one required and provides the default options
+- The `custom` argument can be a string, object or function. If a string is provided, it is considered to be a field on the user, and any object found on the current user at that field will be used to provide the specification for the table. If an object is provided, it is considered to be the configuration of columns/search for the table. If a function is provided it is called and should either return an object, a promise that resolves to the object, or should use the callback argument to provide the object asynchronously. See the details below for how to use `custom` as a function.
+
+myTable.html
+```html
+  <template name="myTable">
+    {{> CustomizableTable custom="fieldOnUser" columns=availableColumns table=tableOptions class="..." selector=selector id="my-table" style="" }}
+  </template>
+```
+
+client.js
+```js
+  Template.myTable.helpers({
+    availableColumns() {
+      return [
+        {
+          data: "name",
+          title: "Name",
+          filterModal: {
+            field: {
+              type: String
+            },
+            required: true
+          },
+          render(val, type, doc){
+            return 'some custom value'
+          }
+        },
+        {
+          data: "someField",
+          titleTmpl: Template.someTitleTemplate,
+          titleTmplContext(){
+
+          },
+          filterModal: {
+            field: {
+              type: [String]
+            },
+            sort: {
+              enabled: false
+            },
+            options(context, search) {
+              const selector = {  };
+              if (search) {
+                selector.name = { $regex: search, $option: "i" };
+              }
+              return SomeCollection.find(selector)
+              .map(tt => ({ value: tt._id, label: tt.name }));
+            }
+          },
+        },
+        {
+          data: "someOtherId",
+          render(val, type, doc){
+            return SomeOtherCollection.findOne({_id: val}).name;
+          },
+          search(query){
+            return (_.isArray(query) ? query : [query]).map(q=>({
+              someOtherId: {$in: SomeOtherCollection.find({name: q}, {fields: {_id: true}}).map(t=>t._id)}
+            }));
+          }
+        },
+        {
+          width: "20px",
+          tmpl: Template.someOtherTemplate,
+          tmplContext(rowData){
+            return {
+              ...
+            };
+          }
+        },
+      ];
+    },
+    tableOptions(){
+      {
+        collection: MyCollection,
+        lengthChange: false,
+        pageLength: 50,
+        publication: "myPublication",
+        autoWidth: false,
+        sub: new SubsManager(),
+        columns: Template.myTable.__helpers[" availableColumns"](),
+        order: [[0, "asc"]],
+        extraFields: ["ownerId",...]
+      };
+    }
+  });
+```
+
+server.js - same as "Basic Usage"
+```js
+  Meteor.publish("myPublication", function(selector, options){
+    if(!this.userId){
+      throw new Meteor.Error(401, "Not logged in");
+    }
+    //any other security you want, e.g.:
+    const myPrivateDataSelector = {ownerId: this.userId};
+    const mySelector = {$and: [myPrivateDataSelector, selector]};
+    const myOptions = _.extend({}, options, {fields: {mySafeField: 1, myOtherSafeField: 2}});
+    return MyCollection.find(mySelector, myOptions);
+
+    //alternatively
+    return [
+      MyCollection.find(mySelector, myOptions),
+      SomeOtherCollection.find(...)
+    ]
+  });
+```
+
+## Column Specifications
+In addition to the default column fields available on datatables, we support a variety of other fields.
+
+### All Tables
+
+1. tmpl/tmplContext - for rendering a template to a row cell. A reference to the template to be used, and a function to return the row's data context of the form `{titleTmplContext(rowData) { return ... }}`
+2. titleTmpl/titleTmplContext - for rendering a template to the header cell. A reference to the template to be used, and a function to return the data context of the form `{titleTmplContext() { return ... }}`
+3. editTmpl/editTmplContext - for rendering an editable version of the cell. Two templates are provided for this `Template.dynamicTableSingleValueTextEditor` and `Template.dynamicTableSelect2ValueEditor` for editing simple text values or arrays of values with/without options. More details of these are provided below. The function for returning context is optional and takes the form `{editTmplContext(rowData) { return ... }}`
+4. search - a function that takes a query and returns the selector to be used while querying this column. Useful if your table displays joined data. Takes the form `{ search(query, userId){ return {...} }}`
+5. sortField - provides a different field to be used while sorting
+6. searchable - true/false should this column be searched
+
+### Filterable Tables
+
+In addition to the options available on all columns, the `filterModal` key is an object containing the following items:
+```
+{
+  filterModal: {
+    field: {
+      type: String, // the type of entity, changes the available sort, filter, and operator options.
+    },
+    sort: {
+      enabled: true, // is sorting supported on this column, defaults to the sortable field of the column
+      direction: 1 // the default sort direction
+    }
+    filter: {
+      enabled: true, //do we enable filtering
+      operator: {
+        enabled: true, //can the user choose which operator to use,
+        selected: "$in", // the default operator to use, other options include "$nin", "$not", "$regex", "$all", "$not$all"
+      }
+    }
+  }
+}
+```
 
 ## Acknowledgements
 

@@ -25,6 +25,16 @@ function changed(newColumns, newFilter, newOrder) {
 }
 
 Template.CustomizableTable.helpers({
+  removeColumn() {
+    const templInstance = Template.instance();
+    return (columnIndex) => {
+      const columns = templInstance.selectedColumns.get();
+      //const actualColumn = columns.find(col => col.id ? col.id === column.id : col.data === column.data);
+      columns.splice(columnIndex, 1);
+      templInstance.selectedColumns.set(columns);
+      changed.call(templInstance, columns);
+    };
+  },
   advancedFilter() {
     return Template.instance().advancedFilter.get();
   },
@@ -49,6 +59,12 @@ Template.CustomizableTable.helpers({
 });
 
 Template.CustomizableTable.events({
+  "click a.clear-fields"(e, templInstance) {
+    e.preventDefault();
+    templInstance.selectedColumns.set(templInstance.data.table ? templInstance.data.table.columns : templInstance.data.columns);
+    templInstance.advancedFilter.set(undefined);
+    templInstance.order.set(undefined);
+  },
   "click a.manage-fields"(e, templInstance) {
     e.preventDefault();
     const manageFieldsOptions = {
@@ -111,7 +127,7 @@ Template.CustomizableTable.events({
   }
 });
 
-function filterColumns(columns, selectedColumnDataOrIds, savedSort, savedAdvancedSelector) {
+function filterColumns(columns, selectedColumnDataOrIds) {
   return selectedColumnDataOrIds.map((c) => {
     return columns.find(col => col.id === c || col.data === c);
   });
@@ -141,11 +157,11 @@ Template.CustomizableTable.onCreated(function onCreated() {
         }
       });
     }
-    if (!stop && _.isArray(this.data.custom)) {
-      this.selectedColumns.set(filterColumns(this.data.columns, this.data.custom));
+    if (!stop && _.isObject(this.data.custom)) {
+      this.selectedColumns.set(filterColumns(this.data.columns, this.data.custom.columns));
     }
-    else if (!stop && _.isFunction(this.data.columnSelector)) {
-      const result = this.data.columnSelector(this.data.columns, (asyncResult) => {
+    else if (!stop && _.isFunction(this.data.custom)) {
+      const result = this.data.custom(this.data.columns, (asyncResult) => {
         this.selectedColumns.set(asyncResult.columns);
       });
       if (result instanceof Promise) {

@@ -2,7 +2,17 @@ import _ from "underscore";
 import "./filterModal.html";
 import "./filterModal.css";
 
+function closeModal() {
+  const filterModalWrapper = $("#dynamic-table-filter-modal")[0];
+  if (filterModalWrapper) {
+    Blaze.remove(filterModalWrapper.__blazeTemplate);
+    filterModalWrapper.innerHTML = "";
+  }
+}
 Template.dynamicTableFilterModal.helpers({
+  hasFooter() {
+    return this.filter.enabled || !this.filter.required;
+  },
   checkedIfWithValue() {
     return ["$in", "$all", "$regex"].includes(this.filter.operator.selected) ? { checked: "checked" } : {};
   },
@@ -62,6 +72,14 @@ Template.dynamicTableFilterModal.helpers({
 
 
 Template.dynamicTableFilterModal.events({
+  "click .btn-dynamic-table-remove"(e, templInstance) {
+    templInstance.data.callback([], "$in", undefined, false);
+    templInstance.data.removeColumn();
+    closeModal();
+  },
+  "click .btn-dynamic-table-clear"(e, templInstance) {
+    templInstance.data.callback([], "$in", undefined, false);
+  },
   "click .btn-dynamic-table-sort"(e, templInstance) {
     templInstance.sortDirection.set($(e.currentTarget).data("direction"));
   },
@@ -226,7 +244,7 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
         return;
       }
       const operator = this.operator.get();
-      callback(selectedOptions, operator, direction);
+      callback(selectedOptions, operator, direction, false);
     });
   }
 });

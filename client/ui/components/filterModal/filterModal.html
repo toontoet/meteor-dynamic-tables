@@ -67,11 +67,11 @@
     {{/if}}
     {{#if hasFooter}}
       <div class="dynamic-table-filter-footer">
-        {{#if field.optional}}
-          <button class="btn btn-danger">Remove Field</button>
-        {{/if}}
+        {{#unless field.required}}
+          <button class="btn btn-danger btn-dynamic-table-remove">Remove</button>
+        {{/unless}}
         {{#if filter.enabled}}
-          <button class="btn btn-default btn-dynamic-table-clear">Clear Filter</button>
+          <button class="btn btn-default btn-dynamic-table-clear">Clear</button>
         {{/if}}
       </div>
     {{/if}}

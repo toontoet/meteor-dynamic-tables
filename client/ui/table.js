@@ -95,7 +95,7 @@ function doExport(extraOptions) {
   }, _.isObject(extraOptions) ? extraOptions : {}));
 }
 
-function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirection) {
+function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirection, multiSort = false) {
   const order = this.dataTable.api().order();
   const existing = _.find(order, col => col[0] === columnIndex);
   let fieldName = this.columns[columnIndex].data;
@@ -103,15 +103,20 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     fieldName = this.columns[columnIndex].filterModal.field.name;
   }
   let changed = false;
-  if (existing) {
-    changed = existing[1] !== (sortDirection === 1 ? "asc" : "desc");
-    existing[1] = sortDirection === 1 ? "asc" : "desc";
+  if (sortDirection !== undefined) {
+    if (existing) {
+      changed = existing[1] !== (sortDirection === 1 ? "asc" : "desc");
+      existing[1] = sortDirection === 1 ? "asc" : "desc";
+    }
+    else if (multiSort) {
+      order.push([columnIndex, sortDirection === 1 ? "asc" : "desc"]);
+      changed = true;
+    }
+    else {
+      order.splice(0, order.length, [columnIndex, sortDirection === 1 ? "asc" : "desc"]);
+    }
+    this.dataTable.api().order(order);
   }
-  else {
-    order.push([columnIndex, sortDirection === 1 ? "asc" : "desc"]);
-    changed = true;
-  }
-  this.dataTable.api().order(order);
   const advancedSearch = this.advancedSearch.get();
 
   if (fieldName && optionsOrQuery) {
@@ -387,7 +392,8 @@ Template.DynamicTable.onRendered(function onRendered() {
                 table: currentData.table,
                 dataTable: templateInstance.dataTable,
                 advancedSearch: templateInstance.advancedSearch.get(),
-                filterModalCallback: filterModalCallback.bind(self)
+                filterModalCallback: filterModalCallback.bind(self),
+                removeColumn: templateInstance.data.removeColumn
               },
               headerCell
             );

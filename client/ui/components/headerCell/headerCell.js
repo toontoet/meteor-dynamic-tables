@@ -65,8 +65,13 @@ Template.dynamicTableHeaderCell.events({
           selected: operator
         }
       },
-      callback(optionsOrQuery, operator, sort) {
-        templInstance.data.filterModalCallback(templInstance.data.columnIndex, optionsOrQuery, operator, sort);
+      removeColumn() {
+        if (templInstance.data.removeColumn) {
+          templInstance.data.removeColumn(templInstance.data.columnIndex);
+        }
+      },
+      callback(optionsOrQuery, operator, sort, multiSort) {
+        templInstance.data.filterModalCallback(templInstance.data.columnIndex, optionsOrQuery, operator, sort, multiSort);
       }
     };
     const bounds = getPosition(e.currentTarget);
@@ -74,7 +79,7 @@ Template.dynamicTableHeaderCell.events({
     div.attr("id", "dynamic-table-filter-modal")
     .html("")
     .css("position", "absolute")
-    .css("top", bounds.top)
+    .css("top", bounds.top - 50)
     .css("left", bounds.left + bounds.width);
     if (div[0].__blazeTemplate) {
       Blaze.remove(div[0].__blazeTemplate);
@@ -85,5 +90,9 @@ Template.dynamicTableHeaderCell.events({
       div[0]
     );
     document.body.appendChild(div[0]);
+    const tooFar = (bounds.left + div.width()) - $(window).width();
+    if (tooFar > 0) {
+      div.css("left", (bounds.left - (tooFar + 5)) + "px");
+    }
   }
 });

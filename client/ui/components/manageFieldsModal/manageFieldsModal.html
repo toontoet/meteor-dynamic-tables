@@ -1,5 +1,6 @@
 <template name="dynamicTableManageFieldsModal">
   <div class="dynamic-table-manage-fields">
+    <input placeholder="Search..." />
     <ul>
       {{#each column in availableColumns}}
         <li data-id="{{column.id}}" data-data="{{column.data}}" class="{{#if selected column}}dynamic-table-manage-fields-selected{{/if}}">
