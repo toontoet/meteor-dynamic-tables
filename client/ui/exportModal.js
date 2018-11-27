@@ -49,7 +49,7 @@ function getRows(doc, fieldNames, data) {
 
   let docs = [doc];
   data.fields
-  .filter(field => field.rows)
+  .filter(field => fieldNames.includes(field.field) && field.rows)
   .forEach((field) => {
     docs = _.flatten(docs.map(aDoc => field.rows(aDoc[field.field], aDoc, (_.findWhere(filters, { field: field.field }) || {}).filters)));
   });
