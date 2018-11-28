@@ -304,7 +304,7 @@ Template.DynamicTable.onRendered(function onRendered() {
   const self = this;
   const templateInstance = this;
   this.$tableElement = $(this.$("table")[0]);
-
+  let lastId;
   if (this.data.table.export) {
     this.$tableElement.data("do-export", (...args) => {
       doExport.apply(templateInstance, args);
@@ -426,8 +426,14 @@ Template.DynamicTable.onRendered(function onRendered() {
     }, currentData.table, { columns: templateInstance.columns });
     if (templateInstance.dataTable) {
       templateInstance.dataTable.api().destroy();
-      templateInstance.$(`#${currentData.id}`).find("thead").html("");
+      if (currentData.id !== lastId) {
+        templateInstance.$(`#${currentData.id}`).html("");
+      }
+      else {
+        templateInstance.$(`#${currentData.id}`).find("thead").html("");
+      }
     }
+    lastId = currentData.id;
     tableSpec.drawCallback = () => {
       templateInstance.dataTable.loading.set(false);
     };
@@ -680,7 +686,7 @@ Template.DynamicTable.onCreated(function onCreated() {
     if (Tracker.nonreactive(() => self.tableId.get()) !== currentData.id) {
       self.tableId.set(currentData.id);
     }
-    if (Tracker.nonreactive(() => self._columns.get().length) !== currentData.table.columns.length) {
+    else if (Tracker.nonreactive(() => self._columns.get().length) !== currentData.table.columns.length) {
       self._columns.set(currentData.table.columns.slice(0));
     }
     if (JSON.stringify(Tracker.nonreactive(() => self.selector.get())) !== JSON.stringify(currentData.selector)) {
