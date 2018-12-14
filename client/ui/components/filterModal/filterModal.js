@@ -25,8 +25,9 @@ Template.dynamicTableFilterModal.helpers({
   isAll() {
     return ["$all", "$not$all"].includes(Template.instance().operator.get());
   },
-  isNumeric() {
-    return this.field && this.field.type && (this.field.type === Number || this.field.type[0] === Number);
+  isNumericOrDate() {
+    const fieldType = this.field && this.field.type && (this.field.type[0] || this.field.type);
+    return fieldType && (fieldType === Number || fieldType === Date);
   },
   isString() {
     return this.field && this.field.type && (this.field.type === String || this.field.type[0] === String);

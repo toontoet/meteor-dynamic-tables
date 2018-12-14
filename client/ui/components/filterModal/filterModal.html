@@ -8,14 +8,13 @@
     {{#if sort.enabled}}
       <section class="dynamic-table-filter-sort">
         <label>Sort</label>
-        {{#if isNumeric}}
+        {{#if isNumericOrDate}}
           <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">0-9</button>
           <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">9-0</button>
-        {{else}}
-          {{#if isString}}
-            <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">A-Z</button>
-            <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">Z-A</button>
-          {{/if}}
+        {{/if}}
+        {{#if isString}}
+          <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">A-Z</button>
+          <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">Z-A</button>
         {{/if}}
       </section>
     {{/if}}
@@ -23,7 +22,7 @@
       {{#if filter.operator.enabled}}
         <section class="dynamic-table-filter-operator">
           <label>Display</label>
-          {{#if isNumeric}}
+          {{#if isNumericOrDate}}
           {{else}}
             <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$in" {{checkedIfWithValue}} /> With Value</label>
             <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$nin" {{checkedIfWithoutValue}} /> Without Value</label>
