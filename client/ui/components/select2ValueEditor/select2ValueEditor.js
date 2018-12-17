@@ -2,12 +2,28 @@ import "./select2ValueEditor.html";
 import { getValue, inlineSave } from "../../../inlineSave.js";
 
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
-  const options = this.data.options;
-  const val = getValue(this.data.doc, this.data.column.data) || [];
+  let options = this.data.options;
+  if (_.isFunction(options)) {
+    options = options(this.data.doc, this.data.column);
+  }
+  const val = this.data.value || getValue(this.data.doc, this.data.column.data) || [];
   this.$("select").select2({
     minimumResultsForSearch: -1,
     multiple: !!this.data.multiple,
     allowClear: true,
+    tags: this.data.tags || !options,
+    createTag: this.data.createTag || ((params) => {
+      const term = $.trim(params.term);
+
+      if (term === "") {
+        return null;
+      }
+
+      return {
+        id: term,
+        text: term
+      };
+    }),
     data: [{
       id: [],
       text: "",

@@ -10,6 +10,7 @@ import "./components/tableCell/tableCell.js";
 import "./components/singleValueTextEditor/singleValueTextEditor.js";
 import "./components/select2ValueEditor/select2ValueEditor.js";
 import { getTableRecordsCollection } from "../db.js";
+import { EJSON } from "meteor/ejson";
 
 
 /**
@@ -132,7 +133,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     else if (!_.isArray(optionsOrQuery) && optionsOrQuery !== "") {
       newAdvancedSearchField = operator === "$regex" ? { $regex: `^${optionsOrQuery}` } : { $not: new RegExp(`^${optionsOrQuery}`) };
     }
-    if (JSON.stringify(advancedSearch[fieldName]) !== JSON.stringify(newAdvancedSearchField)) {
+    if (EJSON.toJSONValue(advancedSearch[fieldName]) !== EJSON.toJSONValue(newAdvancedSearchField)) {
       advancedSearch[fieldName] = newAdvancedSearchField;
       this.advancedSearch.set(advancedSearch);
       changed = true;
@@ -365,7 +366,7 @@ Template.DynamicTable.onRendered(function onRendered() {
         }
       },
       headerCallback(headerRow) {
-        const columns = self.columns;
+        const columns = self.dataTable.fnSettings().aoColumns;
 
         $(headerRow).find("td,th").each((index, headerCell) => {
           if (columns[index].titleTmpl) {
@@ -543,21 +544,22 @@ Template.DynamicTable.onRendered(function onRendered() {
             const rowIndex = rowsData.indexOf(_.findWhere(rowsData, { _id }));
 
             const rowData = currentData.table.collection.findOne({ _id });
+            const columns = templateInstance.dataTable.fnSettings().aoColumns;
             try {
               const row = templateInstance.dataTable.api().row(rowIndex);
               row.context[0].aoData[row[0]]._aData = rowData;
               $(templateInstance.dataTable.api().row(rowIndex).node()).find("td,th").each((cellIndex) => {
-                if (templateInstance.columns[cellIndex].tmpl || templateInstance.columns[cellIndex].editTmpl) {
+                if (columns[cellIndex].tmpl || columns[cellIndex].editTmpl) {
                   let changed = false;
-                  const templateName = (templateInstance.columns[cellIndex].tmpl && templateInstance.columns[cellIndex].tmpl.viewName) || "Template.dynamicTableRawRender";
+                  const templateName = (columns[cellIndex].tmpl && columns[cellIndex].tmpl.viewName) || "Template.dynamicTableRawRender";
                   if (
                     templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl &&
                     templateInstance.blaze[`${rowIndex}-${cellIndex}`].name === templateName &&
-                    templateInstance.blaze[`${rowIndex}-${cellIndex}`].idOrData === (templateInstance.columns[cellIndex].id || templateInstance.columns[cellIndex].data)
+                    templateInstance.blaze[`${rowIndex}-${cellIndex}`].idOrData === (columns[cellIndex].id || columns[cellIndex].data)
                   ) {
                     const oldData = templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl.dataVar.get();
-                    if (templateInstance.columns[cellIndex].tmpl) {
-                      const newData = templateInstance.columns[cellIndex].tmplContext ? templateInstance.columns[cellIndex].tmplContext(rowData) : rowData;
+                    if (columns[cellIndex].tmpl) {
+                      const newData = columns[cellIndex].tmplContext ? columns[cellIndex].tmplContext(rowData) : rowData;
                       try {
                         if (JSON.stringify(oldData.templateData) !== JSON.stringify(newData)) {
                           oldData.templateData = newData;

@@ -2,7 +2,7 @@ import "./CustomizableTable.html";
 import "./table.js";
 import "./components/manageFieldsModal/manageFieldsModal.js";
 import { getValue, getPosition } from "../inlineSave.js";
-
+import { EJSON } from "meteor/ejson";
 
 function changed(newColumns, newFilter, newOrder) {
   const custom = this.data.custom;
@@ -12,7 +12,7 @@ function changed(newColumns, newFilter, newOrder) {
     };
 
     if (newFilter) {
-      $set[`${custom}.filter`] = JSON.stringify(newFilter);
+      $set[`${custom}.filter`] = EJSON.toJSONValue(newFilter);
     }
     if (newOrder) {
       $set[`${custom}.order`] = newOrder;

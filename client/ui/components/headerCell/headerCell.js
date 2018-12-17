@@ -46,6 +46,9 @@ Template.dynamicTableHeaderCell.events({
         direction: columnOrder ? (columnOrder[1] === "asc" ? 1 : -1) : undefined
       } : undefined;
     }
+    else if (!sort.direction) {
+      sort.direction = columnOrder ? (columnOrder[1] === "asc" ? 1 : -1) : undefined;
+    }
     const filterModalOptions = {
       dataTable: templInstance.data.dataTable,
       field: templInstance.data.column.filterModal.field || {
