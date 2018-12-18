@@ -454,10 +454,10 @@ Template.DynamicTable.onRendered(function onRendered() {
 
 
     // NOTE: we dont want to rerun this since we're setting it just below
-    Tracker.nonreactive(() => {
+    const subToStop = Tracker.nonreactive(() => {
       if (templateInstance.sub.get()) {
         if (templateInstance.sub.get().stop) {
-          templateInstance.sub.get().stop();
+          return templateInstance.sub.get();
         }
         else {
           currentData.table.sub.clear();
@@ -485,6 +485,9 @@ Template.DynamicTable.onRendered(function onRendered() {
         _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
         queryOptions
       ));
+    }
+    if (subToStop) {
+      subToStop.stop();
     }
   });
 
@@ -655,10 +658,7 @@ Template.DynamicTable.onCreated(function onCreated() {
   this.autorun((comp) => {
     const columns = this._columns.get();
     if (comp.firstRun) {
-      return;
-    }
-    if (oldColumns === undefined) {
-      oldColumns = columns;
+      oldColumns = this.data.table.columns;
       return;
     }
     if (columns.length < oldColumns.length) {
@@ -684,9 +684,14 @@ Template.DynamicTable.onCreated(function onCreated() {
   this.autorun(() => {
     const currentData = Template.currentData();
     if (Tracker.nonreactive(() => self.tableId.get()) !== currentData.id) {
+      oldColumns = currentData.table.columns.slice(0);
       self.tableId.set(currentData.id);
     }
     else if (Tracker.nonreactive(() => self._columns.get().length) !== currentData.table.columns.length) {
+      const cols = Tracker.nonreactive(() => self._columns.get());
+      if (cols.length) {
+        oldColumns = cols;
+      }
       self._columns.set(currentData.table.columns.slice(0));
     }
     if (JSON.stringify(Tracker.nonreactive(() => self.selector.get())) !== JSON.stringify(currentData.selector)) {
