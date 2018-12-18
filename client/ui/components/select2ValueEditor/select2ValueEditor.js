@@ -3,10 +3,10 @@ import { getValue, inlineSave } from "../../../inlineSave.js";
 
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   let options = this.data.options;
-  if (_.isFunction(options)) {
-    options = options(this.data.doc, this.data.column);
-  }
   const val = this.data.value || getValue(this.data.doc, this.data.column.data) || [];
+  if (_.isFunction(options)) {
+    options = options(this.data.doc, this.data.column, val);
+  }
   this.$("select").select2({
     minimumResultsForSearch: -1,
     multiple: !!this.data.multiple,

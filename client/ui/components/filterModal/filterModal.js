@@ -14,7 +14,13 @@ Template.dynamicTableFilterModal.helpers({
     return this.filter.enabled || !this.filter.required;
   },
   checkedIfWithValue() {
-    return ["$in", "$all", "$regex"].includes(this.filter.operator.selected) ? { checked: "checked" } : {};
+    return ["$between", "$in", "$all", "$regex"].includes(this.filter.operator.selected) ? { checked: "checked" } : {};
+  },
+  checkedIfGteValue() {
+    return this.filter.operator.selected === "$gte" ? { checked: "checked" } : {};
+  },
+  checkedIfLteValue() {
+    return this.filter.operator.selected === "$lte" ? { checked: "checked" } : {};
   },
   checkedIfWithoutValue() {
     return ["$nin", "$not$all", "$not"].includes(this.filter.operator.selected) ? { checked: "checked" } : {};
@@ -27,7 +33,15 @@ Template.dynamicTableFilterModal.helpers({
   },
   isNumericOrDate() {
     const fieldType = this.field && this.field.type && (this.field.type[0] || this.field.type);
-    return fieldType && (fieldType === Number || fieldType === Date);
+    return fieldType && (fieldType === "time" || fieldType === Number || fieldType === Date);
+  },
+  isTime() {
+    const fieldType = this.field && this.field.type && (this.field.type[0] || this.field.type);
+    return fieldType && (fieldType === "time");
+  },
+  isDate() {
+    const fieldType = this.field && this.field.type && (this.field.type[0] || this.field.type);
+    return fieldType && (fieldType === Date);
   },
   isString() {
     return this.field && this.field.type && (this.field.type === String || this.field.type[0] === String);
@@ -61,7 +75,8 @@ Template.dynamicTableFilterModal.helpers({
       return [];
     }
     const search = Template.instance().search.get();
-    return Template.instance().selectedOptions.get().map(o => _.findWhere(options, { value: o })).filter(option => option && (!search || option.label.match(new RegExp(search, "i"))).map(o => _.extend({ _id: o.value }, o)));
+    const selectedOptions = Template.instance().selectedOptions.get().map(o => _.findWhere(options, { value: o }));
+    return selectedOptions.filter(option => option && (!search || option.label.match(new RegExp(search, "i")))).map(o => _.extend({ _id: o.value }, o));
   },
   searching() {
     return Template.instance().searching.get();
@@ -71,6 +86,24 @@ Template.dynamicTableFilterModal.helpers({
   },
   isArrayField() {
     return Template.instance().data.field && _.isArray(Template.instance().data.field.type);
+  },
+  dateValue() {
+    const date = Template.instance().data.filter.search.value;
+    if (date) {
+      return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+    }
+  },
+  minuteValue() {
+    const time = Template.instance().data.filter.search.value;
+    if (time) {
+      return Math.floor(time / 60);
+    }
+  },
+  secondValue() {
+    const time = Template.instance().data.filter.search.value;
+    if (time) {
+      return time % 60;
+    }
   }
 });
 
@@ -82,15 +115,20 @@ Template.dynamicTableFilterModal.events({
     closeModal();
   },
   "click .btn-dynamic-table-clear"(e, templInstance) {
-    templInstance.data.callback([], "$in", undefined, false);
+    templInstance.search.set(undefined);
+    templInstance.selectedOptions.set([]);
+    templInstance.$(".input-dynamic-table-search").val("");
+    // templInstance.data.callback([], "$in", undefined, false);
   },
   "click .btn-dynamic-table-sort"(e, templInstance) {
     templInstance.sortDirection.set($(e.currentTarget).data("direction"));
   },
   "change .input-dynamic-table-operator"(e, templInstance) {
+    const options = Template.instance().options.get();
+    const hasOptions = options && options.length;
     let operator = $(e.currentTarget).val();
     if (operator === "$in") {
-      if (!templInstance.data.filter.options) {
+      if (!hasOptions) {
         operator = "$regex";
       }
       if (templInstance.$(".btn-dynamic-table-operator.btn-dynamic-table-selected").data("modifier") === "$all") {
@@ -98,7 +136,7 @@ Template.dynamicTableFilterModal.events({
       }
     }
     if (operator === "$nin") {
-      if (!templInstance.data.filter.options) {
+      if (!hasOptions) {
         operator = "$not";
       }
       if (templInstance.$(".btn-dynamic-table-operator.btn-dynamic-table-selected").data("modifier") === "$all") {
@@ -108,9 +146,11 @@ Template.dynamicTableFilterModal.events({
     templInstance.operator.set(operator);
   },
   "click .btn-dynamic-table-operator"(e, templInstance) {
+    const options = Template.instance().options.get();
+    const hasOptions = options && options.length;
     let operator = templInstance.$(".input-dynamic-table-operator:checked").val();
     if (operator === "$in") {
-      if (!templInstance.data.filter.options) {
+      if (!hasOptions) {
         operator = "$regex";
       }
       if ($(e.currentTarget).data("modifier") === "$all") {
@@ -118,7 +158,7 @@ Template.dynamicTableFilterModal.events({
       }
     }
     if (operator === "$nin") {
-      if (!templInstance.data.filter.options) {
+      if (!hasOptions) {
         operator = "$not";
       }
       if ($(e.currentTarget).data("modifier") === "$all") {
@@ -140,12 +180,33 @@ Template.dynamicTableFilterModal.events({
   "keyup .input-dynamic-table-search"(e, templInstance) {
     const elem = $(e.currentTarget);
     const data = Template.instance().data;
+    if (data.field.type === Date || data.field.type[0] === Date || data.field.type === "time" || data.field.type[0] === "time") {
+      return;
+    }
     if (_.isArray(data.filter.options) || !data.filter.options) {
       templInstance.search.set(elem.val());
     }
     else {
       templInstance.searching.set(true);
       templInstance.throttledUpdate(templInstance.search, elem.val());
+    }
+  },
+  "change .input-dynamic-table-search"(e, templInstance) {
+    const elem = $(e.currentTarget);
+    const data = Template.instance().data;
+    if (data.field.type === Date || data.field.type[0] === Date) {
+      const date = new Date(elem.val());
+      if (!Number.isNaN(date.getTime())) {
+        templInstance.search.set(date);
+      }
+      else {
+        templInstance.search.set(undefined);
+      }
+    }
+    else if (data.field.type === "time" || data.field.type[0] === "time") {
+      const mins = parseInt($(templInstance.$(".input-dynamic-table-search")[0]).val(), 10) || 0;
+      const secs = parseInt($(templInstance.$(".input-dynamic-table-search")[1]).val(), 10) || 0;
+      templInstance.search.set((mins * 60) + secs);
     }
   }
 });
@@ -239,16 +300,49 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
   if (callback && this.data.filter && this.data.filter.enabled) {
     this.autorun((comp) => {
       let selectedOptions = this.selectedOptions.get();
+      let operator = this.operator.get();
       const options = this.options.get();
-      if (!options || !options.length) {
+      if (this.data.field.type === Date || this.data.field.type[0] === Date || this.data.field.type === "time" || this.data.field.type[0] === "time") {
         selectedOptions = this.search.get();
+        const numericSearches = [
+          "$gt",
+          "$lt",
+          "$gte",
+          "$lte",
+          "$between"
+        ];
+        if (!numericSearches.includes(operator)) {
+          operator = "$between";
+        }
+        if (operator === "$between" && selectedOptions instanceof Date) {
+          selectedOptions = [
+            selectedOptions,
+            new Date(selectedOptions.getTime() + (24 * 60 * 60 * 1000))
+          ];
+        }
+        else if (operator === "$between" && (typeof selectedOptions) === "number") {
+          // HACK: to handle equality of numbers
+          selectedOptions = [
+            selectedOptions,
+            selectedOptions
+          ];
+        }
+      }
+      else if (!options || !options.length) {
+        selectedOptions = this.search.get();
+        if (operator === "$in" || operator === "$all") {
+          operator = "$regex";
+        }
+        else if (operator === "$nin" || operator === "$not$all") {
+          operator = "$not";
+        }
       }
       const direction = this.sortDirection.get();
       if (comp.firstRun) {
         return;
       }
-      const operator = this.operator.get();
-      callback(selectedOptions, operator, direction, false);
+
+      Tracker.nonreactive(() => callback(selectedOptions, operator, direction, false));
     });
   }
 });

@@ -12,7 +12,7 @@ function changed(newColumns, newFilter, newOrder) {
     };
 
     if (newFilter) {
-      $set[`${custom}.filter`] = EJSON.toJSONValue(newFilter);
+      $set[`${custom}.filter`] = JSON.stringify(EJSON.toJSONValue(newFilter));
     }
     if (newOrder) {
       $set[`${custom}.order`] = newOrder;
@@ -41,7 +41,7 @@ Template.CustomizableTable.helpers({
   modifyFilterCallback() {
     const templInstance = Template.instance();
     return (newFilter, newOrder) => {
-      changed.call(templInstance, templInstance.selectedColumns.get(), newFilter, newOrder);
+      changed.call(templInstance, Tracker.nonreactive(() => templInstance.selectedColumns.get()), newFilter, newOrder);
     };
   },
   readyToRender() {

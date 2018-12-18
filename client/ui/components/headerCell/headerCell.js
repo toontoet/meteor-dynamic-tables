@@ -1,6 +1,7 @@
 import "./headerCell.html";
 import "../filterModal/filterModal.js";
 import { getPosition } from "../../../inlineSave.js";
+import { EJSON } from "meteor/ejson";
 
 Template.dynamicTableHeaderCell.helpers({
   hasFilter() {
@@ -17,7 +18,7 @@ Template.dynamicTableHeaderCell.events({
     const order = templInstance.data.dataTable.api().order();
     const columnOrder = _.find(order, col => col[0] === templInstance.data.columnIndex);
     const fieldName = (templInstance.data.column.filterModal.field && templInstance.data.column.filterModal.field.name) || templInstance.data.column.data;
-    const columnSearch = templInstance.data.advancedSearch[fieldName];
+    const columnSearch = EJSON.fromJSONValue(templInstance.data.advancedSearch[fieldName]);
     let selectedOptions;
     let operator = "$in";
     let searchValue;
@@ -34,6 +35,15 @@ Template.dynamicTableHeaderCell.events({
       }
       else if (operator === "$regex") {
         searchValue = columnSearch.$regex.slice(1);
+      }
+      else if (operator === "$lte") {
+        searchValue = columnSearch.$lte;
+        if (columnSearch.$gte) {
+          operator = "$between";
+        }
+      }
+      else if (operator === "$gte") {
+        searchValue = columnSearch.$gte;
       }
       else if (columnSearch[operator]) {
         selectedOptions = columnSearch[operator];

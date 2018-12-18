@@ -118,11 +118,24 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     }
     this.dataTable.api().order(order);
   }
-  const advancedSearch = this.advancedSearch.get();
+
+  // NOTE: we only want to run this code when triggered, not by an advanced search change.
+  const advancedSearch = Tracker.nonreactive(() => this.advancedSearch.get());
 
   if (fieldName && optionsOrQuery) {
     let newAdvancedSearchField;
-    if (_.isArray(optionsOrQuery) && optionsOrQuery.length) {
+    if (operator === "$between") {
+      newAdvancedSearchField = {
+        $lte: optionsOrQuery[1],
+        $gte: optionsOrQuery[0]
+      };
+    }
+    else if (operator === "$gte" || operator === "$lte") {
+      newAdvancedSearchField = {
+        [operator]: optionsOrQuery
+      };
+    }
+    else if (_.isArray(optionsOrQuery) && optionsOrQuery.length) {
       if (operator === "$not$all") {
         newAdvancedSearchField = { $not: { $all: optionsOrQuery } };
       }
@@ -133,7 +146,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     else if (!_.isArray(optionsOrQuery) && optionsOrQuery !== "") {
       newAdvancedSearchField = operator === "$regex" ? { $regex: `^${optionsOrQuery}` } : { $not: new RegExp(`^${optionsOrQuery}`) };
     }
-    if (EJSON.toJSONValue(advancedSearch[fieldName]) !== EJSON.toJSONValue(newAdvancedSearchField)) {
+    if (!EJSON.equals(EJSON.toJSONValue(advancedSearch[fieldName]), EJSON.toJSONValue(newAdvancedSearchField))) {
       advancedSearch[fieldName] = newAdvancedSearchField;
       this.advancedSearch.set(advancedSearch);
       changed = true;
@@ -628,7 +641,7 @@ Template.DynamicTable.onCreated(function onCreated() {
   this.selector = new ReactiveVar({});
   this.options = new ReactiveVar({});
   this.query = new ReactiveVar(false);
-  this.advancedSearch = new ReactiveVar(this.data.advancedFilter || {});
+  this.advancedSearch = new ReactiveVar(EJSON.fromJSONValue(this.data.advancedFilter || {}));
   this.incomingSelector = new ReactiveVar({});
   this.tableId = new ReactiveVar("");
   this._columns = new ReactiveVar([]);
@@ -687,8 +700,12 @@ Template.DynamicTable.onCreated(function onCreated() {
     const currentData = Template.currentData();
     if (Tracker.nonreactive(() => self.tableId.get()) !== currentData.id) {
       self.tableId.set(currentData.id);
+      oldColumns = currentData.table.columns.slice(0);
     }
     else if (Tracker.nonreactive(() => self._columns.get().length) !== currentData.table.columns.length) {
+      if (!oldColumns) {
+        oldColumns = currentData.table.columns;
+      }
       self._columns.set(currentData.table.columns.slice(0));
     }
     if (JSON.stringify(Tracker.nonreactive(() => self.selector.get())) !== JSON.stringify(currentData.selector)) {
@@ -723,7 +740,8 @@ Template.DynamicTable.onDestroyed(function onDestroyed() {
     if (dt) {
       dt.destroy();
     }
-    this.$tableElement.empty();
+    //this.$tableElement.html("");
+    console.log("done");
   }
 });
 

@@ -23,6 +23,9 @@
         <section class="dynamic-table-filter-operator">
           <label>Display</label>
           {{#if isNumericOrDate}}
+            <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$between" {{checkedIfWithValue}} /> With Value</label>
+            <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$gte" {{checkedIfGteValue}} /> Greater than Value</label>
+            <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$lte" {{checkedIfLteValue}} /> Less than Value</label>
           {{else}}
             <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$in" {{checkedIfWithValue}} /> With Value</label>
             <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$nin" {{checkedIfWithoutValue}} /> Without Value</label>
@@ -39,19 +42,32 @@
       {{/if}}
       {{#if filter.search.enabled}}
         <section class="dynamic-table-filter-search">
-          <label>Filter</label>
-          <input type="search" class="input-dynamic-table-search" placeholder="Search..." value="{{filter.search.value}}" />
+          {{#if isString}}
+            <label>{{#if hasOptions}}Filter{{else}}Search{{/if}}</label>
+            <input type="search" class="input-dynamic-table-search" placeholder="Search..." value="{{filter.search.value}}" />
+          {{/if}}
+          {{#if isDate}}
+            <label>Date</label>
+            <input type="date" class="input-dynamic-table-search" placeholder="Date..." value="{{dateValue}}" />
+          {{/if}}
+          {{#if isTime}}
+            <label>Time</label>
+            <input type="number" class="input-dynamic-table-search" placeholder="Min" value="{{minuteValue}}" style="width: 49%;" />
+            <input type="number" class="input-dynamic-table-search" placeholder="Sec" value="{{secondValue}}" style="width: 49%;" />
+          {{/if}}
         </section>
       {{/if}}
-      {{#if hasSelectedOptions}}
-        <section class="dynamic-table-filter-selected">
-          <label>Selected</label>
-          <div class="inner">
-            {{#each option in selectedOptions}}
-              <label><input class="input-dynamic-table-option-selected" type="checkbox" value="{{option.value}}" checked="checked" /> <span class="dynamic-table-option-value">{{option.label}}</span></label>
-            {{/each}}
-          </div>
-        </section>
+      {{#if hasOptions}}
+        {{#if hasSelectedOptions}}
+          <section class="dynamic-table-filter-selected">
+            <label>Selected</label>
+            <div class="inner">
+              {{#each option in selectedOptions}}
+                <label><input class="input-dynamic-table-option-selected" type="checkbox" value="{{option.value}}" checked="checked" /> <span class="dynamic-table-option-value">{{option.label}}</span></label>
+              {{/each}}
+            </div>
+          </section>
+        {{/if}}
       {{/if}}
       {{#if hasOptions}}
         <section class="dynamic-table-filter-options">
