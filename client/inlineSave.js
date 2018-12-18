@@ -36,6 +36,9 @@ export function getValue(doc, field) {
   return obj;
 }
 export function inlineSave(templInstance, val) {
+  if (templInstance.data.editCallback) {
+    return templInstance.data.editCallback(templInstance.data.doc._id, val, templInstance.data.doc, templInstance.data.afterEditCallback);
+  }
   const collection = templInstance.data.collection;
   const doc = templInstance.data.doc;
   const fieldName = templInstance.data.column.data;

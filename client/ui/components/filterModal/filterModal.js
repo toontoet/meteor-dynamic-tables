@@ -57,8 +57,11 @@ Template.dynamicTableFilterModal.helpers({
   },
   selectedOptions() {
     const options = Template.instance().allOptions.get();
+    if (!options) {
+      return [];
+    }
     const search = Template.instance().search.get();
-    return Template.instance().selectedOptions.get().map(o => _.findWhere(options, { value: o })).filter(option => !search || option.label.match(new RegExp(search, "i"))).map(o => _.extend({ _id: o.value }, o));
+    return Template.instance().selectedOptions.get().map(o => _.findWhere(options, { value: o })).filter(option => option && (!search || option.label.match(new RegExp(search, "i"))).map(o => _.extend({ _id: o.value }, o)));
   },
   searching() {
     return Template.instance().searching.get();
@@ -233,11 +236,11 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
   }
 
   const callback = this.data.callback;
-  if (callback) {
+  if (callback && this.data.filter && this.data.filter.enabled) {
     this.autorun((comp) => {
-      this.searchChanged.depend();
       let selectedOptions = this.selectedOptions.get();
-      if (!this.data.filter || !this.data.filter.options) {
+      const options = this.options.get();
+      if (!options || !options.length) {
         selectedOptions = this.search.get();
       }
       const direction = this.sortDirection.get();
