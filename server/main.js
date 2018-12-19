@@ -122,6 +122,9 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
   check(selector, Object);
   check(options, Object);
   check(Meteor.default_server.publish_handlers[publicationName], Function);
+  if (Kadira && Kadira._getInfo()) {
+    Kadira._getInfo().trace.name += "_" + publicationName;
+  }
   const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, options);
   const { dataHandle, interval, recordIds } = getDataHandleAndInterval.call(this, tableId, publicationCursor, options, false);
 
@@ -153,6 +156,9 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
   check(selector, Object);
   check(options, Object);
   check(Meteor.default_server.publish_handlers[publicationName], Function);
+  if (Kadira && Kadira._getInfo()) {
+    Kadira._getInfo().trace.name += "_" + publicationName;
+  }
   const { publicationResult, publicationCursor, canOverride } = getPublicationCursor.call(this, publicationName, selector, options);
   const { dataHandle, interval, recordIds } = getDataHandleAndInterval.call(this, tableId, publicationCursor, options, canOverride);
   this.onStop(() => {

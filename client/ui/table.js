@@ -97,26 +97,45 @@ function doExport(extraOptions) {
 }
 
 function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirection, multiSort = false) {
-  const order = this.dataTable.api().order();
-  const existing = _.find(order, col => col[0] === columnIndex);
-  let fieldName = this.columns[columnIndex].data;
-  if (this.columns[columnIndex].filterModal && this.columns[columnIndex].filterModal.field && this.columns[columnIndex].filterModal.field.name) {
-    fieldName = this.columns[columnIndex].filterModal.field.name;
+  const columns = this.dataTable.api().context[0].aoColumns;
+  const order = this.dataTable.api().order().map(o => ({
+    id: columns[o[0]].id,
+    data: columns[o[0]].data,
+    order: o[1]
+  }));
+  let fieldName = columns[columnIndex].data;
+  if (columns[columnIndex].filterModal && columns[columnIndex].filterModal.field && columns[columnIndex].filterModal.field.name) {
+    fieldName = columns[columnIndex].filterModal.field.name;
   }
+  const existing = _.find(order, col => col.id === columns[columnIndex].id || col.data === fieldName);
   let changed = false;
   if (sortDirection !== undefined) {
     if (existing) {
-      changed = existing[1] !== (sortDirection === 1 ? "asc" : "desc");
-      existing[1] = sortDirection === 1 ? "asc" : "desc";
+      changed = existing.order !== (sortDirection === 1 ? "asc" : "desc");
+      existing.order = sortDirection === 1 ? "asc" : "desc";
     }
     else if (multiSort) {
-      order.push([columnIndex, sortDirection === 1 ? "asc" : "desc"]);
+      order.push({
+        id: columns[columnIndex].id,
+        data: columns[columnIndex].data,
+        order: sortDirection === 1 ? "asc" : "desc"
+      });
       changed = true;
     }
     else {
-      order.splice(0, order.length, [columnIndex, sortDirection === 1 ? "asc" : "desc"]);
+      order.splice(0, order.length, {
+        id: columns[columnIndex].id,
+        data: columns[columnIndex].data,
+        order: sortDirection === 1 ? "asc" : "desc"
+      });
     }
-    this.dataTable.api().order(order);
+    this.dataTable.api().order(order.map((o) => {
+      const column = _.find(columns, c => c.id === o.id || c.data === o.data);
+      return [
+        columns.indexOf(column),
+        o.order
+      ];
+    }));
   }
 
   // NOTE: we only want to run this code when triggered, not by an advanced search change.

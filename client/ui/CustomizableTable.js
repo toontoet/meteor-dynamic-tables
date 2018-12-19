@@ -50,7 +50,16 @@ Template.CustomizableTable.helpers({
   buildTable() {
     const table = _.extend({}, Template.instance().data.table);
     table.columns = Template.instance().selectedColumns.get();
-    table.order = Template.instance().order.get() || table.order;
+    const customOrder = Template.instance().order.get();
+    if (customOrder) {
+      table.order = customOrder.map((o) => {
+        const column = _.find(table.columns, c => c.id === o.id || c.data === o.data);
+        return [
+          table.columns.indexOf(column),
+          o.order
+        ];
+      }).filter(o => o[0] !== -1);
+    }
     table.colReorder = {
       fnReorderCallback: Template.instance().fnReorderCallback
     };
