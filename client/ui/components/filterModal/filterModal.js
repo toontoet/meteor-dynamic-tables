@@ -114,6 +114,28 @@ Template.dynamicTableFilterModal.helpers({
   }
 });
 
+function doSearch(e, templInstance) {
+  const elem = $(e.currentTarget);
+  const data = Template.instance().data;
+  if (data.field.type === Date || data.field.type[0] === Date) {
+    const date = new Date(elem.val());
+    if (!Number.isNaN(date.getTime())) {
+      templInstance.search.set(date);
+    }
+    else {
+      templInstance.search.set(undefined);
+    }
+  }
+  else if (data.field.type === Number || data.field.type[0] === Number) {
+    templInstance.search.set(parseInt(templInstance.$(".input-dynamic-table-search").val()));
+  }
+  else if (data.field.type === "time" || data.field.type[0] === "time") {
+    const mins = parseInt($(templInstance.$(".input-dynamic-table-search")[0]).val(), 10) || 0;
+    const secs = parseInt($(templInstance.$(".input-dynamic-table-search")[1]).val(), 10) || 0;
+    templInstance.search.set((mins * 60) + secs);
+  }
+}
+
 
 Template.dynamicTableFilterModal.events({
   "click .btn-dynamic-table-remove"(e, templInstance) {
@@ -187,7 +209,8 @@ Template.dynamicTableFilterModal.events({
   "keyup .input-dynamic-table-search"(e, templInstance) {
     const elem = $(e.currentTarget);
     const data = Template.instance().data;
-    if (data.field.type === Date || data.field.type[0] === Date || data.field.type === "time" || data.field.type[0] === "time") {
+    if (data.field.type === Date || data.field.type[0] === Date || data.field.type === "time" || data.field.type[0] === "time" || data.field.type === Number || data.field.type[0] === Number) {
+      doSearch(e, templInstance);
       return;
     }
     if (_.isArray(data.filter.options) || !data.filter.options) {
@@ -199,22 +222,7 @@ Template.dynamicTableFilterModal.events({
     }
   },
   "change .input-dynamic-table-search"(e, templInstance) {
-    const elem = $(e.currentTarget);
-    const data = Template.instance().data;
-    if (data.field.type === Date || data.field.type[0] === Date) {
-      const date = new Date(elem.val());
-      if (!Number.isNaN(date.getTime())) {
-        templInstance.search.set(date);
-      }
-      else {
-        templInstance.search.set(undefined);
-      }
-    }
-    else if (data.field.type === "time" || data.field.type[0] === "time") {
-      const mins = parseInt($(templInstance.$(".input-dynamic-table-search")[0]).val(), 10) || 0;
-      const secs = parseInt($(templInstance.$(".input-dynamic-table-search")[1]).val(), 10) || 0;
-      templInstance.search.set((mins * 60) + secs);
-    }
+    doSearch(e, templInstance);
   }
 });
 
@@ -309,7 +317,7 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
       let selectedOptions = this.selectedOptions.get();
       let operator = this.operator.get();
       const options = this.options.get();
-      if (this.data.field.type === Date || this.data.field.type[0] === Date || this.data.field.type === "time" || this.data.field.type[0] === "time") {
+      if (this.data.field.type === Date || this.data.field.type[0] === Date || this.data.field.type === "time" || this.data.field.type[0] === "time" || this.data.field.type === Number || this.data.field.type[0] === Number) {
         selectedOptions = this.search.get();
         const numericSearches = [
           "$gt",

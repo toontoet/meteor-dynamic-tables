@@ -292,12 +292,8 @@ client.js
         {
           data: "name",
           title: "Name",
-          filterModal: {
-            field: {
-              type: String
-            },
-            required: true
-          },
+          filterModal: true,
+          required: true,
           render(val, type, doc){
             return 'some custom value'
           }
@@ -381,6 +377,16 @@ server.js - same as "Basic Usage"
       SomeOtherCollection.find(...)
     ]
   });
+```
+
+If your collection has a schema attached, the filterModal will pull the type from there. Otherwise filterModal must be specified as such:
+
+```
+filterModal: {
+  field: {
+    type: String|Number|Date|"time"
+  }
+}
 ```
 
 ## Column Specifications
