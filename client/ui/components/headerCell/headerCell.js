@@ -92,7 +92,7 @@ Template.dynamicTableHeaderCell.events({
       },
       removeColumn() {
         if (templInstance.data.removeColumn) {
-          templInstance.data.removeColumn(templInstance.data.columnIndex);
+          templInstance.data.removeColumn(column);
         }
       },
       callback(optionsOrQuery, operator, sort, multiSort) {

@@ -27,9 +27,9 @@ function changed(newColumns, newFilter, newOrder) {
 Template.CustomizableTable.helpers({
   removeColumn() {
     const templInstance = Template.instance();
-    return (columnIndex) => {
+    return (column) => {
       const columns = templInstance.selectedColumns.get();
-      //const actualColumn = columns.find(col => col.id ? col.id === column.id : col.data === column.data);
+      const columnIndex = _.findIndex(columns, col => col.id === column.id || col.data === column.data);
       columns.splice(columnIndex, 1);
       templInstance.selectedColumns.set(columns);
       changed.call(templInstance, columns);
