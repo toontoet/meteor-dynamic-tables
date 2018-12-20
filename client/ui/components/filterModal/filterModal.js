@@ -63,7 +63,7 @@ Template.dynamicTableFilterModal.helpers({
     return Template.instance().selectedOptions.get().includes(value) ? { checked: "checked" } : {};
   },
   hasOptions() {
-    const options = Template.instance().options.get();
+    const options = Template.instance().allOptions.get();
     return options && options.length;
   },
   options() {
@@ -316,7 +316,7 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
     this.autorun((comp) => {
       let selectedOptions = this.selectedOptions.get();
       let operator = this.operator.get();
-      const options = this.options.get();
+      const options = this.allOptions.get();
       if (this.data.field.type === Date || this.data.field.type[0] === Date || this.data.field.type === "time" || this.data.field.type[0] === "time" || this.data.field.type === Number || this.data.field.type[0] === Number) {
         selectedOptions = this.search.get();
         const numericSearches = [

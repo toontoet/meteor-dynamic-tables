@@ -8,7 +8,6 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     options = options(this.data.doc, this.data.column, val);
   }
   this.$("select").select2({
-    minimumResultsForSearch: -1,
     multiple: !!this.data.multiple,
     allowClear: true,
     tags: this.data.tags || !options,

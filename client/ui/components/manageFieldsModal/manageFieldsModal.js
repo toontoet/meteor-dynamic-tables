@@ -16,8 +16,8 @@ Template.dynamicTableManageFieldsModal.events({
     templInstance.search.set($(e.currentTarget).val());
   },
   "click li"(e, templInstance) {
-    const colId = $(e.currentTarget).data("id");
-    const colData = $(e.currentTarget).data("data");
+    const colId = $(e.currentTarget).attr("data-id");
+    const colData = $(e.currentTarget).attr("data-data");
     const selected = $(e.currentTarget).hasClass("dynamic-table-manage-fields-selected");
     const column = templInstance.data.availableColumns.find((col) => {
       if (colId) {
