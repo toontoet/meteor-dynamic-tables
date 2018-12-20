@@ -39,6 +39,10 @@ Template.dynamicTableFilterModal.helpers({
     const fieldType = this.field && this.field.type && (this.field.type[0] || this.field.type);
     return fieldType && (fieldType === "time");
   },
+  isNumber() {
+    const fieldType = this.field && this.field.type && (this.field.type[0] || this.field.type);
+    return fieldType && (fieldType === Number);
+  },
   isDate() {
     const fieldType = this.field && this.field.type && (this.field.type[0] || this.field.type);
     return fieldType && (fieldType === Date);
@@ -92,6 +96,9 @@ Template.dynamicTableFilterModal.helpers({
     if (date) {
       return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
     }
+  },
+  numberValue() {
+    return Template.instance().data.filter.search.value;
   },
   minuteValue() {
     const time = Template.instance().data.filter.search.value;

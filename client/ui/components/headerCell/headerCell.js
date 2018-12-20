@@ -16,7 +16,9 @@ Template.dynamicTableHeaderCell.events({
     e.preventDefault();
     e.stopPropagation();
     const order = templInstance.data.dataTable.api().order();
-    const columnOrder = _.find(order, col => col[0] === templInstance.data.columnIndex);
+    const columns = templInstance.data.dataTable.api().context[0].aoColumns;
+    const column = columns.find(c => c.id === templInstance.data.column.id || c.data === templInstance.data.column.data);
+    const columnOrder = _.find(order, col => col[0] === column.idx);
     const fieldName = (templInstance.data.column.filterModal.field && templInstance.data.column.filterModal.field.name) || templInstance.data.column.data;
     const columnSearch = EJSON.fromJSONValue(templInstance.data.advancedSearch[fieldName]);
     let selectedOptions;
@@ -59,11 +61,21 @@ Template.dynamicTableHeaderCell.events({
     else if (!sort.direction) {
       sort.direction = columnOrder ? (columnOrder[1] === "asc" ? 1 : -1) : undefined;
     }
+    const schema = templInstance.data.table.collection._c2._simpleSchema;
+    let type;
+    if (schema) {
+      const obj = schema.schema(fieldName);
+      if (obj) {
+        type = obj.type;
+      }
+    }
+    const defaultField = {
+      type: type || String,
+      fieldName
+    };
     const filterModalOptions = {
       dataTable: templInstance.data.dataTable,
-      field: templInstance.data.column.filterModal.field || {
-        type: String
-      },
+      field: templInstance.data.column.filterModal.field || defaultField,
       sort,
       filter: {
         enabled: true,

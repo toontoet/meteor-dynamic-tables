@@ -46,6 +46,9 @@
             <label>{{#if hasOptions}}Filter{{else}}Search{{/if}}</label>
             <input type="search" class="input-dynamic-table-search" placeholder="Search..." value="{{filter.search.value}}" />
           {{/if}}
+          {{#if isNumber}}
+            <input type="number" class="input-dynamic-table-search" placeholder="Value" value="{{numberValue}}" />
+          {{/if}}
           {{#if isDate}}
             <label>Date</label>
             <input type="date" class="input-dynamic-table-search" placeholder="Date..." value="{{dateValue}}" />
