@@ -206,9 +206,9 @@ function setup() {
       }
       const templateName = (column.tmpl && column.tmpl.viewName) || "Template.dynamicTableRawRender";
 
-      column.createdCell = function createdCell(td, UNUSED, rowData, row, col) {
+      column.createdCell = function createdCell(td, value, rowData, row, col) {
         const rawRowData = rowData;
-        const rawContent = td.innerHTML;
+        const rawContent = td.innerHTML || value;
         td.innerHTML = "";
         if (column.tmplContext && rowData) {
           rowData = column.tmplContext(rowData);
