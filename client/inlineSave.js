@@ -35,9 +35,9 @@ export function getValue(doc, field) {
   }
   return obj;
 }
-export function inlineSave(templInstance, val) {
+export function inlineSave(templInstance, val, extra) {
   if (templInstance.data.editCallback) {
-    return templInstance.data.editCallback(templInstance.data.doc._id, val, templInstance.data.doc, templInstance.data.afterEditCallback);
+    return templInstance.data.editCallback(templInstance.data.doc._id, val, templInstance.data.doc, templInstance.data.afterEditCallback, extra);
   }
   const collection = templInstance.data.collection;
   const doc = templInstance.data.doc;

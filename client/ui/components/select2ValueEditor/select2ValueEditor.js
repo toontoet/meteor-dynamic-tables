@@ -6,14 +6,21 @@ function getAjaxConfig(origOptions, optionsResult) {
   if (!_.isFunction(origOptions) || optionsResult) {
     return undefined;
   }
+  let hadResults = false;
   return {
     transport(params, success, failure) {
-      if (params.data.q) {
-        const val = self.data.value || getValue(self.data.doc, self.data.column.data) || [];
-        origOptions(self.data.doc, self.data.column, val, params.data.q, (results) => {
-          success({ results });
-        });
-      }
+      const val = self.data.value || getValue(self.data.doc, self.data.column.data) || [];
+      origOptions(self.data.doc, self.data.column, val, params.data.q, (results) => {
+        success({ results });
+        if (results.length && !hadResults) {
+          self.$("select").empty();
+          results.forEach((result) => {
+            self.$("select").append($("<option>").text(result.text).val(result.id));
+          });
+          self.$("select").val(val).trigger("change");
+          hadResults = true;
+        }
+      });
     }
   };
 }
@@ -31,7 +38,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     createTag: this.data.createTag || ((params) => {
       const term = $.trim(params.term);
 
-      if (term === "") {
+      if (term === "" || this.data.createTag === false) {
         return null;
       }
 
@@ -62,7 +69,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     try {
       const container = this.$("select").data("select2").$container;
       if (!container.has($(e.target)).length) {
-        inlineSave(this, this.$("select").val());
+        inlineSave(this, this.$("select").val(), this.$("select").data("select2").data());
       }
     }
     catch (e1) {
@@ -79,7 +86,7 @@ Template.dynamicTableSelect2ValueEditor.onDestroyed(function onDestroyed() {
 Template.dynamicTableSelect2ValueEditor.events({
   "select2:close select"(e, templInstance) {
     if (!templInstance.data.multiple) {
-      inlineSave(templInstance, $(e.currentTarget).val());
+      inlineSave(templInstance, $(e.currentTarget).val(), templInstance.$("select").data("select2").data());
     }
   }
 });
