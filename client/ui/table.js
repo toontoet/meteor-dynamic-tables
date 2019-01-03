@@ -471,6 +471,11 @@ Template.DynamicTable.onRendered(function onRendered() {
       templateInstance.dataTable.loading.set(false);
     };
     templateInstance.dataTable = templateInstance.$(`#${currentData.id}`).dataTable(tableSpec);
+    if (tableSpec.orderCallback) {
+      templateInstance.$(`#${currentData.id}`).on("order.dt", () => {
+        tableSpec.orderCallback(templateInstance.dataTable, templateInstance.dataTable.api().order());
+      });
+    }
     templateInstance.dataTable.loading = new ReactiveVar(true);
   });
 

@@ -8,8 +8,11 @@ function changed(newColumns, newFilter, newOrder, unset) {
   const custom = this.data.custom;
   if (_.isString(custom)) {
     const $set = {
-      [`${custom}.columns`]: newColumns.map(col => ({ data: col.data, id: col.id }))
     };
+
+    if (newColumns) {
+      $set[`${custom}.columns`] = newColumns.map(col => ({ data: col.data, id: col.id }));
+    }
 
 
     if (newFilter) {
@@ -57,6 +60,7 @@ Template.CustomizableTable.helpers({
     return Template.instance().selectedColumns.get().length;
   },
   buildTable() {
+    const tmplInstance = Template.instance();
     const table = _.extend({}, Template.instance().data.table);
     table.columns = Template.instance().selectedColumns.get();
     const customOrder = Template.instance().order.get();
@@ -69,6 +73,15 @@ Template.CustomizableTable.helpers({
         ];
       }).filter(o => o[0] !== -1);
     }
+    table.orderCallback = (dataTable, newOrder) => {
+      const columns = dataTable.api().context[0].aoColumns;
+      const order = newOrder.map(o => ({
+        id: columns[o[0]].id,
+        data: columns[o[0]].data,
+        order: o[1]
+      }));
+      changed.call(tmplInstance, null, null, order, false);
+    };
     table.colReorder = {
       fnReorderCallback: Template.instance().fnReorderCallback
     };
