@@ -167,9 +167,9 @@ Template.CustomizableTable.events({
 });
 
 function filterColumns(columns, selectedColumnDataOrIds) {
-  return selectedColumnDataOrIds.map((c) => {
+  return _.compact(selectedColumnDataOrIds.map((c) => {
     return columns.find(col => col.id === c || col.data === c);
-  });
+  }));
 }
 
 Template.CustomizableTable.onCreated(function onCreated() {

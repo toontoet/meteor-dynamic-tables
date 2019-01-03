@@ -1,9 +1,26 @@
 import "./select2ValueEditor.html";
 import { getValue, inlineSave } from "../../../inlineSave.js";
 
+function getAjaxConfig(origOptions, optionsResult) {
+  const self = this;
+  if (!_.isFunction(origOptions) || optionsResult) {
+    return undefined;
+  }
+  return {
+    transport(params, success, failure) {
+      if (params.data.q) {
+        const val = self.data.value || getValue(self.data.doc, self.data.column.data) || [];
+        origOptions(self.data.doc, self.data.column, val, params.data.q, (results) => {
+          success({ results });
+        });
+      }
+    }
+  };
+}
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   let options = this.data.options;
   const val = this.data.value || getValue(this.data.doc, this.data.column.data) || [];
+  const origOptions = options;
   if (_.isFunction(options)) {
     options = options(this.data.doc, this.data.column, val);
   }
@@ -23,12 +40,13 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
         text: term
       };
     }),
+    ajax: getAjaxConfig.call(this, origOptions, options),
     data: [{
       id: [],
       text: "",
       search: "",
       hidden: false
-    }].concat(options),
+    }].concat(options || []),
     placeholder: {
       id: [],
       text: "Add tags"
