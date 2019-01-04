@@ -35,7 +35,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     multiple: !!this.data.multiple,
     allowClear: true,
     tags: this.data.tags || !options,
-    createTag: this.data.createTag || ((params) => {
+    createTag: _.isFunction(this.data.createTag) ? this.data.createTag : ((params) => {
       const term = $.trim(params.term);
 
       if (term === "" || this.data.createTag === false) {

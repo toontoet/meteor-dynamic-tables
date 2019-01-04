@@ -1,4 +1,5 @@
 import "./tableCell.html";
+import "./tableCell.css";
 
 Template.dynamicTableTableCell.helpers({
   editing() {
@@ -16,7 +17,7 @@ Template.dynamicTableTableCell.helpers({
 
 
 Template.dynamicTableTableCell.events({
-  "click span"(e, templInstance) {
+  "click .dynamic-table-enable-editing"(e, templInstance) {
     if (templInstance.data.editable) {
       const td = $(e.currentTarget).closest("td");
       td.width(td.width());
