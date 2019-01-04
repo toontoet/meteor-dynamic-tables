@@ -253,7 +253,8 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
 
   const data = this.data;
   if (data.filter && _.isFunction(data.filter.options)) {
-    const options = data.filter.options(data, undefined, (asyncOptions) => {
+    const initSearch = data.filter.selectedOptions && data.filter.selectedOptions.length ? data.filter.selectedOptions : undefined;
+    const options = data.filter.options(data, initSearch, (asyncOptions) => {
       this.asyncOptions.set(true);
       this.allOptions.set(asyncOptions.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
       this.searching.set(false);
