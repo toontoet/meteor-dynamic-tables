@@ -202,27 +202,27 @@ Template.CustomizableTable.onCreated(function onCreated() {
         }
         const custom = getValue(Tracker.nonreactive(() => Meteor.user()), this.data.custom);
         if (custom) {
-          this.selectedColumns.set(filterColumns(this.data.columns, custom.columns.map(c => c.id || c.data)));
+          this.selectedColumns.set(filterColumns(this.data.columns, (custom.columns || []).map(c => c.id || c.data)));
           this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
-          this.order.set(custom.order);
+          this.order.set(custom.order || []);
           stop = true;
         }
       });
     }
     if (!stop && _.isObject(this.data.custom)) {
-      this.selectedColumns.set(filterColumns(this.data.columns, this.data.custom.columns));
+      this.selectedColumns.set(filterColumns(this.data.columns, this.data.custom.columns || []));
     }
     else if (!stop && _.isFunction(this.data.custom)) {
       const result = this.data.custom(this.data.columns, (asyncResult) => {
-        this.selectedColumns.set(asyncResult.columns);
+        this.selectedColumns.set(asyncResult.columns || []);
       });
       if (result instanceof Promise) {
         result.then((asyncResult) => {
-          this.selectedColumns.set(asyncResult.columns);
+          this.selectedColumns.set(asyncResult.columns || []);
         });
       }
       else if (result) {
-        this.selectedColumns.set(result.columns);
+        this.selectedColumns.set(result.columns || []);
       }
     }
   }
