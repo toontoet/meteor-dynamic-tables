@@ -47,6 +47,10 @@ Template.dynamicTableFilterModal.helpers({
     const fieldType = this.field && this.field.type && (this.field.type[0] || this.field.type);
     return fieldType && (fieldType === Date);
   },
+  isStringOrCustom() {
+    const type = _.isArray(this.field.type) ? this.field.type[0] : this.field.type;
+    return type === String || (type !== Number && type !== Date && type !== "time");
+  },
   isString() {
     return this.field && this.field.type && (this.field.type === String || this.field.type[0] === String);
   },
@@ -63,6 +67,9 @@ Template.dynamicTableFilterModal.helpers({
     return Template.instance().selectedOptions.get().includes(value) ? { checked: "checked" } : {};
   },
   hasOptions() {
+    if (Template.instance().asyncOptions.get()) {
+      return true;
+    }
     const options = Template.instance().allOptions.get();
     return options && options.length;
   },
@@ -234,6 +241,7 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
   this.selectedOptions = new ReactiveVar([]);
   this.searchChanged = new Tracker.Dependency();
   this.sortDirection = new ReactiveVar(this.data.sort && this.data.sort.direction);
+  this.asyncOptions = new ReactiveVar(false);
   this.operator = new ReactiveVar(this.data.filter && this.data.filter && this.data.filter.operator && this.data.filter.operator.selected);
   this.throttledUpdate = _.throttle(
     (reactiveVar, val) => {
@@ -246,11 +254,13 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
   const data = this.data;
   if (data.filter && _.isFunction(data.filter.options)) {
     const options = data.filter.options(data, undefined, (asyncOptions) => {
+      this.asyncOptions.set(true);
       this.allOptions.set(asyncOptions.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
       this.searching.set(false);
     });
     if (options instanceof Promise) {
       options.then((asyncOptions) => {
+        this.asyncOptions.set(true);
         this.allOptions.set(asyncOptions.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
         this.searching.set(false);
       });
@@ -343,7 +353,7 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
           ];
         }
       }
-      else if (!options || !options.length) {
+      else if (!options || !options.length && !this.asyncOptions.get()) {
         selectedOptions = this.search.get();
         if (operator === "$in" || operator === "$all") {
           operator = "$regex";

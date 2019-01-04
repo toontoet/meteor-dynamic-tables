@@ -12,7 +12,7 @@
           <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">0-9</button>
           <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">9-0</button>
         {{/if}}
-        {{#if isString}}
+        {{#if isStringOrCustom}}
           <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">A-Z</button>
           <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">Z-A</button>
         {{/if}}
@@ -42,7 +42,7 @@
       {{/if}}
       {{#if filter.search.enabled}}
         <section class="dynamic-table-filter-search">
-          {{#if isString}}
+          {{#if isStringOrCustom}}
             <label>{{#if hasOptions}}Filter{{else}}Search{{/if}}</label>
             <input type="search" class="input-dynamic-table-search" placeholder="Search..." value="{{filter.search.value}}" />
           {{/if}}
