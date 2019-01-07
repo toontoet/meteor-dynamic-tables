@@ -471,6 +471,21 @@ Template.DynamicTable.onRendered(function onRendered() {
       templateInstance.dataTable.loading.set(false);
     };
     templateInstance.dataTable = templateInstance.$(`#${currentData.id}`).dataTable(tableSpec);
+    if (currentData.table.pageNumber) {
+      templateInstance.$(`#${currentData.id}`).on("init.dt", () => {
+        templateInstance.dataTable.api().page(currentData.table.pageNumber).draw(false);
+      });
+    }
+    if (tableSpec.lengthChangeCallback) {
+      templateInstance.$(`#${currentData.id}`).on("length.dt", (e, settings, len) => {
+        tableSpec.lengthChangeCallback(templateInstance.dataTable, len);
+      });
+    }
+    if (tableSpec.pageChangeCallback) {
+      templateInstance.$(`#${currentData.id}`).on("page.dt", () => {
+        tableSpec.pageChangeCallback(templateInstance.dataTable, templateInstance.dataTable.api().page());
+      });
+    }
     if (tableSpec.orderCallback) {
       templateInstance.$(`#${currentData.id}`).on("order.dt", () => {
         tableSpec.orderCallback(templateInstance.dataTable, templateInstance.dataTable.api().order());

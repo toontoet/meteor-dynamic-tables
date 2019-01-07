@@ -1,40 +1,15 @@
 import "./CustomizableTable.html";
 import "./table.js";
 import "./components/manageFieldsModal/manageFieldsModal.js";
-import { getValue, getPosition } from "../inlineSave.js";
+import { getPosition, changed, getCustom } from "../inlineSave.js";
 import { EJSON } from "meteor/ejson";
 
-function changed(newColumns, newFilter, newOrder, unset) {
-  const custom = this.data.custom;
-  if (_.isString(custom)) {
-    const $set = {
-    };
-
-    if (newColumns) {
-      $set[`${custom}.columns`] = newColumns.map(col => ({ data: col.data, id: col.id }));
-    }
-
-
-    if (newFilter) {
-      $set[`${custom}.filter`] = JSON.stringify(EJSON.toJSONValue(newFilter));
-    }
-    if (newOrder) {
-      $set[`${custom}.order`] = newOrder;
-    }
-    if (unset) {
-      const filter = getValue(Meteor.user(), `${custom}.filter`);
-      if (filter) {
-        const actualFilter = unset === "all" ? {} : JSON.parse(filter);
-        delete actualFilter[unset];
-        $set[`${custom}.filter`] = JSON.stringify(actualFilter);
-      }
-    }
-    Meteor.users.update(
-      { _id: Meteor.userId() },
-      { $set }
-    );
-  }
+function filterColumns(columns, selectedColumnDataOrIds) {
+  return _.compact(selectedColumnDataOrIds.map((c) => {
+    return columns.find(col => col.id === c || col.data === c);
+  }));
 }
+
 
 Template.CustomizableTable.helpers({
   removeColumn() {
@@ -44,7 +19,7 @@ Template.CustomizableTable.helpers({
       const columnIndex = _.findIndex(columns, col => col.id === column.id || col.data === column.data);
       columns.splice(columnIndex, 1);
       templInstance.selectedColumns.set(columns);
-      changed.call(templInstance, columns);
+      changed(templInstance.data.custom, { newColumns: columns });
     };
   },
   advancedFilter() {
@@ -53,7 +28,7 @@ Template.CustomizableTable.helpers({
   modifyFilterCallback() {
     const templInstance = Template.instance();
     return (newFilter, newOrder) => {
-      changed.call(templInstance, Tracker.nonreactive(() => templInstance.selectedColumns.get()), newFilter, newOrder);
+      changed(templInstance.data.custom, { newColumns: Tracker.nonreactive(() => templInstance.selectedColumns.get()), newFilter, newOrder });
     };
   },
   readyToRender() {
@@ -64,6 +39,8 @@ Template.CustomizableTable.helpers({
     const table = _.extend({}, Template.instance().data.table);
     table.columns = Template.instance().selectedColumns.get();
     const customOrder = Template.instance().order.get();
+    table.pageLength = tmplInstance.limit.get();
+    table.pageNumber = tmplInstance.skip.get() / table.pageLength;
     if (customOrder) {
       table.order = customOrder.map((o) => {
         const column = _.find(table.columns, c => c.id === o.id || c.data === o.data);
@@ -73,6 +50,12 @@ Template.CustomizableTable.helpers({
         ];
       }).filter(o => o[0] !== -1);
     }
+    table.lengthChangeCallback = (dataTable, length) => {
+      changed(tmplInstance.data.custom, { newLimit: length, newSkip: dataTable.api().page() * length });
+    };
+    table.pageChangeCallback = (dataTable, page) => {
+      changed(tmplInstance.data.custom, { newSkip: page * tmplInstance.limit.get() });
+    };
     table.orderCallback = (dataTable, newOrder) => {
       const columns = dataTable.api().context[0].aoColumns;
       const order = newOrder.map(o => ({
@@ -80,7 +63,7 @@ Template.CustomizableTable.helpers({
         data: columns[o[0]].data,
         order: o[1]
       }));
-      changed.call(tmplInstance, null, null, order, false);
+      changed(tmplInstance.data.custom, { newOrder: order });
     };
     table.colReorder = {
       fnReorderCallback: Template.instance().fnReorderCallback
@@ -100,7 +83,7 @@ Template.CustomizableTable.events({
     e.preventDefault();
     const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
     tableTemplateInstance.advancedSearch.set({});
-    changed.call(templInstance, templInstance.selectedColumns.get(), false, false, "all");
+    changed(templInstance.data.custom, { newColumns: templInstance.selectedColumns.get(), unset: "all" });
     tableTemplateInstance.query.dep.changed();
   },
   "click a.manage-fields"(e, templInstance) {
@@ -135,7 +118,7 @@ Template.CustomizableTable.events({
           tableTemplateInstance.query.dep.changed();
           columns.splice(columns.indexOf(actualColumn), 1);
         }
-        changed.call(templInstance, columns, null, null, unsetField);
+        changed(templInstance.data.custom, { newColumns: columns, unset: unsetField });
         templInstance.selectedColumns.set(columns);
         manageFieldsOptions.selectedColumns = columns;
 
@@ -179,52 +162,26 @@ Template.CustomizableTable.events({
   }
 });
 
-function filterColumns(columns, selectedColumnDataOrIds) {
-  return _.compact(selectedColumnDataOrIds.map((c) => {
-    return columns.find(col => col.id === c || col.data === c);
-  }));
-}
 
 Template.CustomizableTable.onCreated(function onCreated() {
   this.selectedColumns = new ReactiveVar([]);
   this.order = new ReactiveVar();
   this.advancedFilter = new ReactiveVar();
+  this.limit = new ReactiveVar(this.data.table.pageLength || 25);
+  this.skip = new ReactiveVar(0);
   this.fnReorderCallback = () => {
     const columns = this.$("table").dataTable().api().context[0].aoColumns;
-    changed.call(this, columns.map(col => ({ data: col.data, id: col.id })));
+    changed(this.data.custom, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
   };
   let stop = false;
   if (this.data.custom) {
-    if (_.isString(this.data.custom)) {
-      Tracker.autorun(() => {
-        if (!Meteor.userId()) {
-          return;
-        }
-        const custom = getValue(Tracker.nonreactive(() => Meteor.user()), this.data.custom);
-        if (custom) {
-          this.selectedColumns.set(filterColumns(this.data.columns, (custom.columns || []).map(c => c.id || c.data)));
-          this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
-          this.order.set(custom.order || []);
-          stop = true;
-        }
-      });
-    }
-    if (!stop && _.isObject(this.data.custom)) {
-      this.selectedColumns.set(filterColumns(this.data.columns, this.data.custom.columns || []));
-    }
-    else if (!stop && _.isFunction(this.data.custom)) {
-      const result = this.data.custom(this.data.columns, (asyncResult) => {
-        this.selectedColumns.set(asyncResult.columns || []);
-      });
-      if (result instanceof Promise) {
-        result.then((asyncResult) => {
-          this.selectedColumns.set(asyncResult.columns || []);
-        });
-      }
-      else if (result) {
-        this.selectedColumns.set(result.columns || []);
-      }
-    }
+    stop = getCustom(this.data.custom, (custom) => {
+      this.selectedColumns.set(filterColumns(this.data.columns, (custom.columns || []).map(c => c.id || c.data)));
+      this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
+      this.order.set(custom.order || []);
+      this.limit.set(custom.limit || this.data.pageLength || 25);
+      this.skip.set(custom.skip || 0);
+    });
   }
   if (!stop && this.data.table.columns) {
     this.selectedColumns.set(this.data.table.columns);

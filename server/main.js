@@ -175,5 +175,29 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
     return publicationResult;
   }
 }
+
+export function simpleTablePublicationCount(tableId, publicationName, selector, options = {}) {
+  check(tableId, String);
+  check(publicationName, String);
+  check(selector, Object);
+  check(options, Object);
+  if (Kadira && Kadira._getInfo()) {
+    Kadira._getInfo().trace.name += "_" + publicationName;
+  }
+  const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, { fields: { _id: true } });
+  const count = publicationCursor.count();
+  this.added("groupInfo", tableId, { count });
+  const interval = Meteor.setInterval(() => {
+    const newCount = publicationCursor.count();
+    if (count !== newCount) {
+      this.changed("groupInfo", tableId, { count: newCount });
+    }
+  }, options.interval || 10000);
+  this.onStop(() => {
+    Meteor.clearInterval(interval);
+    this.removed("groupInfo", tableId);
+  });
+}
 Meteor.publishComposite("simpleTablePublication", simpleTablePublication);
 Meteor.publish("simpleTablePublicationArray", simpleTablePublicationArrayNew);
+Meteor.publish("simpleTablePublicationCount", simpleTablePublicationCount);

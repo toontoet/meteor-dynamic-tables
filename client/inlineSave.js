@@ -1,4 +1,5 @@
 
+
 export function getPosition(el) {
   let xPos = 0;
   let yPos = 0;
@@ -26,6 +27,7 @@ export function getPosition(el) {
     width
   };
 }
+
 export function getValue(doc, field) {
   let obj = doc;
   const parts = field.split(".");
@@ -35,6 +37,40 @@ export function getValue(doc, field) {
   }
   return obj;
 }
+
+export function getCustom(customField, callback) {
+  let stop = false;
+  if (_.isString(customField)) {
+    Tracker.autorun(() => {
+      if (!Meteor.userId()) {
+        return;
+      }
+      const custom = getValue(Tracker.nonreactive(() => Meteor.user()), customField);
+      if (custom) {
+        callback(custom);
+        stop = true;
+      }
+    });
+  }
+  if (!stop && _.isObject(customField)) {
+    callback(customField);
+  }
+  else if (!stop && _.isFunction(customField)) {
+    const result = customField(this.data.columns, (asyncResult) => {
+      callback(asyncResult);
+    });
+    if (result instanceof Promise) {
+      result.then((asyncResult) => {
+        callback(asyncResult);
+      });
+    }
+    else if (result) {
+      callback(result);
+    }
+  }
+  return stop;
+}
+
 export function inlineSave(templInstance, val, extra) {
   if (templInstance.data.editCallback) {
     return templInstance.data.editCallback(templInstance.data.doc._id, val, templInstance.data.doc, templInstance.data.afterEditCallback, extra);
@@ -50,3 +86,70 @@ export function inlineSave(templInstance, val, extra) {
     }
   );
 }
+
+export function changed(
+  custom,
+  {
+    newColumns, newFilter, newOrder, newLimit, newSkip, newGroupChainFields, changeOpenGroups, unset
+  }
+) {
+  if (_.isString(custom)) {
+    const $set = {
+    };
+    const $pull = {};
+    const $addToSet = {};
+    if (changeOpenGroups) {
+      _.each(changeOpenGroups, (open, tableId) => {
+        if (open) {
+          $addToSet[`${custom}.openGroups`] = tableId;
+        }
+        else {
+          $pull[`${custom}.openGroups`] = tableId;
+        }
+      });
+    }
+
+    if (newColumns) {
+      $set[`${custom}.columns`] = newColumns.map(col => ({ data: col.data, id: col.id }));
+    }
+
+    if (newGroupChainFields) {
+      $set[`${custom}.groupChainFields`] = newGroupChainFields;
+    }
+
+    if (newFilter) {
+      $set[`${custom}.filter`] = JSON.stringify(EJSON.toJSONValue(newFilter));
+    }
+    if (newOrder) {
+      $set[`${custom}.order`] = newOrder;
+    }
+    if (newLimit) {
+      $set[`${custom}.limit`] = newLimit;
+    }
+    if (newSkip || newSkip === 0) {
+      $set[`${custom}.skip`] = newSkip;
+    }
+    if (unset) {
+      const filter = getValue(Meteor.user(), `${custom}.filter`);
+      if (filter) {
+        const actualFilter = unset === "all" ? {} : JSON.parse(filter);
+        delete actualFilter[unset];
+        $set[`${custom}.filter`] = JSON.stringify(actualFilter);
+      }
+    }
+    const update = {};
+    if (_.keys($set).length) {
+      update.$set = $set;
+    }
+    if (_.keys($pull).length) {
+      update.$pull = $pull;
+    }
+    if (_.keys($addToSet).length) {
+      update.$addToSet = $addToSet;
+    }
+    Meteor.users.update(
+      { _id: Meteor.userId() },
+      update
+    );
+  }
+};

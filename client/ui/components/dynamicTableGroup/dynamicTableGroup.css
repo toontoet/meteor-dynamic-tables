@@ -1,0 +1,18 @@
+.dynamic-table-header {
+  background-color: #eee;
+  color: #222;
+  padding: 10px;
+}
+
+.dynamic-table-panel {
+  border-radius: 3px;
+  border: 1px solid #ccc;
+  margin-bottom: 5px;
+}
+
+.dynamic-table-content {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 20px;
+  display: none;
+}

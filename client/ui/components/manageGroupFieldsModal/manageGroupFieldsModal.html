@@ -1,0 +1,11 @@
+<template name="dynamicTableManageGroupFieldsModal">
+  <div class="dynamic-table-manage-group-fields">
+    <ul>
+      {{#each column in columns}}
+        <li data-field="{{column.field}}" class="{{#if selected column}}dynamic-table-manage-group-fields-selected{{/if}}">
+          <i class="fa fa-list"></i> {{column.label}}
+        </li>
+      {{/each}}
+    </ul>
+  </div>
+</template>
