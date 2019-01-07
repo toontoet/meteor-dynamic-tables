@@ -85,8 +85,14 @@ Template.dynamicTableSelect2ValueEditor.onDestroyed(function onDestroyed() {
 
 Template.dynamicTableSelect2ValueEditor.events({
   "select2:close select"(e, templInstance) {
-    if (!templInstance.data.multiple) {
-      inlineSave(templInstance, $(e.currentTarget).val(), templInstance.$("select").data("select2").data());
+    const target = e.currentTarget;
+    if (templInstance.waiting) {
+      clearTimeout(templInstance.waiting);
     }
+    templInstance.waiting = setTimeout(() => {
+      if (!templInstance.data.multiple) {
+        inlineSave(templInstance, $(target).val(), templInstance.$("select").data("select2").data());
+      }
+    }, 100);
   }
 });
