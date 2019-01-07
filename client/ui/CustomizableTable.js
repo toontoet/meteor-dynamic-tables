@@ -176,7 +176,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
   let stop = false;
   if (this.data.custom) {
     stop = getCustom(this.data.custom, (custom) => {
-      this.selectedColumns.set(filterColumns(this.data.columns, (custom.columns || []).map(c => c.id || c.data)));
+      this.selectedColumns.set(filterColumns(this.data.columns, (custom.columns || this.data.table.columns).map(c => c.id || c.data)));
       this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
       this.order.set(custom.order || []);
       this.limit.set(custom.limit || this.data.pageLength || 25);
