@@ -90,12 +90,24 @@ export function inlineSave(templInstance, val, extra) {
 export function changed(
   custom,
   {
-    newColumns, newFilter, newOrder, newLimit, newSkip, newGroupChainFields, unset
+    newColumns, newFilter, newOrder, newLimit, newSkip, newGroupChainFields, changeOpenGroups, unset
   }
 ) {
   if (_.isString(custom)) {
     const $set = {
     };
+    const $pull = {};
+    const $addToSet = {};
+    if (changeOpenGroups) {
+      _.each(changeOpenGroups, (open, tableId) => {
+        if (open) {
+          $addToSet[`${custom}.openGroups`] = tableId;
+        }
+        else {
+          $pull[`${custom}.openGroups`] = tableId;
+        }
+      });
+    }
 
     if (newColumns) {
       $set[`${custom}.columns`] = newColumns.map(col => ({ data: col.data, id: col.id }));
@@ -125,9 +137,19 @@ export function changed(
         $set[`${custom}.filter`] = JSON.stringify(actualFilter);
       }
     }
+    const update = {};
+    if (_.keys($set).length) {
+      update.$set = $set;
+    }
+    if (_.keys($pull).length) {
+      update.$pull = $pull;
+    }
+    if (_.keys($addToSet).length) {
+      update.$addToSet = $addToSet;
+    }
     Meteor.users.update(
       { _id: Meteor.userId() },
-      { $set }
+      update
     );
   }
 };
