@@ -1,6 +1,8 @@
 import { ReactiveVar } from "meteor/reactive-var";
 import { Modal } from "meteor/peppelg:bootstrap-3-modal";
+import { EJSON } from "meteor/ejson";
 import "./table.html";
+import "./table.css";
 import "./exportModal.js";
 import "./components/filterModal/filterModal.js";
 import "./advancedSearchModal.js";
@@ -10,7 +12,6 @@ import "./components/tableCell/tableCell.js";
 import "./components/singleValueTextEditor/singleValueTextEditor.js";
 import "./components/select2ValueEditor/select2ValueEditor.js";
 import { getTableRecordsCollection } from "../db.js";
-import { EJSON } from "meteor/ejson";
 
 
 /**
@@ -521,6 +522,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       currentData.table.useArrayPublication ||
       (currentData.table.useArrayPublication === undefined && (!currentData.table.compositePublicationNames || currentData.table.compositePublicationNames.length === 0))
     ) {
+      templateInstance.loaded.set(false);
       templateInstance.sub.set(currentData.table.sub.subscribe(
         "simpleTablePublicationArray",
         currentData.id,
@@ -530,6 +532,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       ));
     }
     else {
+      templateInstance.loaded.set(false);
       templateInstance.sub.set(currentData.table.sub.subscribe(
         "simpleTablePublication",
         currentData.id,
@@ -568,6 +571,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       };
     }
     if (templateInstance.sub.get() && templateInstance.sub.get().ready() && tableInfo) {
+      templateInstance.loaded.set(true);
       if (templateInstance.handle) {
         templateInstance.handle.stop();
       }
@@ -679,6 +683,7 @@ Template.DynamicTable.onRendered(function onRendered() {
 });
 Template.DynamicTable.onCreated(function onCreated() {
   const self = this;
+  this.loaded = new ReactiveVar(true);
   this.sub = new ReactiveVar(null);
   this.selector = new ReactiveVar({});
   this.options = new ReactiveVar({});
@@ -792,4 +797,7 @@ Template.DynamicTable.events({
 });
 
 Template.DynamicTable.helpers({
+  loaded() {
+    return Template.instance().loaded.get();
+  }
 });

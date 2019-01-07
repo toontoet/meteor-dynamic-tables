@@ -7,7 +7,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.groupChain = new ReactiveVar(this.data.groupChain || []);
   getCustom(this.data.custom, (custom) => {
     if (custom.groupChainFields) {
-      this.groupChain.set(_.compact(custom.groupChainFields.map(gcf => this.data.groupableColumns.find(gc => gc.field === gcf))));
+      this.groupChain.set(_.compact(custom.groupChainFields.map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
     }
   });
   this.documentMouseDown = (e) => {
@@ -28,6 +28,18 @@ Template.GroupedTable.onDestroyed(function onDestroyed() {
   document.removeEventListener("mousedown", this.documentMouseDown);
 });
 Template.GroupedTable.helpers({
+  expandAll() {
+    if (this.expandAll !== undefined) {
+      return this.expanAll;
+    }
+    return false;
+  },
+  lazy() {
+    if (this.lazy !== undefined) {
+      return this.lazy;
+    }
+    return true;
+  },
   groupChain() {
     return Template.instance().groupChain.get();
   }
@@ -37,7 +49,7 @@ Template.GroupedTable.events({
   "click a.manage-group-fields"(e, templInstance) {
     e.preventDefault();
     const manageGroupFieldsOptions = {
-      availableColumns: templInstance.data.groupableColumns,
+      availableColumns: templInstance.data.groupableFields,
       selectedColumns: templInstance.groupChain.get(),
       changeCallback(columns) {
         templInstance.groupChain.set(columns);

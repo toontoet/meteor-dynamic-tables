@@ -201,3 +201,16 @@ export function simpleTablePublicationCount(tableId, publicationName, selector, 
 Meteor.publishComposite("simpleTablePublication", simpleTablePublication);
 Meteor.publish("simpleTablePublicationArray", simpleTablePublicationArrayNew);
 Meteor.publish("simpleTablePublicationCount", simpleTablePublicationCount);
+
+
+Meteor.methods({
+  async dynamicTableDistinctValuesForField(tableId, publicationName, selector, field) {
+    check(tableId, String);
+    check(field, String);
+    check(publicationName, String);
+    check(selector, Object);
+    const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, { fields: { limit: 0, _id: true } });
+    const values = await publicationCursor._mongo.db.collection(publicationCursor._getCollectionName()).distinct(field, publicationCursor._cursorDescription.selector);
+    return values;
+  }
+});

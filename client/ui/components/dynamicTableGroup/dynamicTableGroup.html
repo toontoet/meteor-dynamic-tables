@@ -10,7 +10,7 @@
             {{#if lastLevel}}
               {{> CustomizableTable (table (newSelector value selector))}}
             {{else}}
-              {{> dynamicTableGroup customTableSpec=customTableSpec groupChain=groupChain index=nextIndex selector=(newSelector value selector)}}
+              {{> dynamicTableGroup customTableSpec=customTableSpec expandAll=expandAll lazy=lazy groupChain=groupChain index=nextIndex selector=(newSelector value selector)}}
             {{/if}}
           {{/if}}
         </div>

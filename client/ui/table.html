@@ -1,7 +1,10 @@
 <template name="DynamicTable">
   {{! without the div, the firstNode of the template is the table, when it then gets nested inside the datatables wrapper, all this.$(selector) queries fail}}
   <div>
-    <table id="{{id}}" class="{{class}}" style="{{style}}">
+    <table id="{{id}}" class="{{class}}" style="{{style}}; position: relative;">
+      <div class="dynamic-table-processing" style="{{#if loaded}}display: none;{{/if}}">
+        Processing...
+      </div>
     </table>
   </div>
 </template>
