@@ -5,64 +5,20 @@ Provides more flexible functionality than [Tabular Tables](https://github.com/al
 ## New in version 2.0
 
 1. Reorder columns
-2. Allow the addition and removal of columns (though these must be defined)
+2. Allow the uesr to add and remove columns
 3. Allow per-column advanced filtering and sorting
-4. Save configurations (columns, sort, filter) on the user object for use later.
-5. Inline editing either using a generic template, or a custom provided one.
-6. More finegrained reactivity to improve render perforamnce
+4. Allow arbitrary grouping of records
+5. Save configurations (columns, sort, filter, skip, limit, grouping) on the user object for use later.
+6. Inline editing either using a generic template, or a custom provided one.
+7. More finegrained reactivity to improve render perforamnce
 
+Some of these advanced features require the use of the `CustomizableTable` or `GroupedTable` templates.
 
-## Key differences to Tabular Tables
-
-If you aren't having any problems using Tabular Tables, and don't explicitly need the items mentioned below, you should probably use Tabular Tables - I wrote this package to deal with some (possibly very specific) use cases that Tabular Tables couldn't handle - I then extended it to handle some other elements (e.g., advanced search and export). The simple configuration, test coverage and widespread use of Tabular Tables should make it more attractive to most developers.
-
-That being said...:
-
-1. Allows multiple tables with the same table definition,
-     - for example if you display a list of folders (in an accordion) and want to allow multiple panels of the accordion to be open at the same time, you would need a dynamic set of tables with the same definition
-     - this could be accomplished with Tabular Tables, but required a lot of hacking, and does not persist well between server failovers or reconnects.
-2. Allows templates in the header - for example if you want to use a checkbox column with a checkbox + dropdown in the header to allow for bulk actions
-3. Allows custom per-column search rules, when displaying data across joins
-4. Allows for a boilerplate advanced search modal, for fields potentially not displayed in the table
-5. Allows for client side export of data to CSV
-     - columns potentially not shown in the table
-     - rows not in the currently visible dataset
-6. Requires a specified publication
-     - takes as arguments a {selector} and {options} - which can be passed directly to a find
-     - all permissions must be handled here.
-     - the publication must return either a single cursor, or an array of cursors, the first of which must be the cursor for the documents (e.g., any joins must follow)
-     - complex publications can be accomplished by specifying an array of `compositecompositePublicationNames`- which utilise `publishComposite`
-     - I'm actively working on reducing some of this complexity.
-7. Potential performance benefits caused by highly selective rendering of rows based on modified data
-     - I'm actively working on improving this further by caching rendered templates between page changes and rendering specific columns on data change.
-8. Beyond this it has a very similar API to Tabular Tables
-
-## performance
-
-There are three main performance improvements over Tabular Tables. First, there is no additional rountrip between client and server - tabular tables works by publishing an "information" collection for each table with the list of documentIds to return, the client the subscribes to those documents. While this package also returns the documentIDs as paret of an information collection, it does it at the same time as running the main publication.
-
-Additionally, as tabular tables uses one publication for fetching the documentIds and another for fetching the documents themselves, any security work (e.g., checking a users permissions) must be done in both places. This package only requires it in one place, where it is called exactly once.
-
-Finally, by selectively re-rendering rows on data change (rather than re-rendering the entire page), we achieve performance improvements relative to tabular tables. This is particularly important when your rows use templates.
-
-## Usage
+## Installation
 
 `meteor add znewsham:dynamic-tables`
 
-See [this example](https://bitbucket.org/znewsham/table-bulk-demo) of the usage of this table component and a bulk checkbox component
-
-### Dependencies
-
-This package requires:
-
-- [file-saver](https://github.com/eligrey/FileSaver.js/)
-- [peppelg:bootstrap-3-modal](https://github.com/PeppeL-G/bootstrap-3-modal/)
-- [reywood:publish-composite](https://github.com/englue/meteor-publish-composite/)
-
-And likes to have (but does not require):
-- bootstrap3
-- [aldeed:autoform](https://github.com/aldeed/meteor-autoform)
-- [aldeed:simple-schema](https://github.com/aldeed/meteor-simple-schema)
+## Usage
 
 ### Basic Usage
 
@@ -146,6 +102,188 @@ server.js
     ]
   });
 ```
+
+The publication provided to `DynamicTable` must accept two arguments, selector and options, both of which can be passed directly to a mongo find call, however should be checked for security.
+
+## API
+
+The following is a list of all options that can be passed to DynamicTable.
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| table | TableSpec | The table specification | Required |
+| id | String | The id of the table | Required |
+| class | String | The classes to apply to the table | Optional |
+| style | String | The style to apply directly to the table | Optional |
+
+
+### TableSpec
+
+In addition to these fields, any option defined by DataTables can be used (e.g., lengthChange, pageLength, autoWidth, etc)
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| collection | MongoCollection | The client side collection to pull data from | Required |
+| publication | String | The name of the publication to use | Required |
+| columns | [ColumnSpec] | The columns in the table | Required |
+| limit | Number | Mostly used when pagination is disabled, will return a fixed number of rows | Optional |
+| extraFields | [String] | Additional fields to fetch | Optional |
+| sub | { subscribe } | Any object that provides a subscribe method | Meteor |
+| useArrayPublication | Boolean | Force the use of the array publication (vs the composite pub) | true if no compositePublicationNames are defined |
+| compositePublicationNames | [String] | A list of additional publications to be called per row as part of the composite publication | Optional |
+| export | ExportSpec | How an export should be handled | Optional |
+| advancedSearch | AdvancedSearchSpec | Which fields should be available in the advanced search modal | Optional |
+| subscriptionOptions | Object | Additional options to pass to the subscriotion | Optional |
+
+### ColumnSpec
+
+In addition to these options, any option available to a DataTable column is available here
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| data | String | The field to pull values from | Required |
+| id | String | Required if using advanced features, and non-unique data columns | Optional |
+| title | String | The title of the column | the data field |
+| titleFn | Function | A function that returns the value of the column title | Optional |
+| titleTmpl | Blaze.Template | A template to render as the column header | Optional |
+| titleTmplContext | Function | Returns the data context to be passed into the title template | {} |
+| render | Function | Return the string to render, called with `(value, type, doc)` | Optional |
+| tmpl | Blaze.Template | A template to render the content of the cell | Optional |
+| tmplContext | Function | A function invoked with the partial document of the row, should return the context to call the template with | Optional |
+| editTmpl | Blaze.Template | A template that gets toggled to when editing, can use `Blaze.dynamicTableSingleValueTextEditor` or `Blaze.dynamicTableSelect2ValueEditor`, or any other template you care to define | Optional |
+| editTmplContext | Function | A function invoked with `{ doc, column, collection }` and should return the context to pass into the edit template | Optional |
+| search | Function/String | Either the field to search (if different from the data field) or a function which returns a selector when called with `(query, userId)` | Optional
+| searchable | Boolean | Whether this column should be searched | true |
+| sortField | String | The field to sort on if different from data  | Optional |
+
+### ExportSpec
+
+The export functionality allows multiple CSV rows to be output per data row, and in theory multiple columns per column - this allows clean exporting of mongo documents containing arrays
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| fileName | String | The name of the downloaded file, will be appended with .csv | The table ID |
+| onError | Function | A callback in the case of error | console.log |
+| onComplete | Function | A callback in the case of success, called with `(csvText, fileName)` | Optional |
+| beforeRender | Function | A callback called prior to the export modal displaying, you can subscribe to anything from here | Optional |
+| fields | [ExportFieldSpec/String] | An array of fields that should be exported, this could be more or less fields than provided by the table | The table columns |
+
+### ExportFieldSpec
+
+You can shortcut this spec by just defining A string (the fieldName)
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| field | String | The field to pull data from | Required |
+| label | String | The column header | Defaults to the schema label for this field |
+| render | Function | Same as ColumnSpec.render | Optional |
+| columns | Function | Called to determine the set of columns this field maps to, for example if you store an array of values you may want each value to be in its own column. Called with `(userId, selector)` and must return an array of ExportFieldSpec | Optional |
+| rows | Function | Called to determine the set of rows each row maps to based on this field, called with `(value, doc, filters)` | Optional
+| filters | [ExportFieldFilterSpec] | A list of filters available for this field. This allows users to only export rows matching this criteria (beyond the filter applied to the entire table) for example, a row may have an array of notes saved by a user at a certain time. A user may want to export one row per document per note, but filter to only include recent notes, or notes by a specific user | Optional |
+| columns | [{ label, render }] | Primariliy used to extract values from an array, or nested object | Optional | 
+
+### ExportFieldFilterSpec
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| field |
+| label |
+| type |
+| options |
+| comparators |
+| filter |
+
+
+fileName: "myExport",//optional will be appended with .csv - defaults to the table ID
+onError(e){//optional, defaults to console.log
+  console.log(e);
+},
+onComplete(csvText, fileName){//optional
+
+},
+
+//optional: defaults to using the fields defined in tableOptions.columns which arent data: _id and don't have a template.
+//if a field is defined but has no render method, we will use the render method on the column is used if present, if not the value of the data is converted to a string, arrays are joined with ,
+//if no label is defined, the columns title is used, if not present the schemas label is used, if not the field name is used
+fields: [
+  "name",
+  {
+    field: "someField",
+    label: "My Special Field"
+  },
+  {
+    field: "simpleArray",
+    columns(selector){
+      /*potentially return multiple columns
+        for example one documents simpleArray contains [{type: "mytype1", value: 3}, {type: "mytype2", value: 4}]
+        another contains [{type: "mytype3", value: 3}, {type: "mytype4", value: 4}]
+        you might want to return the distinct set of `types` as columns
+      */
+      return [{
+        label: `Simple(myType1)`,
+        render(simpleArray, doc){
+          return _.pluck(_.where(simpleArray, {type: "myType1"}), "value").join(",");
+        },
+        label: `Simple(myType2)`,
+        render(simpleArray, doc){
+          return _.pluck(_.where(simpleArray, {type: "myType2"}), "value").join(",");
+        }
+      }]
+    }
+  },
+  {
+    field: "complexArrayOfObjects",
+    render(value, doc){
+      return "anything you want"
+    }
+  }
+]
+}
+
+## Key differences to Tabular Tables
+
+1. Allows multiple tables with the same table definition,
+     - for example if you display a list of folders (in an accordion) and want to allow multiple panels of the accordion to be open at the same time, you would need a dynamic set of tables with the same definition
+     - this could be accomplished with Tabular Tables, but required a lot of hacking, and does not persist well between server failovers or reconnects.
+2. Allows templates in the header - for example if you want to use a checkbox column with a checkbox + dropdown in the header to allow for bulk actions
+3. Allows custom per-column search rules, e.g., when displaying data across joins
+4. Allows for a boilerplate advanced search modal, for fields potentially not displayed in the table
+5. Allows for client side export of data to CSV
+     - columns potentially not shown in the table
+     - rows not in the currently visible dataset
+6. Requires a specified publication
+     - takes as arguments a {selector} and {options} - which can be passed directly to a find
+     - all permissions must be handled here.
+     - the publication must return either a single cursor, or an array of cursors, the first of which must be the cursor for the documents (e.g., any joins must follow)
+     - complex publications can be accomplished by specifying an array of `compositecompositePublicationNames`- which utilise `publishComposite`
+     - I'm actively working on reducing some of this complexity.
+7. Potential performance benefits caused by highly selective rendering of rows based on modified data
+     - I'm actively working on improving this further by caching rendered templates between page changes and rendering specific columns on data change.
+8. Beyond this it has a very similar API to Tabular Tables
+
+## Performance
+
+There are three main performance improvements over Tabular Tables. First, there is no additional rountrip between client and server - tabular tables works by publishing an "information" collection for each table with the list of documentIds to return, the client the subscribes to those documents. While this package also returns the documentIDs as paret of an information collection, it does it at the same time as running the main publication.
+
+Additionally, as tabular tables uses one publication for fetching the documentIds and another for fetching the documents themselves, any security work (e.g., checking a users permissions) must be done in both places. This package only requires it in one place, where it is called exactly once.
+
+Finally, by selectively re-rendering rows on data change (rather than re-rendering the entire page), we achieve performance improvements relative to tabular tables. This is particularly important when your rows use templates.
+
+
+### Dependencies
+
+This package requires:
+
+- [file-saver](https://github.com/eligrey/FileSaver.js/)
+- [peppelg:bootstrap-3-modal](https://github.com/PeppeL-G/bootstrap-3-modal/)
+- [reywood:publish-composite](https://github.com/englue/meteor-publish-composite/)
+
+And likes to have (but does not require):
+- bootstrap3
+- [aldeed:autoform](https://github.com/aldeed/meteor-autoform)
+- [aldeed:simple-schema](https://github.com/aldeed/meteor-simple-schema)
+
+
 
 ### Migrating from Tabular Tables
 
