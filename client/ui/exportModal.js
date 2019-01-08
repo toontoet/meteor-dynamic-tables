@@ -225,13 +225,13 @@ Template.dynamicTableExportModal.events({
           const csvText = `${csvHeaders}\n${allRecords.map(doc => CSVLineFromDocument(doc, data.export, data.columns, fieldNames, { _id: { $in: tableInfo._ids } })).join("\n")}`;
           const blob = new Blob([csvText], { type: "text/csv;charset=utf-8" });
           FileSaver.saveAs(blob, fileName);
-          if (data.export.complete) {
-            data.export.complete(csvText, fileName);
+          if (data.export.onComplete) {
+            data.export.onComplete(csvText, fileName);
           }
         }
         catch (e) {
-          if (data.export.error) {
-            data.export.error(e);
+          if (data.export.onError) {
+            data.export.onError(e);
           }
           else {
             console.log(e);
