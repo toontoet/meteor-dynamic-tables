@@ -69,13 +69,14 @@ Template.dynamicTableHeaderCell.events({
         type = obj.type;
       }
     }
-    const defaultField = {
+    const field = _.extend({
       type: type || String,
-      fieldName
-    };
+      name: fieldName
+    }, templInstance.data.column.filterModal.field || {});
+
     const filterModalOptions = {
       dataTable: templInstance.data.dataTable,
-      field: templInstance.data.column.filterModal.field || defaultField,
+      field,
       sort,
       filter: {
         enabled: true,
