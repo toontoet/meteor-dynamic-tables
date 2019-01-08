@@ -155,7 +155,7 @@ In addition to these options, any option available to a DataTable column is avai
 | search | Function/String | Either the field to search (if different from the data field) or a function which returns a selector when called with `(query, userId)` | Optional
 | searchable | Boolean | Whether this column should be searched | true |
 | sortField | String | The field to sort on if different from data  | Optional |
-| filterModal | [FilterModalSpec](#filtermodalspec)/Boolean | Should this column be filterable/sortable via a per-column modal | false |
+| filterModal | [FilterModalSpec](#markdown-header-filtermodalspec)/Boolean | Should this column be filterable/sortable via a per-column modal | false |
 
 ### ExportSpec
 
