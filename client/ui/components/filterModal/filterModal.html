@@ -22,7 +22,7 @@
       {{#if filter.operator.enabled}}
         <section class="dynamic-table-filter-operator">
           <label>Display</label>
-          {{#if isNumericOrDate}}
+          {{#if isNumericOrDateAndNoOptions}}
             <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$between" {{checkedIfWithValue}} /> With Value</label>
             <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$gte" {{checkedIfGteValue}} /> Greater than Value</label>
             <label><input type="radio" class="input-dynamic-table-operator" name="dynamic-table-operator" value="$lte" {{checkedIfLteValue}} /> Less than Value</label>

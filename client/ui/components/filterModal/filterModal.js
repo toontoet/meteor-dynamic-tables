@@ -31,6 +31,12 @@ Template.dynamicTableFilterModal.helpers({
   isAll() {
     return ["$all", "$not$all"].includes(Template.instance().operator.get());
   },
+  isNumericOrDateAndNoOptions() {
+    const fieldType = this.field && this.field.type && (this.field.type[0] || this.field.type);
+    const isNumericOrDate = fieldType && (fieldType === "time" || fieldType === Number || fieldType === Date);
+
+    return isNumericOrDate && Template.instance().allOptions.get().length === 0;
+  },
   isNumericOrDate() {
     const fieldType = this.field && this.field.type && (this.field.type[0] || this.field.type);
     return fieldType && (fieldType === "time" || fieldType === Number || fieldType === Date);
@@ -328,7 +334,7 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
       let selectedOptions = this.selectedOptions.get();
       let operator = this.operator.get();
       const options = this.allOptions.get();
-      if (this.data.field.type === Date || this.data.field.type[0] === Date || this.data.field.type === "time" || this.data.field.type[0] === "time" || this.data.field.type === Number || this.data.field.type[0] === Number) {
+      if (selectedOptions.length === 0 && (this.data.field.type === Date || this.data.field.type[0] === Date || this.data.field.type === "time" || this.data.field.type[0] === "time" || this.data.field.type === Number || this.data.field.type[0] === Number)) {
         selectedOptions = this.search.get();
         const numericSearches = [
           "$gt",
@@ -368,6 +374,12 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
         return;
       }
 
+      if (this.data.field.type === Number || this.data.field.type[0] === Number) {
+        selectedOptions = selectedOptions.map(v => v.includes(".") ? parseFloat(v) : parseInt(v, 10));
+      }
+      if (this.data.field.type === Date || this.data.field.type[0] === Date) {
+        selectedOptions = selectedOptions.map(v => new Date(v));
+      }
       Tracker.nonreactive(() => callback(selectedOptions, operator, direction, false));
     });
   }
