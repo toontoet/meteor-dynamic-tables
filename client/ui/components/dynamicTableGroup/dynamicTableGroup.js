@@ -3,7 +3,12 @@ import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection } from "../../../db.js";
 import { changed, getCustom } from "../../../inlineSave.js";
 
-function selectorToId(selector) {
+
+
+function selectorToId(selector, tableIdSuffix) {
+  if (tableIdSuffix) {
+    return tableIdSuffix;
+  }
   return JSON.stringify(selector)
   .replace(/:/g, "")
   .replace(/,/g, "")
@@ -18,8 +23,19 @@ function selectorToId(selector) {
   .replace(/ /g, "");
 }
 
+/** @this = root data context */
+function getTableIdSuffix(value) {
+  const current = this.groupChain[this.index];
+  const nextSuffix = selectorToId({ [current.field]: value.query }, value.tableIdSuffix);
+
+  const nextParts = (this.tableIdSuffixChain || []).slice(0);
+  nextParts.push(nextSuffix);
+  return nextParts.join("");
+}
+
+/** @this = template instance */
 function getCount(value, selector) {
-  const tableId = this.data.customTableSpec.id + selectorToId(selector);
+  const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this.data, value);
   let count = value.count;
   if (_.isFunction(value.count)) {
     count = value.count(tableId, selector);
@@ -43,8 +59,7 @@ Template.dynamicTableGroup.events({
     }
 
     const values = templInstance.values.get();
-    const current = templInstance.data.groupChain[templInstance.data.index];
-    const tableId = templInstance.data.customTableSpec.id + selectorToId(_.extend({ [current.field]: values[index].query }, templInstance.data.selector));
+    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(this, values[index]);
     changed(templInstance.data.customTableSpec.custom, { changeOpenGroups: { [tableId]: open } });
   }
 });
@@ -53,11 +68,10 @@ Template.dynamicTableGroup.onRendered(function onRendered() {
   this.autorun(() => {
     const values = this.values.get();
     const custom = this.custom.get();
-    const current = this.data.groupChain[this.data.index];
     Tracker.afterFlush(() => {
       if (custom) {
         values.forEach((value, index) => {
-          const tableId = this.data.customTableSpec.id + selectorToId(_.extend({ [current.field]: value.query }, this.data.selector));
+          const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this.data, value);
           if (custom.openGroups && custom.openGroups.includes(tableId)) {
             this.stickyEnabled.set(index, true);
             this.$(`.dynamic-table-panel:nth-child(${index + 1}) > .dynamic-table-content`).css("display", "block");
@@ -127,10 +141,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       });
     }
     const ids = values.filter(v => v.count === true || (v.count === undefined && current.count === true))
-    .map((value) => {
-      const selector = _.extend({ [current.field]: value.query }, data.selector);
-      return this.data.customTableSpec.id + selectorToId(selector);
-    });
+    .map(value => this.data.customTableSpec.id + getTableIdSuffix.call(data, value));
     const counts = this.groupInfo.find({ _id: { $in: ids } });
     counts.forEach((count) => {
       this.counts.set(count._id, count.count);
@@ -144,7 +155,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     values.filter(v => v.count === true || (v.count === undefined && current.count === true))
     .forEach((value) => {
       const selector = _.extend({ [current.field]: value.query }, currentSelector);
-      const tableId = this.data.customTableSpec.id + selectorToId(selector);
+      const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(data, value);
       this.subscribe("simpleTablePublicationCount", tableId, data.customTableSpec.table.publication, selector, current.options || {});
     });
     values.filter(v => v.count !== true && v.count !== undefined)
@@ -157,12 +168,12 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
 });
 
 Template.dynamicTableGroup.helpers({
-  shouldDisplaySection(value, selector) {
+  shouldDisplaySection(value) {
     const current = this.groupChain[this.index];
     if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow) || (value.count === undefined && current.count === undefined)) {
       return true;
     }
-    const tableId = this.customTableSpec.id + selectorToId(selector);
+    const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
     const count = Template.instance().counts.get(tableId);
     return count;
   },
@@ -170,8 +181,8 @@ Template.dynamicTableGroup.helpers({
     const current = this.groupChain[this.index];
     return value.count || (value.count === undefined && current.count);
   },
-  count(value, selector) {
-    const tableId = this.customTableSpec.id + selectorToId(selector);
+  count(value) {
+    const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
     return Template.instance().counts.get(tableId);
   },
   shouldDisplayTable(index) {
@@ -181,11 +192,12 @@ Template.dynamicTableGroup.helpers({
     const current = this.groupChain[this.index];
     return _.extend({ [current.field]: value.query }, currentSelector);
   },
-  table(newSelector) {
+  table(value, newSelector) {
+    const tableIdSuffix = getTableIdSuffix.call(this, value);
     return _.extend(
       {},
       this.customTableSpec,
-      { selector: newSelector, id: this.customTableSpec.id + selectorToId(newSelector) }
+      { selector: newSelector, id: this.customTableSpec.id + tableIdSuffix }
     );
   },
   lastLevel() {
@@ -199,5 +211,12 @@ Template.dynamicTableGroup.helpers({
   },
   currentGroupValues() {
     return Template.instance().values.get();
+  },
+  tableIdSuffixChain(value) {
+    const current = this.groupChain[this.index];
+    const tableIdSuffixChain = [];
+    tableIdSuffixChain.push(...(this.tableIdSuffixChain || []));
+    tableIdSuffixChain.push(selectorToId({ [current.field]: value.query }, value.tableIdSuffix));
+    return tableIdSuffixChain;
   }
 });

@@ -193,8 +193,9 @@ function setup() {
   const currentData = Tracker.nonreactive(() => Template.currentData());
   self.query.set(null);
   // NOTE: allow for subscription managers.
-  if (!currentData.table.sub) {
-    currentData.table.sub = currentData.table.collection._connection || Meteor;
+  self.subManager = currentData.table.sub;
+  if (!self.subManager) {
+    self.subManager = currentData.table.collection._connection || Meteor;
   }
 
   // NOTE: ensure we have clean data.
@@ -508,14 +509,13 @@ Template.DynamicTable.onRendered(function onRendered() {
 
 
     // NOTE: we dont want to rerun this since we're setting it just below
+    let newSub;
     const subToStop = Tracker.nonreactive(() => {
       if (templateInstance.sub.get()) {
         if (templateInstance.sub.get().stop) {
           return templateInstance.sub.get();
         }
-        else {
-          currentData.table.sub.clear();
-        }
+        self.subManager.clear();
       }
     });
     if (
@@ -523,26 +523,28 @@ Template.DynamicTable.onRendered(function onRendered() {
       (currentData.table.useArrayPublication === undefined && (!currentData.table.compositePublicationNames || currentData.table.compositePublicationNames.length === 0))
     ) {
       templateInstance.loaded.set(false);
-      templateInstance.sub.set(currentData.table.sub.subscribe(
+      newSub = self.subManager.subscribe(
         "simpleTablePublicationArray",
         currentData.id,
         currentData.table.publication,
         _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
         queryOptions
-      ));
+      )
+      templateInstance.sub.set(newSub);
     }
     else {
       templateInstance.loaded.set(false);
-      templateInstance.sub.set(currentData.table.sub.subscribe(
+      newSub = self.subManager.subscribe(
         "simpleTablePublication",
         currentData.id,
         currentData.table.publication,
         currentData.table.compositePublicationNames,
         _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
         queryOptions
-      ));
+      );
+      templateInstance.sub.set(newSub);
     }
-    if (subToStop) {
+    if (subToStop && subToStop !== newSub && subToStop.subscriptionId !== newSub.subscriptionId) {
       subToStop.stop();
     }
   });
@@ -774,7 +776,7 @@ Template.DynamicTable.onDestroyed(function onDestroyed() {
       this.sub.get().stop();
     }
     else {
-      Template.instance().data.table.sub.clear();
+      this.subManager.clear();
     }
   }
   if (this.handle) {
