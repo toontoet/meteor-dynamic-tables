@@ -155,6 +155,7 @@ In addition to these options, any option available to a DataTable column is avai
 | search | Function/String | Either the field to search (if different from the data field) or a function which returns a selector when called with `(query, userId)` | Optional
 | searchable | Boolean | Whether this column should be searched | true |
 | sortField | String | The field to sort on if different from data  | Optional |
+| filterModal | [FilterModalSpec](#filtermodalspec)/Boolean | Should this column be filterable/sortable via a per-column modal | false |
 
 ### ExportSpec
 
@@ -180,65 +181,50 @@ You can shortcut this spec by just defining A string (the fieldName)
 | columns | Function | Called to determine the set of columns this field maps to, for example if you store an array of values you may want each value to be in its own column. Called with `(userId, selector)` and must return an array of ExportFieldSpec | Optional |
 | rows | Function | Called to determine the set of rows each row maps to based on this field, called with `(value, doc, filters)` | Optional
 | filters | [ExportFieldFilterSpec] | A list of filters available for this field. This allows users to only export rows matching this criteria (beyond the filter applied to the entire table) for example, a row may have an array of notes saved by a user at a certain time. A user may want to export one row per document per note, but filter to only include recent notes, or notes by a specific user | Optional |
-| columns | [{ label, render }] | Primariliy used to extract values from an array, or nested object | Optional | 
+| columns | [{ label, render }] | Primariliy used to extract values from an array, or nested object | Optional |
 
 ### ExportFieldFilterSpec
 
 | Field | Type | Description | Default |
 | - | - | - | - |
-| field |
-| label |
-| type |
-| options |
-| comparators |
-| filter |
+| field | String | Which field to filter on | Required |
+| label | String | The label to display to the user | Required |
+| type | String | The autoforms input type | Required |
+| options | [Object] | The options to pass to an autoform select/select2 element | Optional |
+| comparators | [Object] | A list of available comparators for the filter | Optional |
+| comparators.$.operator | String | A mongo DB query operator, e.g., $lt, $ne, etc | Required |
+| comparators.$.label | String | The label for the operator | Required |
+| filter | Function | The function that does the filtering, according to the passed in `(subDoc, field, doc, value, comparator)`. `subDoc` is the element in the array which is being filtered. | Required |
+
+### AdvancedSearchSpec
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| beforeRender | Function | A callback called prior to the export modal displaying, you can subscribe to anything from here | Optional |
+| buttonHtml | String | The HTML of the button to render | `<button class=''>Advanced Search</button>` |
+| fields | [AdvancedSearchFieldSpec/String] | The fields to allow searching over, defaults to the fields defined by the columns in the table | Optional |
 
 
-fileName: "myExport",//optional will be appended with .csv - defaults to the table ID
-onError(e){//optional, defaults to console.log
-  console.log(e);
-},
-onComplete(csvText, fileName){//optional
+### AdvancedSearchFieldSpec
 
-},
+You can shortcut this spec by just defining A string (the fieldName)
 
-//optional: defaults to using the fields defined in tableOptions.columns which arent data: _id and don't have a template.
-//if a field is defined but has no render method, we will use the render method on the column is used if present, if not the value of the data is converted to a string, arrays are joined with ,
-//if no label is defined, the columns title is used, if not present the schemas label is used, if not the field name is used
-fields: [
-  "name",
-  {
-    field: "someField",
-    label: "My Special Field"
-  },
-  {
-    field: "simpleArray",
-    columns(selector){
-      /*potentially return multiple columns
-        for example one documents simpleArray contains [{type: "mytype1", value: 3}, {type: "mytype2", value: 4}]
-        another contains [{type: "mytype3", value: 3}, {type: "mytype4", value: 4}]
-        you might want to return the distinct set of `types` as columns
-      */
-      return [{
-        label: `Simple(myType1)`,
-        render(simpleArray, doc){
-          return _.pluck(_.where(simpleArray, {type: "myType1"}), "value").join(",");
-        },
-        label: `Simple(myType2)`,
-        render(simpleArray, doc){
-          return _.pluck(_.where(simpleArray, {type: "myType2"}), "value").join(",");
-        }
-      }]
-    }
-  },
-  {
-    field: "complexArrayOfObjects",
-    render(value, doc){
-      return "anything you want"
-    }
-  }
-]
-}
+| Field | Type | Description | Default |
+| - | - | - | - |
+| field | String | The name of the field you are searching over | Required |
+| label | String | The label of the field, defaults to the simple schema label, or the title of the column | Optional |
+| type | String | The type of field, passed to autoform | Optional |
+| options | [{ label, value }] | A list of options to pass to a select/select2 autoform | Optional |
+| comparators | [Object] | A list of available comparators for the filter | Optional |
+| comparators.$.operator | String | A mongo DB query operator, e.g., $lt, $ne, etc | Required |
+| comparators.$.label | String | The label for the operator | Required |
+| search | Function | A search function, takes as arguments the value and the comparator | Optional |
+
+### FilterModalSpec
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+
 
 ## Key differences to Tabular Tables
 
@@ -529,15 +515,6 @@ filterModal: {
 
 ## Column Specifications
 In addition to the default column fields available on datatables, we support a variety of other fields.
-
-### All Tables
-
-1. tmpl/tmplContext - for rendering a template to a row cell. A reference to the template to be used, and a function to return the row's data context of the form `{titleTmplContext(rowData) { return ... }}`
-2. titleTmpl/titleTmplContext - for rendering a template to the header cell. A reference to the template to be used, and a function to return the data context of the form `{titleTmplContext() { return ... }}`
-3. editTmpl/editTmplContext - for rendering an editable version of the cell. Two templates are provided for this `Template.dynamicTableSingleValueTextEditor` and `Template.dynamicTableSelect2ValueEditor` for editing simple text values or arrays of values with/without options. More details of these are provided below. The function for returning context is optional and takes the form `{editTmplContext(rowData) { return ... }}`
-4. search - a function that takes a query and returns the selector to be used while querying this column. Useful if your table displays joined data. Takes the form `{ search(query, userId){ return {...} }}`
-5. sortField - provides a different field to be used while sorting
-6. searchable - true/false should this column be searched
 
 ### Filterable Tables
 
