@@ -1,4 +1,4 @@
-
+import { EJSON } from "meteor/ejson";
 
 export function getPosition(el) {
   let xPos = 0;
