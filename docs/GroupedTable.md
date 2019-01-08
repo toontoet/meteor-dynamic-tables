@@ -11,7 +11,7 @@ We use JQuery sortable for reordering the group levels
 
 ## Usage
 
-Use in the same way as CustomizableTable with three extra argument
+Use in the same way as [CustomizableTable](./docs/CustomizableTable.md) with three extra argument
 
 ```html
 {{> GroupedTable groupableFields=groupableFields lazy=true expandAll=false ...}}
