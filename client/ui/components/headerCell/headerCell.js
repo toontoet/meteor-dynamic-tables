@@ -61,7 +61,7 @@ Template.dynamicTableHeaderCell.events({
     else if (!sort.direction) {
       sort.direction = columnOrder ? (columnOrder[1] === "asc" ? 1 : -1) : undefined;
     }
-    const schema = templInstance.data.table.collection._c2._simpleSchema;
+    const schema = templInstance.data.table.collection._c2 && templInstance.data.table.collection._c2._simpleSchema;
     let type;
     if (schema) {
       const obj = schema.schema(fieldName);

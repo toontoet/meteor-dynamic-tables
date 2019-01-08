@@ -167,7 +167,12 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       newAdvancedSearchField = operator === "$regex" ? { $regex: `^${optionsOrQuery}` } : { $not: new RegExp(`^${optionsOrQuery}`) };
     }
     if (!EJSON.equals(EJSON.toJSONValue(advancedSearch[fieldName]), EJSON.toJSONValue(newAdvancedSearchField))) {
-      advancedSearch[fieldName] = newAdvancedSearchField;
+      if (newAdvancedSearchField) {
+        advancedSearch[fieldName] = newAdvancedSearchField;
+      }
+      else {
+        delete advancedSearch[fieldName];
+      }
       this.advancedSearch.set(advancedSearch);
       changed = true;
     }
@@ -567,11 +572,12 @@ Template.DynamicTable.onRendered(function onRendered() {
     const queryOptions = query.options;
     let tableInfo = getTableRecordsCollection(currentData.table.collection._connection).findOne({ _id: currentData.id });
     if (!tableInfo && (Meteor.status().status === "offline" || !currentData.table.publication)) {
+      const advancedSearch = templateInstance.advancedSearch.get();
       const options = _.extend({}, query.options);
       delete options.limit;
       delete options.skip;
       options.fields = { _id: true };
-      const data = currentData.table.collection.find(query.selector, options).fetch();
+      const data = currentData.table.collection.find(_.keys(advancedSearch).length ? { $and: [query.selector, advancedSearch] } : query.selector, options).fetch();
 
       tableInfo = {
         recordsFiltered: data.length,
