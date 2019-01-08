@@ -493,6 +493,9 @@ Template.DynamicTable.onRendered(function onRendered() {
         tableSpec.orderCallback(templateInstance.dataTable, templateInstance.dataTable.api().order());
       });
     }
+    if (tableSpec.sortable) {
+      templateInstance.$(`#${currentData.id}>tbody`).sortable(tableSpec.sortable);
+    }
     templateInstance.dataTable.loading = new ReactiveVar(true);
   });
 
@@ -518,6 +521,10 @@ Template.DynamicTable.onRendered(function onRendered() {
         self.subManager.clear();
       }
     });
+    if (!currentData.table.publication) {
+      templateInstance.loaded.set(true);
+      return;
+    }
     if (
       currentData.table.useArrayPublication ||
       (currentData.table.useArrayPublication === undefined && (!currentData.table.compositePublicationNames || currentData.table.compositePublicationNames.length === 0))
@@ -559,7 +566,7 @@ Template.DynamicTable.onRendered(function onRendered() {
     }
     const queryOptions = query.options;
     let tableInfo = getTableRecordsCollection(currentData.table.collection._connection).findOne({ _id: currentData.id });
-    if (!tableInfo && Meteor.status().status === "offline") {
+    if (!tableInfo && (Meteor.status().status === "offline" || !currentData.table.publication)) {
       const options = _.extend({}, query.options);
       delete options.limit;
       delete options.skip;
@@ -572,7 +579,7 @@ Template.DynamicTable.onRendered(function onRendered() {
         _ids: data.slice(queryOptions.skip || 0, (queryOptions.skip || 0) + (queryOptions.limit || 10000000)).map (i => i. _id)
       };
     }
-    if (templateInstance.sub.get() && templateInstance.sub.get().ready() && tableInfo) {
+    if ((!currentData.table.publication || (templateInstance.sub.get() && templateInstance.sub.get().ready())) && tableInfo) {
       templateInstance.loaded.set(true);
       if (templateInstance.handle) {
         templateInstance.handle.stop();

@@ -254,7 +254,7 @@ In addition to these fields, any option defined by DataTables can be used (e.g.,
 | Field | Type | Description | Default |
 | - | - | - | - |
 | collection | MongoCollection | The client side collection to pull data from | Required |
-| publication | String | The name of the publication to use | Required |
+| publication | String | The name of the publication to use, this can ONLY be ommitted if you are using a local collection and the data doesn't need to be fetched from the server (or you are fetching it yourself) | Optional |
 | columns | [[ColumnSpec](#markdown-header-columnspec)] | The columns in the table | Required |
 | limit | Number | Mostly used when pagination is disabled, will return a fixed number of rows | Optional |
 | extraFields | [String] | Additional fields to fetch | Optional |
@@ -264,6 +264,7 @@ In addition to these fields, any option defined by DataTables can be used (e.g.,
 | export | [ExportSpec](#markdown-header-exportspec) | How an export should be handled | Optional |
 | advancedSearch | [AdvancedSearchSpec](#markdown-header-advancedsearchspec) | Which fields should be available in the advanced search modal | Optional |
 | subscriptionOptions | Object | Additional options to pass to the subscriotion | Optional |
+| sortable | Object | Optionally add a jQuery sortable. This works best on local collections | Optional | 
 
 ### ColumnSpec
 
