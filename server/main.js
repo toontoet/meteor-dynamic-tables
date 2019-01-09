@@ -197,6 +197,7 @@ export function simpleTablePublicationCount(tableId, publicationName, selector, 
     Meteor.clearInterval(interval);
     this.removed("groupInfo", tableId);
   });
+  this.ready();
 }
 Meteor.publishComposite("simpleTablePublication", simpleTablePublication);
 Meteor.publish("simpleTablePublicationArray", simpleTablePublicationArrayNew);

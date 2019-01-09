@@ -33,6 +33,7 @@ Use in the same way as [CustomizableTable](./docs/CustomizableTable.md) with thr
 ```
 
 ### groupableFields Specs
+Each element in the `groupableFields` array should match the following schema.
 
 | Field | Type | Description | Default |
 | - | - | - | - |
@@ -40,16 +41,22 @@ Use in the same way as [CustomizableTable](./docs/CustomizableTable.md) with thr
 | valuesField | String | In case you need a different field to get the distinct values, e.g., the field to group on is `myField.searchableValue` but the distinct values come from `myField` which is an array containing a label and `searchableValue`. | Optional |
 | label | String | The label to display, for example if you are grouping by a field `folderName` the label might be "Folder". | Required |
 | count | Boolean | The default value to use for all values | false |
-| alwaysShow | Boolean | The default value to use for all values | Optional |
+| ensureValues | Number | Ensure that a minimum number of entries exist - usefull if you want to check that a group has data, but not wait for a full count to be returned - don't use this with the `values.$.count` option as the count will only return the `ensureValues` count | Optional |
+| alwaysShow | Boolean | The default value to use for all values | 0 |
 | values | [Object]/Function | The set of groups to display at each level. For example, if grouping on a field called `folderName` these might be the set of distinct `folderName`'s stored. This field is optional, if not defined we fetch the distinct values by default. If it is defined it is either an array or a reactive function. In the case of a function it returns an array of the same format. The function will be invoked with `(query)` where `query` is the selector of the previous grouping (e.g., identifies all documents to pull from) | Optional |
 | transformDistinctValues | Function | Transforms the default values into `{ label, query, count, alwaysShow }` objects. If not provided, the returned values are used as both the `query` and `label`. `count` and `alwaysShow` default to the raw values. | Optional |
 | values.$.label | String | The label for the group, for example the `folderName`. The fully qualified label would be `${label}: ${values.*.label}` | Required
 | values.$.query | | The query passed to the field by mongo. For example, this could be the `folderName` as a string, or an object `{$gt: 10, $lt: 20}` | Optional (selector)
 | values.$.selector | | An entire additional selector to use. Use this when you need to group by multiple fields at the same time | Optional (query)
 | values.$.count | Boolean/Function | Whether to count the number of entries in the group, defaults to false. If a function is provided it is called reactively | false |
+| values.$.ensureValues | Number | Ensure that a minimum number of entries exist - usefull if you want to check that a group has data, but not wait for a full count to be returned - don't use this with the `values.$.count` option as the count will only return the `ensureValues` count | 0 |
 | values.$.tableIdSuffix | String | By default each table's ID (also used for getting count information) is the cleaned selector of the table. However, in the case that your values are for psuedo groups (e.g., "this week") this wont allow for saved open groups. So you can optionally pass in a tableIdSuffix, which will be chained together in place of the selector to form the unique tableId | Optional |
 | values.$.alwaysShow | Boolean | Whether to shwo the group even if the count is 0, defaults to true if count is undefined or false, defaults to false if count is truey | Optional |
-| undefined | Boolean/String/[Object] | Whether to show a group for entries that match none of the other groups specified. If a boolean, the label defaults to "Uncategorized", the query becomes the negated join of the other groups and the defaults of `values.$` are used. If a string it becomes the label, if an object it should be defined just like a `values.$` element | false
+| undefined | Boolean/String/[Object] | Whether to show a group for entries that match none of the other groups specified. If a boolean, the label defaults to "Uncategorized", the query becomes the negated join of the other groups and the defaults of `values.$` are used. If a string it becomes the label, if an object it should be defined just like a `values.$` element | false |
+| loading | Object | What to do when the groups are loading | Optional |
+| loading.message | String | The HTML to display when we're loading the list of groups | Optional |
+| loading.tmpl | Blaze.Template | A Blaze template to render when we're loading the list of groups | Optional |
+| loading.tmplContext | Function | A function to provide the context to `loading.tmpl` | Optional |
 
 ## Saving state
 

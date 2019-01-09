@@ -1,5 +1,15 @@
 <template name="dynamicTableGroup">
   <div class="dynamic-table-group">
+    {{#if waitingAndLoading}}
+      <div class="dynamic-table-loading-group">
+        {{#if loading.message}}
+          {{{loading.message}}}
+        {{/if}}
+        {{#if loading.tmpl}}
+          {{>Template.dynamic template=loading.tmpl data=loading.tmplContext}}
+        {{/if}}
+      </div>
+    {{/if}}
     {{#each value in currentGroupValues}}
       <div class="dynamic-table-panel" style="{{#unless shouldDisplaySection value}}display: none;{{/unless}}">
         <div class="dynamic-table-header" data-index="{{@index}}">
@@ -10,7 +20,7 @@
             {{#if lastLevel}}
               {{> CustomizableTable (table value (newSelector value selector))}}
             {{else}}
-              {{> dynamicTableGroup customTableSpec=customTableSpec expandAll=expandAll lazy=lazy groupChain=groupChain index=nextIndex tableIdSuffixChain=(tableIdSuffixChain value) selector=(newSelector value selector)}}
+              {{> dynamicTableGroup loading=loading customTableSpec=customTableSpec expandAll=expandAll lazy=lazy groupChain=groupChain index=nextIndex tableIdSuffixChain=(tableIdSuffixChain value) selector=(newSelector value selector)}}
             {{/if}}
           {{/if}}
         </div>

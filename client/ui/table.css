@@ -5,5 +5,13 @@
   right: 0px;
   opacity: 0.8;
   background-color: #ccc;
-  text-align: center; 
+  text-align: center;
+}
+
+.dynamic-table-loading-group {
+  text-align: center;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
 }

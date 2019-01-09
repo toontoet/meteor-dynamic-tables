@@ -10,17 +10,7 @@ function selectorToId(selector, tableIdSuffix) {
     return tableIdSuffix;
   }
   return JSON.stringify(selector)
-  .replace(/:/g, "")
-  .replace(/,/g, "")
-  .replace(/\./g, "-")
-  .replace(/\{/g, "")
-  .replace(/"/g, "")
-  .replace(/'/g, "")
-  .replace(/\[/g, "")
-  .replace(/\]/g, "")
-  .replace(/\}/g, "")
-  .replace(/\$/g, "")
-  .replace(/ /g, "");
+  .replace(/[^\d\w]/g, "");
 }
 
 /** @this = root data context */
@@ -102,6 +92,7 @@ function addUndefined(current, values) {
 }
 Template.dynamicTableGroup.onCreated(function onCreated() {
   this.stickyEnabled = new ReactiveDict();
+  this.loading = new ReactiveVar({});
   this.counts = new ReactiveDict();
   this.values = new ReactiveVar([]);
   this.groupInfo = getGroupedInfoCollection(this.data.customTableSpec.table.collection._connection);
@@ -123,10 +114,16 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       addUndefined(current, values);
     }
     else {
+      const loading = Tracker.nonreactive(() => this.loading.get());
+      loading.distinctValues = true;
+      this.loading.set(loading);
       Meteor.call("dynamicTableDistinctValuesForField", data.customTableSpec.id, data.customTableSpec.table.publication, data.selector, current.valuesField || current.field, (err, distinctValues) => {
         const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(distinctValues) : distinctValues.map(v => ({ label: v, query: v }));
         addUndefined(current, asyncValues);
         this.values.set(asyncValues);
+        const loading = Tracker.nonreactive(() => this.loading.get());
+        delete loading.distinctValues;
+        this.loading.set(loading);
       });
     }
     this.values.set(values);
@@ -140,7 +137,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         this.stickyEnabled.set(index, true);
       });
     }
-    const ids = values.filter(v => v.count === true || (v.count === undefined && current.count === true))
+    const ids = values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
     .map(value => this.data.customTableSpec.id + getTableIdSuffix.call(data, value));
     const counts = this.groupInfo.find({ _id: { $in: ids } });
     counts.forEach((count) => {
@@ -152,17 +149,32 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const current = data.groupChain[data.index];
     const values = this.values.get();
     const currentSelector = data.selector;
-    values.filter(v => v.count === true || (v.count === undefined && current.count === true))
+    values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
     .forEach((value) => {
       let selector;
       if (value.selector) {
-        selector = { $and: [currentSelector, selector] };
+        if (currentSelector.$and) {
+          selector = _.extend({}, currentSelector);
+          selector.$and.push(value.selector);
+        }
+        else {
+          selector = { $and: [currentSelector, value.selector] };
+        }
       }
       if (value.query) {
         selector = _.extend({ [current.field]: value.query }, currentSelector);
       }
       const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(data, value);
-      this.subscribe("simpleTablePublicationCount", tableId, data.customTableSpec.table.publication, selector, current.options || {});
+      const sub = this.subscribe("simpleTablePublicationCount", tableId, data.customTableSpec.table.publication, selector, _.extend({ limit: value.ensureValues || current.ensureValues || undefined }, current.options) || {});
+      const loading = Tracker.nonreactive(() => this.loading.get());
+      loading[sub.subscriptionId] = true;
+      this.autorun(() => {
+        if (sub.ready()) {
+          const loading = Tracker.nonreactive(() => this.loading.get());
+          delete loading[sub.subscriptionId];
+          this.loading.set(loading);
+        }
+      })
     });
     values.filter(v => v.count !== true && v.count !== undefined)
     .forEach((value) => {
@@ -174,13 +186,20 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
 });
 
 Template.dynamicTableGroup.helpers({
+  waitingAndLoading() {
+    return this.loading && Object.keys(Template.instance().loading.get()).length !== 0;
+  },
   shouldDisplaySection(value) {
     const current = this.groupChain[this.index];
-    if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow) || (value.count === undefined && current.count === undefined)) {
+    if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow) || (value.count === undefined && current.count === undefined && value.ensureValues === undefined && current.ensureValues === undefined)) {
       return true;
     }
     const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
     const count = Template.instance().counts.get(tableId);
+    const ensureValues = value.ensureValues || current.ensureValues;
+    if (ensureValues && count < ensureValues) {
+      return 0;
+    }
     return count;
   },
   hasCount(value) {
