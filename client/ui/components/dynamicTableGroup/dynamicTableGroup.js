@@ -119,7 +119,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       addUndefined(current, values);
     }
     else if (current.values) {
-      values = current.values();
+      values = current.values(data.selector);
       addUndefined(current, values);
     }
     else {
@@ -154,7 +154,13 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const currentSelector = data.selector;
     values.filter(v => v.count === true || (v.count === undefined && current.count === true))
     .forEach((value) => {
-      const selector = _.extend({ [current.field]: value.query }, currentSelector);
+      let selector;
+      if (value.selector) {
+        selector = { $and: [currentSelector, selector] };
+      }
+      if (value.query) {
+        selector = _.extend({ [current.field]: value.query }, currentSelector);
+      }
       const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(data, value);
       this.subscribe("simpleTablePublicationCount", tableId, data.customTableSpec.table.publication, selector, current.options || {});
     });
