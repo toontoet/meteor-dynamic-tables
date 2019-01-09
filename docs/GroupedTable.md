@@ -11,17 +11,21 @@ We use JQuery sortable for reordering the group levels
 
 ## Usage
 
-Use in the same way as [CustomizableTable](./docs/CustomizableTable.md) with three extra argument
+Use in the same way as [CustomizableTable](./docs/CustomizableTable.md) with five extra argument
 
 ```html
 {{> GroupedTable groupableFields=groupableFields lazy=true expandAll=false ...}}
 ```
+
+`loading` display a message or render a template when the groups are being loaded.
 
 `lazy` determines whether all tables should be loaded up front reqardless of expansion, it defaults to true (where the tables don't load until the section is expanded)
 
 `expandAll` determines whether all groups should be expanded (and thus load the tables)
 
 `groupableFields` contains an array of the fields which are defined as groupable. Each item in the array looks like this:
+
+`groupChain` An array of the names of the default chain of groups to use, e.g., `["folderName", "age"]`. This value will be overwritten if a custom field is provided
 
 ```js
 {
@@ -31,6 +35,14 @@ Use in the same way as [CustomizableTable](./docs/CustomizableTable.md) with thr
   undefined, //Boolean or Object, optional
 }
 ```
+### loading specs
+If `loading` is a boolean, display the default message
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| message | String | The HTML to display when we're loading the list of groups | "Loading your groups" |
+| tmpl | Blaze.Template | A Blaze template to render when we're loading the list of groups | Optional |
+| tmplContext | Function | A function to provide the context to `loading.tmpl` | Optional |
 
 ### groupableFields Specs
 Each element in the `groupableFields` array should match the following schema.
@@ -53,10 +65,6 @@ Each element in the `groupableFields` array should match the following schema.
 | values.$.tableIdSuffix | String | By default each table's ID (also used for getting count information) is the cleaned selector of the table. However, in the case that your values are for psuedo groups (e.g., "this week") this wont allow for saved open groups. So you can optionally pass in a tableIdSuffix, which will be chained together in place of the selector to form the unique tableId | Optional |
 | values.$.alwaysShow | Boolean | Whether to shwo the group even if the count is 0, defaults to true if count is undefined or false, defaults to false if count is truey | Optional |
 | undefined | Boolean/String/[Object] | Whether to show a group for entries that match none of the other groups specified. If a boolean, the label defaults to "Uncategorized", the query becomes the negated join of the other groups and the defaults of `values.$` are used. If a string it becomes the label, if an object it should be defined just like a `values.$` element | false |
-| loading | Object | What to do when the groups are loading | Optional |
-| loading.message | String | The HTML to display when we're loading the list of groups | Optional |
-| loading.tmpl | Blaze.Template | A Blaze template to render when we're loading the list of groups | Optional |
-| loading.tmplContext | Function | A function to provide the context to `loading.tmpl` | Optional |
 
 ## Saving state
 

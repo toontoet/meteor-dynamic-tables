@@ -4,7 +4,7 @@ import "./components/manageGroupFieldsModal/manageGroupFieldsModal.js";
 import { getPosition, changed, getCustom } from "../inlineSave.js";
 
 Template.GroupedTable.onCreated(function onCreated() {
-  this.groupChain = new ReactiveVar(this.data.groupChain || []);
+  this.groupChain = new ReactiveVar(_.compact((this.data.groupChain || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
   getCustom(this.data.custom, (custom) => {
     if (custom.groupChainFields) {
       this.groupChain.set(_.compact(custom.groupChainFields.map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
@@ -41,7 +41,8 @@ Template.GroupedTable.helpers({
     return true;
   },
   groupChain() {
-    return Template.instance().groupChain.get();
+    const groupChain = Template.instance().groupChain.get();
+    return groupChain;
   }
 });
 

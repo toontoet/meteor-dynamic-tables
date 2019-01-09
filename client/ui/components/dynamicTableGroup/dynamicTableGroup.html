@@ -2,6 +2,9 @@
   <div class="dynamic-table-group">
     {{#if waitingAndLoading}}
       <div class="dynamic-table-loading-group">
+        {{#if showLoadingMessage}}
+          Loading your groups
+        {{/if}}
         {{#if loading.message}}
           {{{loading.message}}}
         {{/if}}

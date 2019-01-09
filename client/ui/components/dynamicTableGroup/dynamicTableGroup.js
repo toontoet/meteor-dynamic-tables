@@ -189,6 +189,9 @@ Template.dynamicTableGroup.helpers({
   waitingAndLoading() {
     return this.loading && Object.keys(Template.instance().loading.get()).length !== 0;
   },
+  showLoadingMessage() {
+    return this.loading === true;
+  },
   shouldDisplaySection(value) {
     const current = this.groupChain[this.index];
     if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow) || (value.count === undefined && current.count === undefined && value.ensureValues === undefined && current.ensureValues === undefined)) {
