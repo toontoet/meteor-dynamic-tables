@@ -633,7 +633,7 @@ Template.DynamicTable.onRendered(function onRendered() {
                   ) {
                     const oldData = templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl.dataVar.get();
                     if (columns[cellIndex].tmpl) {
-                      const newData = columns[cellIndex].tmplContext ? columns[cellIndex].tmplContext(rowData) : rowData;
+                      const newData = columns[cellIndex].tmplContext ? columns[cellIndex].tmplContext(rowData, templateInstance.data) : rowData;
                       try {
                         if (JSON.stringify(oldData.templateData) !== JSON.stringify(newData)) {
                           oldData.templateData = newData;

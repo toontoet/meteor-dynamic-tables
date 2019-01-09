@@ -280,7 +280,7 @@ In addition to these options, any option available to a DataTable column is avai
 | titleTmplContext | Function | Returns the data context to be passed into the title template, called with these arguments `(data)` where data is the data passed into the table, the context of `this` will be the column | {} |
 | render | Function | Return the string to render, called with `(value, type, doc)` | Optional |
 | tmpl | Blaze.Template | A template to render the content of the cell | Optional |
-| tmplContext | Function | A function invoked with the partial document of the row, should return the context to call the template with | Optional |
+| tmplContext | Function | A function invoked with the partial document of the row and the data passed into the table, should return the context to call the template with | Optional |
 | editTmpl | Blaze.Template | A template that gets toggled to when editing, can use `Blaze.dynamicTableSingleValueTextEditor` or `Blaze.dynamicTableSelect2ValueEditor`, or any other template you care to define | Optional |
 | editTmplContext | Function | A function invoked with `{ doc, column, collection }` and should return the context to pass into the edit template | Optional |
 | search | Function/String | Either the field to search (if different from the data field) or a function which returns a selector when called with `(query, userId)` | Optional
