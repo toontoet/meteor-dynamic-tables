@@ -264,7 +264,7 @@ In addition to these fields, any option defined by DataTables can be used (e.g.,
 | export | [ExportSpec](#markdown-header-exportspec) | How an export should be handled | Optional |
 | advancedSearch | [AdvancedSearchSpec](#markdown-header-advancedsearchspec) | Which fields should be available in the advanced search modal | Optional |
 | subscriptionOptions | Object | Additional options to pass to the subscriotion | Optional |
-| sortable | Object | Optionally add a jQuery sortable. This works best on local collections | Optional | 
+| sortable | Object | Optionally add a jQuery sortable. This works best on local collections | Optional |
 
 ### ColumnSpec
 
@@ -277,7 +277,7 @@ In addition to these options, any option available to a DataTable column is avai
 | title | String | The title of the column | the data field |
 | titleFn | Function | A function that returns the value of the column title | Optional |
 | titleTmpl | Blaze.Template | A template to render as the column header | Optional |
-| titleTmplContext | Function | Returns the data context to be passed into the title template | {} |
+| titleTmplContext | Function | Returns the data context to be passed into the title template, called with these arguments `(data)` where data is the data passed into the table, the context of `this` will be the column | {} |
 | render | Function | Return the string to render, called with `(value, type, doc)` | Optional |
 | tmpl | Blaze.Template | A template to render the content of the cell | Optional |
 | tmplContext | Function | A function invoked with the partial document of the row, should return the context to call the template with | Optional |

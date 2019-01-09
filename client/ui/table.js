@@ -415,7 +415,7 @@ Template.DynamicTable.onRendered(function onRendered() {
             headerCell.innerHTML = "";
             headerCell.__blazeViewInstance = Blaze.renderWithData(
               columns[index].titleTmpl,
-              columns[index].titleTmplContext ? columns[index].titleTmplContext() : {},
+              columns[index].titleTmplContext ? columns[index].titleTmplContext(templateInstance.data) : {},
               headerCell
             );
           }
