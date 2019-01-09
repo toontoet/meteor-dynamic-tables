@@ -92,7 +92,7 @@ Template.dynamicTableFilterModal.helpers({
       return [];
     }
     const search = Template.instance().search.get();
-    const selectedOptions = Template.instance().selectedOptions.get().map(o => _.findWhere(options, { value: o }));
+    const selectedOptions = Template.instance().selectedOptions.get().map(o => _.find(options, { value: o }));
     return selectedOptions.filter(option => option && (!search || option.label.match(new RegExp(search, "i")))).map(o => _.extend({ _id: o.value }, o));
   },
   searching() {
@@ -259,26 +259,30 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
 
   const data = this.data;
   if (data.filter && _.isFunction(data.filter.options)) {
-    const initSearch = data.filter.selectedOptions && data.filter.selectedOptions.length ? data.filter.selectedOptions : undefined;
+    const initSearch = data.filter.selectedOptions && !_.isArray(data.filter.selectedOptions) && data.filter.selectedOptions.length ? data.filter.selectedOptions : undefined;
     const options = data.filter.options(data, initSearch, (asyncOptions) => {
       this.asyncOptions.set(true);
       this.allOptions.set(asyncOptions.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
+      this.options.set(asyncOptions.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
       this.searching.set(false);
     });
     if (options instanceof Promise) {
       options.then((asyncOptions) => {
         this.asyncOptions.set(true);
         this.allOptions.set(asyncOptions.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
+        this.options.set(asyncOptions.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
         this.searching.set(false);
       });
     }
     else if (options) {
       this.allOptions.set(options.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
+      this.options.set(options.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
       this.searching.set(false);
     }
   }
   else if (data.filter && _.isArray(data.filter.options)) {
     this.allOptions.set(data.filter.options.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
+    this.options.set(data.filter.options.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
   }
   if (data.filter && data.filter.selectedOptions) {
     if (_.isFunction(data.filter.selectedOptions)) {
@@ -298,9 +302,14 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
       this.selectedOptions.set(data.filter.selectedOptions);
     }
   }
+  let lastSearch;
   if (data.filter && data.filter.options) {
     this.autorun(() => {
       const search = this.search.get();
+      if (search === lastSearch) {
+        return;
+      }
+      lastSearch = search;
       if (_.isFunction(data.filter.options)) {
         const options = data.filter.options(data, search, (asyncOptions) => {
           this.options.set(asyncOptions.map(o => (typeof o) === "object" ? o : { label: o, value: o }));
@@ -375,10 +384,14 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
       }
 
       if (this.data.field.type === Number || this.data.field.type[0] === Number) {
-        selectedOptions = selectedOptions.map(v => v.includes(".") ? parseFloat(v) : parseInt(v, 10));
+        if (_.isArray(selectedOptions)) {
+          selectedOptions = selectedOptions.map(v => typeof v === "number" ? v : (v.includes(".") ? parseFloat(v) : parseInt(v, 10)));
+        }
       }
       if (this.data.field.type === Date || this.data.field.type[0] === Date) {
-        selectedOptions = selectedOptions.map(v => new Date(v));
+        if (_.isArray(selectedOptions)) {
+          selectedOptions = selectedOptions.map(v => new Date(v));
+        }
       }
       Tracker.nonreactive(() => callback(selectedOptions, operator, direction, false));
     });
