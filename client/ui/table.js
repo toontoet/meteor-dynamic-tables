@@ -218,7 +218,7 @@ function setup() {
         const rawContent = td.innerHTML || value;
         td.innerHTML = "";
         if (column.tmplContext && rowData) {
-          rowData = column.tmplContext(rowData, templateInstance.data);
+          rowData = column.tmplContext(rowData, self.data);
         }
         const editRowData = {
           doc: rawRowData,
