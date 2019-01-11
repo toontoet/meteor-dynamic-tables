@@ -180,7 +180,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
       this.selectedColumns.set(filterColumns(this.data.columns, columnsToUse.map(c => c.id || c.data)));
       this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
       this.order.set(custom.order || []);
-      this.limit.set(custom.limit || this.data.pageLength || 25);
+      this.limit.set(custom.limit || this.data.table.pageLength || 25);
       this.skip.set(custom.skip || 0);
     });
   }
