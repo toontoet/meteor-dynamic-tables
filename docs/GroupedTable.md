@@ -11,11 +11,13 @@ We use JQuery sortable for reordering the group levels
 
 ## Usage
 
-Use in the same way as [CustomizableTable](./docs/CustomizableTable.md) with five extra argument
+Use in the same way as [CustomizableTable](./docs/CustomizableTable.md) with a few extra argument
 
 ```html
 {{> GroupedTable groupableFields=groupableFields lazy=true expandAll=false ...}}
 ```
+
+`noGroups` display a message or render a template when there are no groups available in a section.
 
 `loading` display a message or render a template when the groups are being loaded.
 
@@ -35,7 +37,20 @@ Use in the same way as [CustomizableTable](./docs/CustomizableTable.md) with fiv
   undefined, //Boolean or Object, optional
 }
 ```
-### loading specs
+
+### noGroups Specs
+
+If `noGroups` is a boolean, display the default message
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| message | String | The HTML to display when there are no groups - this will also be shown if there are no groups inside another group | "None Available" |
+| tmpl | Blaze.Template | A Blaze template to render when there are no groups | Optional |
+| tmplContext | Function | A function to provide the context to `noGroups.tmpl` | Optional |
+
+
+### loading Specs
+
 If `loading` is a boolean, display the default message
 
 | Field | Type | Description | Default |
@@ -45,6 +60,7 @@ If `loading` is a boolean, display the default message
 | tmplContext | Function | A function to provide the context to `loading.tmpl` | Optional |
 
 ### groupableFields Specs
+
 Each element in the `groupableFields` array should match the following schema.
 
 | Field | Type | Description | Default |

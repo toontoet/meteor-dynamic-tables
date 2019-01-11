@@ -3,7 +3,7 @@
     <a style="float: right" class="manage-group-fields" href="#">Manage Groups</a>
   </div>
   {{#if groupChain}}
-    {{> dynamicTableGroup loading=loading expandAll=expandAll lazy=lazy customTableSpec=this groupChain=groupChain index=0 selector=this.selector}}
+    {{> dynamicTableGroup noGroups=noGroups loading=loading expandAll=expandAll lazy=lazy customTableSpec=this groupChain=groupChain index=0 selector=this.selector}}
   {{else}}
     {{> CustomizableTable this}}
   {{/if}}

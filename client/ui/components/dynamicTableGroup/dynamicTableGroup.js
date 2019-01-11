@@ -185,6 +185,18 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   });
 });
 
+function shouldDisplaySection(current, value) {
+  if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow) || (value.count === undefined && current.count === undefined && value.ensureValues === undefined && current.ensureValues === undefined)) {
+    return true;
+  }
+  const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
+  const count = Template.instance().counts.get(tableId);
+  const ensureValues = value.ensureValues || current.ensureValues;
+  if (ensureValues && count < ensureValues) {
+    return 0;
+  }
+  return count;
+}
 Template.dynamicTableGroup.helpers({
   waitingAndLoading() {
     return this.loading && Object.keys(Template.instance().loading.get()).length !== 0;
@@ -192,18 +204,17 @@ Template.dynamicTableGroup.helpers({
   showLoadingMessage() {
     return this.loading === true;
   },
+  showNoGroupsMessage() {
+    return this.noGroups === true;
+  },
+  hasVisibleGroups() {
+    const current = this.groupChain[this.index];
+    const values = Template.instance().values.get().filter(value => shouldDisplaySection.call(this, current, value));
+    return values.length;
+  },
   shouldDisplaySection(value) {
     const current = this.groupChain[this.index];
-    if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow) || (value.count === undefined && current.count === undefined && value.ensureValues === undefined && current.ensureValues === undefined)) {
-      return true;
-    }
-    const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
-    const count = Template.instance().counts.get(tableId);
-    const ensureValues = value.ensureValues || current.ensureValues;
-    if (ensureValues && count < ensureValues) {
-      return 0;
-    }
-    return count;
+    return shouldDisplaySection.call(this, current, value);
   },
   hasCount(value) {
     const current = this.groupChain[this.index];
