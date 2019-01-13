@@ -146,7 +146,8 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
       check(Meteor.default_server.publish_handlers[pubName], Function);
       return {
         find(play) {
-          return Meteor.default_server.publish_handlers[pubName].call(this, play);
+          const fn = publicationFunctions[pubName] || Meteor.default_server.publish_handlers[pubName];
+          return fn.call(this, play);
         }
       };
     })
