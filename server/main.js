@@ -1,3 +1,7 @@
+const publicationFunctions = {};
+export function registerPubFunction(name, fn) {
+  publicationFunctions[name] = fn;
+}
 function getDataHandleAndInterval(tableId, publicationCursor, options, canOverride) {
   const hasSortableFields = _.keys(options.fields || {}).length === 0 || _.intersection(_.keys(options.fields || {}), _.keys(options.sort || {})).length === _.keys(options.sort || {}).length;
 
@@ -91,9 +95,9 @@ function getDataHandleAndInterval(tableId, publicationCursor, options, canOverri
 }
 
 function getPublicationCursor(publicationName, selector, options) {
-  const publicationResult = Meteor.default_server.publish_handlers[publicationName].call(this, selector, options);
+  const fn = publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName];
+  const publicationResult = fn.call(this, selector, options);
   let publicationCursor;
-
   // NOTE: if we haven't explicitly stated whether we can override the default publication, lets figure it out
   // if we returned a cursor, or an array with exactly one cursor in it, we can override
   // doing so fixes a potential issue with cursors returning results with a bad sort
@@ -121,7 +125,7 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
   check(publicationName, String);
   check(selector, Object);
   check(options, Object);
-  check(Meteor.default_server.publish_handlers[publicationName], Function);
+  check(publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName], Function);
   if (Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
   }
@@ -140,10 +144,11 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
       return publicationCursor;
     },
     children: (compositePublicationNames || []).map((pubName) => {
-      check(Meteor.default_server.publish_handlers[pubName], Function);
+      const fn = publicationFunctions[pubName] || Meteor.default_server.publish_handlers[pubName];
+      check(fn, Function);
       return {
         find(play) {
-          return Meteor.default_server.publish_handlers[pubName].call(this, play);
+          return fn.call(this, play);
         }
       };
     })
@@ -155,7 +160,7 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
   check(publicationName, String);
   check(selector, Object);
   check(options, Object);
-  check(Meteor.default_server.publish_handlers[publicationName], Function);
+  check(publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName], Function);
   if (Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
   }
@@ -183,6 +188,9 @@ export function simpleTablePublicationCount(tableId, publicationName, selector, 
   check(options, Object);
   if (Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
+  }
+  if (this.unblock) {
+    this.unblock();
   }
   const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, { fields: { _id: true } });
   const count = publicationCursor.count();

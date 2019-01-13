@@ -111,6 +111,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     }
     else if (current.values) {
       values = current.values(data.selector);
+      values = values.slice(0, values.length);
       addUndefined(current, values);
     }
     else {

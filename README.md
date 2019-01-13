@@ -4,19 +4,32 @@ Provides more flexible functionality than [Tabular Tables](https://github.com/al
 
 ## New in version 2.0
 
-1. Reorder columns
-2. Allow the uesr to add and remove columns
-3. Allow per-column advanced filtering and sorting
-4. Allow arbitrary grouping of records
-5. Save configurations (columns, sort, filter, skip, limit, grouping) on the user object for use later.
-6. Inline editing either using a generic template, or a custom provided one.
-7. More finegrained reactivity to improve render perforamnce
+1. Redis oplog support
+2. Reorder columns
+3. Allow the uesr to add and remove columns
+4. Allow per-column advanced filtering and sorting
+5. Allow arbitrary grouping of records
+6. Save configurations (columns, sort, filter, skip, limit, grouping) on the user object for use later.
+7. Inline editing either using a generic template, or a custom provided one.
+8. More finegrained reactivity to improve render perforamnce
 
 Some of these advanced features require the use of the `CustomizableTable` or `GroupedTable` templates.
 
 ## Installation
 
-`meteor add znewsham:dynamic-tables`
+`meteor add znewsham:dynamic-table`
+
+
+## Redis oplog support
+
+the redis-oplog package intercepts publication calls and modifies the results (e.g., just returning the cursors it can't handle). In the new version you can do the following instead of calling `Meteor.publish`:
+
+```js
+import { registerPubFunction } from "meteor/znewsham:dynamic-table";
+registerPubFunction("myPubFunction", function(...) {
+
+});
+```
 
 ## Usage
 
