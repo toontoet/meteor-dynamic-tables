@@ -1,3 +1,8 @@
+const publicationFunctions = {};
+export function registerPubFunction(name, fn) {
+  publicationFunctions[name] = fn;
+}
+
 function getDataHandleAndInterval(tableId, publicationCursor, options, canOverride) {
   const hasSortableFields = _.keys(options.fields || {}).length === 0 || _.intersection(_.keys(options.fields || {}), _.keys(options.sort || {})).length === _.keys(options.sort || {}).length;
 
@@ -91,7 +96,8 @@ function getDataHandleAndInterval(tableId, publicationCursor, options, canOverri
 }
 
 function getPublicationCursor(publicationName, selector, options) {
-  const publicationResult = Meteor.default_server.publish_handlers[publicationName].call(this, selector, options);
+  const fn = publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName];
+  const publicationResult = fn.call(this, selector, options);
   let publicationCursor;
 
   // NOTE: if we haven't explicitly stated whether we can override the default publication, lets figure it out
@@ -121,7 +127,7 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
   check(publicationName, String);
   check(selector, Object);
   check(options, Object);
-  check(Meteor.default_server.publish_handlers[publicationName], Function);
+  check(publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName], Function);
   const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, options);
   const { dataHandle, interval, recordIds } = getDataHandleAndInterval.call(this, tableId, publicationCursor, options, false);
 
