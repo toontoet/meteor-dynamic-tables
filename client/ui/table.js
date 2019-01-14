@@ -225,11 +225,12 @@ function setup() {
           column,
           collection: currentData.table.collection
         };
+        const enableEdit = column.enableEdit ? column.enableEdit(rawRowData) : true;
         if (self.blaze[`${row}-${col}`]) {
           if (self.blaze[`${row}-${col}`].name === templateName && self.blaze[`${row}-${col}`].idOrData === (column.id || column.data)) {
             td.parentElement.replaceChild(self.blaze[`${row}-${col}`].cell, td);
             self.blaze[`${row}-${col}`].tmpl.dataVar.set({
-              editable: !!column.editTmpl,
+              editable: !!column.editTmpl && enableEdit,
               templateName: templateName.split(".")[1],
               templateData: column.tmpl ? rowData : rawContent,
               editTemplateName: column.editTmpl && column.editTmpl.viewName.split(".")[1],
@@ -240,7 +241,7 @@ function setup() {
           delete self.blaze[`${row}-${col}`];
         }
         const ret = Blaze.renderWithData(Template.dynamicTableTableCell, {
-          editable: !!column.editTmpl,
+          editable: !!column.editTmpl && enableEdit,
           templateName: templateName.split(".")[1],
           templateData: column.tmpl ? rowData : rawContent,
           editTemplateName: column.editTmpl && column.editTmpl.viewName.split(".")[1],
