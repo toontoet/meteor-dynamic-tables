@@ -148,6 +148,7 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
       check(fn, Function);
       return {
         find(play) {
+          const fn = publicationFunctions[pubName] || Meteor.default_server.publish_handlers[pubName];
           return fn.call(this, play);
         }
       };
@@ -186,6 +187,7 @@ export function simpleTablePublicationCount(tableId, publicationName, selector, 
   check(publicationName, String);
   check(selector, Object);
   check(options, Object);
+  check(publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName], Function);
   if (Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
   }
