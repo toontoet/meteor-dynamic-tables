@@ -130,8 +130,9 @@ Template.CustomizableTable.events({
     div.attr("id", "dynamic-table-manage-fields-modal")
     .html("")
     .css("position", "absolute")
-    .css("top", bounds.top)
-    .css("left", bounds.left);
+    .css("top", bounds.top + $(e.currentTarget).height())
+    .css("left", bounds.left)
+    .css("z-index", 1);
 
     if (div[0].__blazeTemplate) {
       Blaze.remove(div[0].__blazeTemplate);

@@ -1,10 +1,13 @@
 <template name="dynamicTableManageFieldsModal">
   <div class="dynamic-table-manage-fields">
-    <input placeholder="Search..." />
+    <div style="width: 100%">
+      <input placeholder="Search..." />
+      <i class="fa fa-plus add-column"></i>
+    </div>
     <ul>
       {{#each column in availableColumns}}
-        <li data-id="{{column.id}}" data-data="{{column.data}}" class="{{#if selected column}}dynamic-table-manage-fields-selected{{/if}}">
-          {{title column}}
+        <li data-id="{{column.id}}" data-data="{{column.data}}">
+          <i class="fa fa-toggle-{{#if selected column}}on{{else}}off{{/if}}"></i> {{title column}}
         </li>
       {{/each}}
     </ul>

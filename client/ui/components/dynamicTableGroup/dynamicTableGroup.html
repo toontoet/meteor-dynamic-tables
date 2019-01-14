@@ -16,14 +16,14 @@
     {{#each value in currentGroupValues}}
       <div class="dynamic-table-panel" style="{{#unless shouldDisplaySection value}}display: none;{{/unless}}">
         <div class="dynamic-table-header" data-index="{{@index}}">
-          {{currentGroupLabel}}: {{value.label}} {{#if hasCount value}}({{count value}}){{/if}}
+          {{#if showPrefix}}{{currentGroupLabel}}: {{/if}}{{value.label}} {{#if hasCount value}}({{count value}}){{/if}}
         </div>
         <div class="dynamic-table-content">
           {{# if shouldDisplayTable @index}}
             {{#if lastLevel}}
               {{> CustomizableTable (table value (newSelector value selector))}}
             {{else}}
-              {{> dynamicTableGroup noGroups=noGroups loading=loading customTableSpec=customTableSpec expandAll=expandAll lazy=lazy groupChain=groupChain index=nextIndex tableIdSuffixChain=(tableIdSuffixChain value) selector=(newSelector value selector)}}
+              {{> dynamicTableGroup showPrefix=showPrefix noGroups=noGroups loading=loading customTableSpec=customTableSpec expandAll=expandAll lazy=lazy groupChain=groupChain index=nextIndex tableIdSuffixChain=(tableIdSuffixChain value) selector=(newSelector value selector)}}
             {{/if}}
           {{/if}}
         </div>
