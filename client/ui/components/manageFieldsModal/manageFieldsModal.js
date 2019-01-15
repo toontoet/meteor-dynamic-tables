@@ -15,6 +15,11 @@ Template.dynamicTableManageFieldsModal.events({
   "blur input"(e, templInstance) {
     templInstance.search.set($(e.currentTarget).val());
   },
+  "click .add-column"(e, templInstance) {
+    templInstance.data.addColumnFunction(templInstance.data, (columnSpec) => {
+
+    });
+  },
   "click li"(e, templInstance) {
     const colId = $(e.currentTarget).attr("data-id");
     const colData = $(e.currentTarget).attr("data-data");
@@ -29,6 +34,15 @@ Template.dynamicTableManageFieldsModal.events({
   }
 });
 Template.dynamicTableManageFieldsModal.helpers({
+  search() {
+    if (Template.instance().data.search !== undefined) {
+      return Template.instance().data.search;
+    }
+    return Template.instance().data.availableColumns.length > 15;
+  },
+  add() {
+    return Template.instance().data.add;
+  },
   title(column) {
     return column.manageFieldsTitle || column.title;
   },

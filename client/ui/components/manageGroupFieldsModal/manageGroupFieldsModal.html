@@ -1,11 +1,22 @@
 <template name="dynamicTableManageGroupFieldsModal">
   <div class="dynamic-table-manage-group-fields">
-    <ul>
-      {{#each column in columns}}
-        <li data-field="{{column.field}}" class="{{#if selected column}}dynamic-table-manage-group-fields-selected{{/if}}">
-          <i class="fa fa-list"></i> {{column.label}}
-        </li>
-      {{/each}}
-    </ul>
+    {{#each selectedField in selectedColumns}}
+      <label for="dynamic-table-manage-group-label-{{@index}}">
+        {{#if @index}}
+          <i class="fa fa-times remove-group" data-index="{{@index}}" style="margin-left: 5px"></i> then by
+        {{else}}
+          Group by
+        {{/if}}
+      </label>
+      <select id="dynamic-table-manage-group-label-{{@index}}">
+        <option value="">Select a Column</option>
+        {{#each field in availableColumns}}
+          <option value="{{field.field}}" {{selected field selectedField}}>{{field.label}}</option>
+        {{/each}}
+      </select>
+    {{/each}}
+    <div style="width: 100%">
+      <span class="add-group"><i class="fa fa-plus"></i> Select another column to group by</span>
+    </div>
   </div>
 </template>

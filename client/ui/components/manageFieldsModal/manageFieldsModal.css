@@ -1,3 +1,7 @@
+div.dynamic-table-manage-fields hr {
+  margin-top: 5px;
+  margin-bottom: -5px;
+}
 div.dynamic-table-manage-fields {
   z-index: 2;
   width: 200px;

@@ -5,7 +5,9 @@ import { getPosition, changed, getCustom } from "../inlineSave.js";
 
 Template.GroupedTable.onCreated(function onCreated() {
   this.groupChain = new ReactiveVar(_.compact((this.data.groupChain || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
-
+  this.autorun(() => {
+    console.log(Template.currentData());
+  });
   if (this.data.customGroupButtonSelector) {
     this.autorun(() => {
       const chain = this.groupChain.get();

@@ -88,9 +88,10 @@ Template.CustomizableTable.events({
   },
   "click a.manage-fields"(e, templInstance) {
     e.preventDefault();
-    const manageFieldsOptions = {
+    const manageFieldsOptions = _.extend({
       availableColumns: templInstance.data.columns,
       selectedColumns: templInstance.selectedColumns.get(),
+      tableData: templInstance.data,
       changeCallback(column, add) {
         let unsetField = false;
         const columns = templInstance.selectedColumns.get();
@@ -124,7 +125,7 @@ Template.CustomizableTable.events({
 
         $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageFieldsOptions);
       }
-    };
+    }, templInstance.data.manageFieldsOptions || {});
     const bounds = getPosition(e.currentTarget);
     const div = $("#dynamic-table-manage-fields-modal").length ? $("#dynamic-table-manage-fields-modal") : $("<div>");
     div.attr("id", "dynamic-table-manage-fields-modal")
@@ -180,9 +181,16 @@ Template.CustomizableTable.onCreated(function onCreated() {
       const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
       this.selectedColumns.set(filterColumns(this.data.columns, columnsToUse.map(c => c.id || c.data)));
       this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
-      this.order.set(custom.order || []);
-      this.limit.set(custom.limit || this.data.table.pageLength || 25);
-      this.skip.set(custom.skip || 0);
+      const oldOrder = Tracker.nonreactive(() => this.order.get());
+      if (EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
+        this.order.set(custom.order || []);
+      }
+      if (Tracker.nonreactive(() => this.limit.get()) !== (custom.litit || this.data.table.pageLength || 25)) {
+        this.limit.set(custom.limit || this.data.table.pageLength || 25);
+      }
+      if (Tracker.nonreactive(() => this.skip.get()) !== (custom.skip || 0)) {
+        this.skip.set(custom.skip || 0);
+      }
     });
   }
   if (!stop && this.data.table.columns) {

@@ -1,8 +1,17 @@
 <template name="dynamicTableManageFieldsModal">
   <div class="dynamic-table-manage-fields">
     <div style="width: 100%">
-      <input placeholder="Search..." />
-      <i class="fa fa-plus add-column"></i>
+      {{#if search}}
+        <input placeholder="Search..." />
+        {{#if add}}
+          <i class="fa fa-plus add-column"></i>
+        {{/if}}
+      {{else}}
+        {{#if add}}
+          <span class="add-column"><i class="fa fa-plus"></i> Add a Column</span>
+          <hr />
+        {{/if}}
+      {{/if}}
     </div>
     <ul>
       {{#each column in availableColumns}}
