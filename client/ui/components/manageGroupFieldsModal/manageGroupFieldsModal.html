@@ -1,6 +1,7 @@
 <template name="dynamicTableManageGroupFieldsModal">
   <div class="dynamic-table-manage-group-fields">
     {{#each selectedField in selectedColumns}}
+    <div>
       <label for="dynamic-table-manage-group-label-{{@index}}">
         {{#if @index}}
           <i class="fa fa-times remove-group" data-index="{{@index}}" style="margin-left: 5px"></i> then by
@@ -14,6 +15,7 @@
           <option value="{{field.field}}" {{selected field selectedField}}>{{field.label}}</option>
         {{/each}}
       </select>
+    </div>
     {{/each}}
     <div style="width: 100%">
       <span class="add-group"><i class="fa fa-plus"></i> Select another column to group by</span>

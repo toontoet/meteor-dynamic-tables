@@ -228,6 +228,9 @@ Meteor.methods({
     check(field, String);
     check(publicationName, String);
     check(selector, Object);
+    if (Kadira && Kadira._getInfo()) {
+      Kadira._getInfo().trace.name += "_" + publicationName;
+    }
     const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, { fields: { limit: 0, _id: true } });
     const values = await publicationCursor._mongo.db.collection(publicationCursor._getCollectionName()).distinct(field, publicationCursor._cursorDescription.selector);
     return values;

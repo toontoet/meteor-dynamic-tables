@@ -33,7 +33,7 @@ Template.dynamicTableManageGroupFieldsModal.events({
       templInstance.newColumns.dep.changed();
     }
     else {
-      $(e.currentTarget).remove();
+      $(e.currentTarget).closest("div").remove();
     }
     templInstance.maybeCallback();
   }
