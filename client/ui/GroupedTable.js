@@ -5,6 +5,21 @@ import { getPosition, changed, getCustom } from "../inlineSave.js";
 
 Template.GroupedTable.onCreated(function onCreated() {
   this.groupChain = new ReactiveVar(_.compact((this.data.groupChain || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
+  this.autorun(() => {
+    console.log(Template.currentData());
+  });
+  if (this.data.customGroupButtonSelector) {
+    this.autorun(() => {
+      const chain = this.groupChain.get();
+      if (chain.length) {
+        $(this.data.customGroupButtonSelector).addClass("grouped");
+      }
+      else {
+        $(this.data.customGroupButtonSelector).removeClass("grouped");
+      }
+    });
+  }
+
   getCustom(this.data.custom, (custom) => {
     if (custom.groupChainFields) {
       this.groupChain.set(_.compact(custom.groupChainFields.map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
@@ -47,7 +62,7 @@ Template.GroupedTable.helpers({
 });
 
 Template.GroupedTable.events({
-  "click a.manage-group-fields"(e, templInstance) {
+  "click a.manage-group-fields"(e, templInstance, extra) {
     e.preventDefault();
     const manageGroupFieldsOptions = {
       availableColumns: templInstance.data.groupableFields,
@@ -57,12 +72,13 @@ Template.GroupedTable.events({
         changed(templInstance.data.custom, { newGroupChainFields: columns.map(c => c.field) });
       }
     };
-    const bounds = getPosition(e.currentTarget);
+    const target = extra ? extra.target : e.currentTarget
+    const bounds = getPosition(target);
     const div = $("#dynamic-table-manage-group-fields-modal").length ? $("#dynamic-table-manage-group-fields-modal") : $("<div>");
     div.attr("id", "dynamic-table-manage-group-fields-modal")
     .html("")
     .css("position", "absolute")
-    .css("top", bounds.top)
+    .css("top", bounds.top + $(target).height())
     .css("left", bounds.left);
 
     if (div[0].__blazeTemplate) {

@@ -15,10 +15,15 @@ Template.dynamicTableManageFieldsModal.events({
   "blur input"(e, templInstance) {
     templInstance.search.set($(e.currentTarget).val());
   },
+  "click .add-column"(e, templInstance) {
+    templInstance.data.addColumnFunction(templInstance.data, (columnSpec) => {
+
+    });
+  },
   "click li"(e, templInstance) {
     const colId = $(e.currentTarget).attr("data-id");
     const colData = $(e.currentTarget).attr("data-data");
-    const selected = $(e.currentTarget).hasClass("dynamic-table-manage-fields-selected");
+    const selected = $(e.currentTarget).find("i.fa-toggle-on").length;//hasClass("dynamic-table-manage-fields-selected");
     const column = templInstance.data.availableColumns.find((col) => {
       if (colId) {
         return colId === col.id;
@@ -29,6 +34,15 @@ Template.dynamicTableManageFieldsModal.events({
   }
 });
 Template.dynamicTableManageFieldsModal.helpers({
+  search() {
+    if (Template.instance().data.search !== undefined) {
+      return Template.instance().data.search;
+    }
+    return Template.instance().data.availableColumns.length > 15;
+  },
+  add() {
+    return Template.instance().data.add;
+  },
   title(column) {
     return column.manageFieldsTitle || column.title;
   },

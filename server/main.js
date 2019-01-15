@@ -3,8 +3,16 @@ export function registerPubFunction(name, fn) {
   publicationFunctions[name] = fn;
 }
 function getDataHandleAndInterval(tableId, publicationCursor, options, canOverride) {
-  const hasSortableFields = _.keys(options.fields || {}).length === 0 || _.intersection(_.keys(options.fields || {}), _.keys(options.sort || {})).length === _.keys(options.sort || {}).length;
-
+  const sortKeys = _.keys(options.sort || {});
+  const fieldKeys = _.keys(options.fields || {});
+  const presentSortKeys = sortKeys.filter((sk) => {
+    if (fieldKeys.includes(sk)) {
+      return true;
+    }
+    const parts = sk.split(".");
+    return parts.some((p, i) => fieldKeys.includes(parts.slice(0, i).join(".")));
+  });
+  const hasSortableFields = presentSortKeys.length === sortKeys.length;
   const oldLimit = publicationCursor._cursorDescription.options.limit;
   const recordIds = [];
   let updateRecords;
@@ -220,6 +228,9 @@ Meteor.methods({
     check(field, String);
     check(publicationName, String);
     check(selector, Object);
+    if (Kadira && Kadira._getInfo()) {
+      Kadira._getInfo().trace.name += "_" + publicationName;
+    }
     const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, { fields: { limit: 0, _id: true } });
     const values = await publicationCursor._mongo.db.collection(publicationCursor._getCollectionName()).distinct(field, publicationCursor._cursorDescription.selector);
     return values;

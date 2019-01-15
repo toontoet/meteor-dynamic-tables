@@ -1,39 +1,50 @@
+import { Random } from "meteor/random";
 import "./manageGroupFieldsModal.css";
 import "./manageGroupFieldsModal.html";
 
 
-Template.dynamicTableManageGroupFieldsModal.onRendered(function onRendered() {
-  const self = this;
-  this.$("ul").sortable({
-    handle: "i",
-    stop() {
-      const fields = _.toArray(self.$("li.dynamic-table-manage-group-fields-selected")).map(u => $(u).data("field"));
-      const cols = _.object(self.data.availableColumns.map(c => c.field), self.data.availableColumns);
-      self.data.changeCallback(fields.map(f => cols[f]));
-    }
-  });
+Template.dynamicTableManageGroupFieldsModal.onCreated(function onCreated() {
+  this.newColumns = new ReactiveVar([]);
 });
+Template.dynamicTableManageGroupFieldsModal.onRendered(function onRendered() {
+  this.maybeCallback = () => {
+    const newFields = _.compact(_.toArray(this.$("select")).map(elem => $(elem).val()));
+    const oldFields = this.data.selectedColumns.map(c => c.field);
+    if (!_.isEqual(newFields, oldFields)) {
+      const cols = _.object(this.data.availableColumns.map(c => c.field), this.data.availableColumns);
+      this.data.changeCallback(newFields.map(f => cols[f]));
+    }
+  };
+});
+
 Template.dynamicTableManageGroupFieldsModal.events({
-  "click li"(e, templInstance) {
-    $(e.currentTarget).toggleClass("dynamic-table-manage-group-fields-selected");
-    const fields = _.toArray(templInstance.$("li.dynamic-table-manage-group-fields-selected")).map(u => $(u).data("field"));
-    const cols = _.object(templInstance.data.availableColumns.map(c => c.field), templInstance.data.availableColumns);
-    templInstance.data.changeCallback(fields.map(f => cols[f]));
+  "change select"(e, templInstance) {
+    templInstance.maybeCallback();
+  },
+  "click .add-group"(e, templInstance) {
+    templInstance.newColumns.get().push({ _id: Random.id() });
+    templInstance.newColumns.dep.changed();
+  },
+  "click .remove-group"(e, templInstance) {
+    const index = parseInt($(e.currentTarget).data("index"), 10);
+    const selectedLength = Math.max(1, templInstance.data.selectedColumns.length);
+    if (index >= selectedLength) {
+      templInstance.newColumns.get().splice(index - selectedLength, 1);
+      templInstance.newColumns.dep.changed();
+    }
+    else {
+      $(e.currentTarget).closest("div").remove();
+    }
+    templInstance.maybeCallback();
   }
 });
 Template.dynamicTableManageGroupFieldsModal.helpers({
-  columns() {
-    return _.sortBy(this.availableColumns, (c) => {
-      const col = this.selectedColumns.find(c1 => c1.field === c.field);
-      if (!col) {
-        return this.selectedColumns.length;
-      }
-      return this.selectedColumns.indexOf(col);
-    });
+  selectedColumns() {
+    const selectedColumns = this.selectedColumns.length ? this.selectedColumns : [{ _id: Random.id() }];
+    return [].concat(selectedColumns, Template.instance().newColumns.get());
   },
-  selected(column) {
-    const templInstance = Template.instance();
-    return _.find(templInstance.data.selectedColumns, selectedColumn => selectedColumn.field === column.field);
+  selected(field, selectedField) {
+    return field.field === selectedField.field ? { selected: "selected" } : {};
   },
   availableColumns() {
     const availableColumns = Template.instance().data.availableColumns;

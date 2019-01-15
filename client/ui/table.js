@@ -466,6 +466,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       }
     }, currentData.table, { columns: templateInstance.columns });
     if (templateInstance.dataTable) {
+      templateInstance.dataTable.isReady = false;
       templateInstance.dataTable.api().destroy();
       if (currentData.id !== lastId) {
         templateInstance.$(`#${currentData.id}`).html("");
@@ -479,23 +480,34 @@ Template.DynamicTable.onRendered(function onRendered() {
       templateInstance.dataTable.loading.set(false);
     };
     templateInstance.dataTable = templateInstance.$(`#${currentData.id}`).dataTable(tableSpec);
-    if (currentData.table.pageNumber) {
-      templateInstance.$(`#${currentData.id}`).on("init.dt", () => {
+
+    templateInstance.$(`#${currentData.id}`).on("init.dt", () => {
+      if (currentData.table.pageNumber) {
         templateInstance.dataTable.api().page(currentData.table.pageNumber).draw(false);
-      });
-    }
+      }
+      templateInstance.dataTable.isReady = true;
+    });
     if (tableSpec.lengthChangeCallback) {
       templateInstance.$(`#${currentData.id}`).on("length.dt", (e, settings, len) => {
+        if (!templateInstance.dataTable.isReady) {
+          return;
+        }
         tableSpec.lengthChangeCallback(templateInstance.dataTable, len);
       });
     }
     if (tableSpec.pageChangeCallback) {
       templateInstance.$(`#${currentData.id}`).on("page.dt", () => {
+        if (!templateInstance.dataTable.isReady) {
+          return;
+        }
         tableSpec.pageChangeCallback(templateInstance.dataTable, templateInstance.dataTable.api().page());
       });
     }
     if (tableSpec.orderCallback) {
       templateInstance.$(`#${currentData.id}`).on("order.dt", () => {
+        if (!templateInstance.dataTable.isReady) {
+          return;
+        }
         tableSpec.orderCallback(templateInstance.dataTable, templateInstance.dataTable.api().order());
       });
     }
@@ -796,13 +808,12 @@ Template.DynamicTable.onDestroyed(function onDestroyed() {
   if (this.handle) {
     this.handle.stop();
   }
-  if (this.$tableElement.length) {
+  if (this.tableElement && this.$tableElement.length) {
     const dt = this.$tableElement.DataTable();
     if (dt) {
       dt.destroy();
     }
     //this.$tableElement.html("");
-    console.log("done");
   }
 });
 

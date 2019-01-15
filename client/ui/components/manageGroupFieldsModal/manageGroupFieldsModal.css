@@ -1,5 +1,5 @@
 div.dynamic-table-manage-group-fields {
-  width: 200px;
+  width: 350px;
   background-color: #fff;
   border: 1px solid #000;
   border-radius: 5px;
@@ -7,17 +7,18 @@ div.dynamic-table-manage-group-fields {
   max-height: 200px;
   overflow-y: auto;
 }
-div.dynamic-table-manage-group-fields ul {
-  margin-left: 0px;
+
+div.dynamic-table-manage-group-fields select {
+  width: 75%;
 }
-.dynamic-table-manage-group-fields li {
-  margin-bottom: 2px;
+div.dynamic-table-manage-group-fields label {
+  width: 20%;
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 25px;
+}
+
+div.dynamic-table-manage-group-fields .add-group {
+  color: #0088cc;
   cursor: pointer;
-  list-style: none;
-  border: 1px solid #ccc;
-  border-radius: 2px;
-  padding: 10px;
-}
-.dynamic-table-manage-group-fields li.dynamic-table-manage-group-fields-selected {
-  background-color: #eee;
 }

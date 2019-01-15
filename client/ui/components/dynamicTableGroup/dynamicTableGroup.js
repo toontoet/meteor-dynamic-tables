@@ -38,14 +38,12 @@ Template.dynamicTableGroup.events({
     e.stopImmediatePropagation(); // QUESTION: why is this required? Without it this event handler gets called multiple times
     const index = parseInt($(e.currentTarget).data("index"), 10);
     let open = false;
-    templInstance.stickyEnabled.set(index, true);
-    if ($(e.currentTarget).siblings(".dynamic-table-content").css("display") === "block") {
-      $(e.currentTarget).siblings(".dynamic-table-content").css("display", "none");
+    if (templInstance.stickyEnabled.get(index)) {
       open = false;
     }
     else {
-      $(e.currentTarget).siblings(".dynamic-table-content").css("display", "block");
       open = true;
+      templInstance.stickyEnabled.set(index, true);
     }
 
     const values = templInstance.values.get();
@@ -64,7 +62,6 @@ Template.dynamicTableGroup.onRendered(function onRendered() {
           const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this.data, value);
           if (custom.openGroups && custom.openGroups.includes(tableId)) {
             this.stickyEnabled.set(index, true);
-            this.$(`.dynamic-table-panel:nth-child(${index + 1}) > .dynamic-table-content`).css("display", "block");
           }
         });
       }
