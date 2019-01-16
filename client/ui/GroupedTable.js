@@ -4,10 +4,13 @@ import "./components/manageGroupFieldsModal/manageGroupFieldsModal.js";
 import { getPosition, changed, getCustom } from "../inlineSave.js";
 
 Template.GroupedTable.onCreated(function onCreated() {
+  this.search = new ReactiveVar();
   this.groupChain = new ReactiveVar(_.compact((this.data.groupChain || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
-  this.autorun(() => {
-    console.log(Template.currentData());
-  });
+
+  this.searchFn = _.debounce(() => {
+    this.search.set(this.$(".dynamic-table-global-search").val());
+  }, 1000);
+
   if (this.data.customGroupButtonSelector) {
     this.autorun(() => {
       const chain = this.groupChain.get();
@@ -43,6 +46,28 @@ Template.GroupedTable.onDestroyed(function onDestroyed() {
   document.removeEventListener("mousedown", this.documentMouseDown);
 });
 Template.GroupedTable.helpers({
+  selector() {
+    const data = Template.instance().data;
+    const selector = data.selector;
+    const search = Template.instance().search.get();
+    let searchSelector;
+    if (search) {
+      const searchVal = { $regex: search, $options: "i" };
+      searchSelector = { $or: [] };
+      data.columns.filter(c => c.searchable !== false).forEach((column) => {
+        if (column.search) {
+          searchSelector.$or.push(column.search(searchVal));
+        }
+        else if (column.data) {
+          searchSelector.$or.push({ [column.data]: searchVal });
+        }
+      });
+    }
+    if (selector && searchSelector) {
+      return { $and: [selector, searchSelector] };
+    }
+    return searchSelector || selector;
+  },
   expandAll() {
     if (this.expandAll !== undefined) {
       return this.expanAll;
@@ -62,6 +87,15 @@ Template.GroupedTable.helpers({
 });
 
 Template.GroupedTable.events({
+  "change .dynamic-table-global-search"(e, templInstance) {
+    templInstance.searchFn();
+  },
+  "keydown .dynamic-table-global-search"(e, templInstance) {
+    templInstance.searchFn();
+  },
+  "keyup .dynamic-table-global-search"(e, templInstance) {
+    templInstance.searchFn();
+  },
   "click a.manage-group-fields"(e, templInstance, extra) {
     e.preventDefault();
     const manageGroupFieldsOptions = {

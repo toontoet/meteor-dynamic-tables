@@ -38,13 +38,14 @@ Template.dynamicTableGroup.events({
     e.stopImmediatePropagation(); // QUESTION: why is this required? Without it this event handler gets called multiple times
     const index = parseInt($(e.currentTarget).data("index"), 10);
     let open = false;
-    if (templInstance.stickyEnabled.get(index)) {
+    if (templInstance.enabled.get(index)) {
       open = false;
     }
     else {
       open = true;
       templInstance.stickyEnabled.set(index, true);
     }
+    templInstance.enabled.set(index, open);
 
     const values = templInstance.values.get();
     const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(this, values[index]);
@@ -62,6 +63,7 @@ Template.dynamicTableGroup.onRendered(function onRendered() {
           const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this.data, value);
           if (custom.openGroups && custom.openGroups.includes(tableId)) {
             this.stickyEnabled.set(index, true);
+            this.enabled.set(index, true);
           }
         });
       }
@@ -88,7 +90,9 @@ function addUndefined(current, values) {
   }
 }
 Template.dynamicTableGroup.onCreated(function onCreated() {
+  const self = this;
   this.stickyEnabled = new ReactiveDict();
+  this.enabled = new ReactiveDict();
   this.loading = new ReactiveVar({});
   this.counts = new ReactiveDict();
   this.values = new ReactiveVar([]);
@@ -132,6 +136,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const values = this.values.get();
     if (data.expandAll) {
       values.forEach((v, index) => {
+        this.enabled.set(index, true);
         this.stickyEnabled.set(index, true);
       });
     }
@@ -163,8 +168,24 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         selector = _.extend({ [current.field]: value.query }, currentSelector);
       }
       const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(data, value);
-      const sub = this.subscribe("simpleTablePublicationCount", tableId, data.customTableSpec.table.publication, selector, _.extend({ limit: value.ensureValues || current.ensureValues || undefined }, current.options) || {});
       const loading = Tracker.nonreactive(() => this.loading.get());
+      const sub = this.subscribe(
+        "simpleTablePublicationCount",
+        tableId,
+        data.customTableSpec.table.publication,
+        selector,
+        _.extend({ limit: value.ensureValues || current.ensureValues || undefined }, current.options) || {},
+        {
+          onError() {
+            delete loading[sub.subscriptionId];
+            self.loading.set(loading);
+          },
+          onStop() {
+            delete loading[sub.subscriptionId];
+            self.loading.set(loading);
+          }
+        }
+      );
       loading[sub.subscriptionId] = true;
       this.autorun(() => {
         if (sub.ready()) {
@@ -221,6 +242,9 @@ Template.dynamicTableGroup.helpers({
   count(value) {
     const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
     return Template.instance().counts.get(tableId);
+  },
+  shouldDisplayContent(index) {
+    return !this.lazy || Template.instance().enabled.get(index);
   },
   shouldDisplayTable(index) {
     return !this.lazy || Template.instance().stickyEnabled.get(index);
