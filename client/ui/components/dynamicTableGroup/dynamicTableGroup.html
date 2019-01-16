@@ -30,17 +30,19 @@
       </div>
     {{/each}}
     {{#unless hasVisibleGroups}}
-      <div class="dynamic-table-loading-group">
-        {{#if showNoGroupsMessage}}
-          None Available
-        {{/if}}
-        {{#if noGroups.message}}
-          {{{noGroups.message}}}
-        {{/if}}
-        {{#if noGroups.tmpl}}
-          {{>Template.dynamic template=noGroups.tmpl data=noGroups.tmplContext}}
-        {{/if}}
-      </div>
+      {{#unless showLoadingMessage}}
+        <div class="dynamic-table-no-group">
+          {{#if showNoGroupsMessage}}
+            None Available
+          {{/if}}
+          {{#if noGroups.message}}
+            {{{noGroups.message}}}
+          {{/if}}
+          {{#if noGroups.tmpl}}
+            {{>Template.dynamic template=noGroups.tmpl data=noGroups.tmplContext}}
+          {{/if}}
+        </div>
+      {{/unless}}
     {{/unless}}
   </div>
 </template>

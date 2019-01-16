@@ -58,12 +58,14 @@ Template.CustomizableTable.helpers({
     };
     table.orderCallback = (dataTable, newOrder) => {
       const columns = dataTable.api().context[0].aoColumns;
-      const order = newOrder.map(o => ({
+      const order = JSON.parse(JSON.stringify(newOrder.map(o => ({
         id: columns[o[0]].id,
         data: columns[o[0]].data,
         order: o[1]
-      }));
-      changed(tmplInstance.data.custom, { newOrder: order });
+      }))));
+      if (!EJSON.equals(order, Tracker.nonreactive(() => tmplInstance.order.get()))) {
+        changed(tmplInstance.data.custom, { newOrder: order });
+      }
     };
     table.colReorder = {
       fnReorderCallback: Template.instance().fnReorderCallback
@@ -185,7 +187,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
       if (EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
         this.order.set(custom.order || []);
       }
-      if (Tracker.nonreactive(() => this.limit.get()) !== (custom.litit || this.data.table.pageLength || 25)) {
+      if (Tracker.nonreactive(() => this.limit.get()) !== (custom.limit || this.data.table.pageLength || 25)) {
         this.limit.set(custom.limit || this.data.table.pageLength || 25);
       }
       if (Tracker.nonreactive(() => this.skip.get()) !== (custom.skip || 0)) {

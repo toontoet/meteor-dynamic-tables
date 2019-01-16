@@ -5,6 +5,7 @@ import "./manageGroupFieldsModal.html";
 
 Template.dynamicTableManageGroupFieldsModal.onCreated(function onCreated() {
   this.newColumns = new ReactiveVar([]);
+  this.selectedColumns = new ReactiveVar(this.data.selectedColumns.length ? this.data.selectedColumns : [{ _id: Random.id() }]);
 });
 Template.dynamicTableManageGroupFieldsModal.onRendered(function onRendered() {
   this.maybeCallback = () => {
@@ -40,7 +41,7 @@ Template.dynamicTableManageGroupFieldsModal.events({
 });
 Template.dynamicTableManageGroupFieldsModal.helpers({
   selectedColumns() {
-    const selectedColumns = this.selectedColumns.length ? this.selectedColumns : [{ _id: Random.id() }];
+    const selectedColumns = Template.instance().selectedColumns.get();
     return [].concat(selectedColumns, Template.instance().newColumns.get());
   },
   selected(field, selectedField) {

@@ -1,7 +1,7 @@
 import "./dynamicTableGroup.html";
 import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection } from "../../../db.js";
-import { changed, getCustom } from "../../../inlineSave.js";
+import { changed, getCustom, getValue } from "../../../inlineSave.js";
 
 
 
@@ -16,10 +16,12 @@ function selectorToId(selector, tableIdSuffix) {
 /** @this = root data context */
 function getTableIdSuffix(value) {
   const current = this.groupChain[this.index];
-  const nextSuffix = selectorToId({ [current.field]: value.query }, value.tableIdSuffix);
+  const nextSuffix = value && selectorToId({ [current.field]: value.query }, value.tableIdSuffix);
 
   const nextParts = (this.tableIdSuffixChain || []).slice(0);
-  nextParts.push(nextSuffix);
+  if (nextSuffix) {
+    nextParts.push(nextSuffix);
+  }
   return nextParts.join("");
 }
 
@@ -105,6 +107,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.autorun(() => {
     const data = Template.currentData();
     const current = data.groupChain[data.index];
+    const countWithDistinct = false;//current.count && !current.values; NOTE: can't figure out how to handle the ability to mutate the list in transform.
     let values = [];
     if (_.isArray(current.values)) {
       values = current.values.slice(0, current.values.length);
@@ -119,7 +122,29 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       const loading = Tracker.nonreactive(() => this.loading.get());
       loading.distinctValues = true;
       this.loading.set(loading);
-      Meteor.call("dynamicTableDistinctValuesForField", data.customTableSpec.id, data.customTableSpec.table.publication, data.selector, current.valuesField || current.field, (err, distinctValues) => {
+      let promise;
+      if (Tracker.nonreactive(() => Meteor.status().status === "offline")) {
+        const distinctValues = _.unique(data.customTableSpec.table.collection.find(data.selector, { fields: { [current.valuesField || current.field]: 1 } }).map(i => getValue(i, current.valuesField || current.field)));
+        promise = Promise.resolve(distinctValues);
+      }
+      else {
+        promise = new Promise((resolve) => {
+          Meteor.call("dynamicTableDistinctValuesForField", data.customTableSpec.id, data.customTableSpec.table.publication, data.selector, current.valuesField || current.field, countWithDistinct, (err, distinctValues) => {
+            if (countWithDistinct) {
+              // NOTE: this won't work
+              const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(_.pluck(distinctValues, "_id")) : _.pluck(distinctValues, "_id").map(v => ({ label: v, query: v }));
+              asyncValues.forEach((value, index) => {
+                const id = this.data.customTableSpec.id + getTableIdSuffix.call(data, value);
+                const count = asyncValues[index].count;
+                this.counts.set(id, count);
+              });
+              return resolve(_.pluck(distinctValues, "_id"));
+            }
+            resolve(distinctValues || []);
+          });
+        });
+      }
+      promise.then((distinctValues) => {
         const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(distinctValues) : distinctValues.map(v => ({ label: v, query: v }));
         addUndefined(current, asyncValues);
         this.values.set(asyncValues);
@@ -140,18 +165,50 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         this.stickyEnabled.set(index, true);
       });
     }
-    const ids = values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
-    .map(value => this.data.customTableSpec.id + getTableIdSuffix.call(data, value));
-    const counts = this.groupInfo.find({ _id: { $in: ids } });
-    counts.forEach((count) => {
-      this.counts.set(count._id, count.count);
-    });
+    const valuesToCount = values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues));
+    if (Tracker.nonreactive(() => Meteor.status().status !== "offline")) {
+      const ids = valuesToCount.map(value => ({ tableId: this.data.customTableSpec.id + getTableIdSuffix.call(data, value), resultId: JSON.stringify(value.query).replace(/[\{\}.:]/g, "") }));
+      const count = this.groupInfo.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this.data) });
+      ids.forEach(({ tableId, resultId }) => {
+        if (count && count[resultId]) {
+          this.counts.set(tableId, count[resultId]);
+        }
+      });
+    }
+    else {
+      valuesToCount.forEach((value) => {
+        const selector = _.extend({ [current.field]: value.query }, data.selector);
+        const count = data.customTableSpec.table.collection.find(selector).count();
+        this.counts.set(this.data.customTableSpec.id + getTableIdSuffix.call(data, value), count);
+      });
+    }
   });
   this.autorun(() => {
     const data = Template.currentData();
     const current = data.groupChain[data.index];
     const values = this.values.get();
     const currentSelector = data.selector;
+    const countWithDistinct = false;//current.count && !current.values;
+    if (!countWithDistinct) {
+      let loading = Tracker.nonreactive(() => this.loading.get());
+      loading.countValues = true;
+      this.loading.set(loading);
+      const sub = this.subscribe(
+        "simpleTablePublicationCounts",
+        data.customTableSpec.id + getTableIdSuffix.call(this.data),
+        data.customTableSpec.table.publication,
+        current.field,
+        currentSelector,
+        values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues)).map(v => v.query),
+        current.options || {}
+      );
+      if (sub.ready()) {
+        loading = Tracker.nonreactive(() => this.loading.get());
+        delete loading.countValues;
+        this.loading.set(loading);
+      }
+    }
+    return;
     values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
     .forEach((value) => {
       let selector;
@@ -169,31 +226,33 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       }
       const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(data, value);
       const loading = Tracker.nonreactive(() => this.loading.get());
-      const sub = this.subscribe(
-        "simpleTablePublicationCount",
-        tableId,
-        data.customTableSpec.table.publication,
-        selector,
-        _.extend({ limit: value.ensureValues || current.ensureValues || undefined }, current.options) || {},
-        {
-          onError() {
-            delete loading[sub.subscriptionId];
-            self.loading.set(loading);
-          },
-          onStop() {
-            delete loading[sub.subscriptionId];
-            self.loading.set(loading);
+      if (!countWithDistinct && Tracker.nonreactive(() => Meteor.status().status !== "offline")) {
+        const sub = this.subscribe(
+          "simpleTablePublicationCount",
+          tableId,
+          data.customTableSpec.table.publication,
+          selector,
+          _.extend({ limit: value.ensureValues || current.ensureValues || undefined }, current.options) || {},
+          {
+            onError() {
+              delete loading[sub.subscriptionId];
+              self.loading.set(loading);
+            },
+            onStop() {
+              delete loading[sub.subscriptionId];
+              self.loading.set(loading);
+            }
           }
-        }
-      );
-      loading[sub.subscriptionId] = true;
-      this.autorun(() => {
-        if (sub.ready()) {
-          const loading = Tracker.nonreactive(() => this.loading.get());
-          delete loading[sub.subscriptionId];
-          this.loading.set(loading);
-        }
-      })
+        );
+        loading[sub.subscriptionId] = true;
+        this.autorun(() => {
+          if (sub.ready()) {
+            const loading = Tracker.nonreactive(() => this.loading.get());
+            delete loading[sub.subscriptionId];
+            this.loading.set(loading);
+          }
+        });
+      }
     });
     values.filter(v => v.count !== true && v.count !== undefined)
     .forEach((value) => {
