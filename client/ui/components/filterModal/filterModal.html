@@ -75,6 +75,9 @@
       {{#if hasOptions}}
         <section class="dynamic-table-filter-options">
           <label>Options{{#if searching}}...{{/if}}</label>
+          {{#unless options.length}}
+            Start typing to see your options
+          {{/unless}}
           <div class="inner">
             {{#each option in options}}
               <label><input class="input-dynamic-table-option" type="checkbox" value="{{option.value}}" {{checkedIfSelected option.value}} /> <span class="dynamic-table-option-value">{{option.label}}</span></label>

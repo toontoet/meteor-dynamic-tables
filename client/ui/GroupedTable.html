@@ -2,11 +2,11 @@
   <div style="height: 20px">
     <a style="float: right" class="manage-group-fields" href="#">Manage Groups</a>
   </div>
-  {{#if groupChain}}
+  {{#if aGroupChain}}
     {{#if searching}}
       <input type="text" placeholder="Search..." class="dynamic-table-global-search" />
     {{/if}}
-    {{> dynamicTableGroup showPrefix=showPrefix noGroups=noGroups loading=loading expandAll=expandAll lazy=lazy customTableSpec=this groupChain=groupChain index=0 selector=selector}}
+    {{> dynamicTableGroup showPrefix=showPrefix noGroups=noGroups loading=loading expandAll=expandAll lazy=lazy customTableSpec=customTableSpec groupChain=aGroupChain index=0 selector=selector}}
   {{else}}
     {{> CustomizableTable this}}
   {{/if}}

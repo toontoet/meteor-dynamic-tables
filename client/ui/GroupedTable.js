@@ -4,6 +4,7 @@ import "./components/manageGroupFieldsModal/manageGroupFieldsModal.js";
 import { getPosition, changed, getCustom } from "../inlineSave.js";
 
 Template.GroupedTable.onCreated(function onCreated() {
+  this.customTableSpec = this.data;
   this.search = new ReactiveVar();
   this.customColumns = new ReactiveVar([]);
   this.groupChain = new ReactiveVar(_.compact((this.data.groupChain || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
@@ -83,7 +84,10 @@ Template.GroupedTable.helpers({
     }
     return true;
   },
-  groupChain() {
+  customTableSpec() {
+    return Template.instance().customTableSpec;
+  },
+  aGroupChain() {
     const groupChain = Template.instance().groupChain.get();
     return groupChain;
   }

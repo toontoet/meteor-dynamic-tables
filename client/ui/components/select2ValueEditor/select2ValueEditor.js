@@ -11,15 +11,16 @@ function getAjaxConfig(origOptions, optionsResult) {
     transport(params, success, failure) {
       const val = self.data.value || getValue(self.data.doc, self.data.column.data) || [];
       origOptions(self.data.doc, self.data.column, val, params.data.q, (results) => {
-        success({ results });
         if (results.length && !hadResults) {
-          self.$("select").empty();
+          const select = self.$("select");
+          select.empty();
           results.forEach((result) => {
-            self.$("select").append($("<option>").text(result.text).val(result.id));
+            select.append($("<option selected=\"selected\" aria-selected=\"true\">").text(result.text).val(result.id));
           });
-          self.$("select").val(val).trigger("change");
+          select.val(val).trigger("change");
           hadResults = true;
         }
+        success({ results });
       });
     }
   };

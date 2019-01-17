@@ -133,6 +133,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
             if (countWithDistinct) {
               // NOTE: this won't work
               const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(_.pluck(distinctValues, "_id")) : _.pluck(distinctValues, "_id").map(v => ({ label: v, query: v }));
+              this.counts.clear();
               asyncValues.forEach((value, index) => {
                 const id = this.data.customTableSpec.id + getTableIdSuffix.call(data, value);
                 const count = asyncValues[index].count;
@@ -172,6 +173,9 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       ids.forEach(({ tableId, resultId }) => {
         if (count && count[resultId]) {
           this.counts.set(tableId, count[resultId]);
+        }
+        else {
+          this.counts.set(tableId, 0);
         }
       });
     }

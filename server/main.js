@@ -240,6 +240,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   let hasChanges = false;
   Promise.all(queries.map((query) => {
     const selector = { $and: [{ [field]: query }, publicationCursor._cursorDescription.selector] };
+    console.log(JSON.stringify(selector));
     const id = JSON.stringify(query).replace(/[\{\}.:]/g, "");
     return publicationCursor._mongo.db.collection(publicationCursor._getCollectionName()).find(selector).count()
     .then((count) => {
