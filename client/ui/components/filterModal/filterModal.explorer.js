@@ -1,5 +1,5 @@
 import { ComponentCollection } from "meteor/znewsham:blaze-explorer";
-import "../filterModal.js";
+import "./filterModal.js";
 
 ComponentCollection.getCollection("dynamic-tables")
 .registerComponent("Filter Modal", Template.dynamicTableFilterModal)
@@ -11,7 +11,7 @@ ComponentCollection.getCollection("dynamic-tables")
     enabled: true,
     direction: 1
   }
-})
+}, { testSnapshot: true })
 .addCase("with a numeric sort", {
   field: {
     type: [Number]
@@ -60,6 +60,15 @@ ComponentCollection.getCollection("dynamic-tables")
     search: {
       enabled: true
     },
+    enabled: true,
+    options: ["test1", "test2", "test3"]
+  }
+})
+.addCase("with an array of options and NO search", {
+  field: {
+    type: String
+  },
+  filter: {
     enabled: true,
     options: ["test1", "test2", "test3"]
   }

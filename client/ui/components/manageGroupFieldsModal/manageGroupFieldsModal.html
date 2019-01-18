@@ -12,7 +12,7 @@
       <select id="dynamic-table-manage-group-label-{{@index}}">
         <option value="">Select a Column</option>
         {{#each field in availableColumns}}
-          <option value="{{field.field}}" {{selected field selectedField}}>{{field.label}}</option>
+          <option value="{{field.field}}" {{selected field selectedField}}>{{label field}}</option>
         {{/each}}
       </select>
     </div>

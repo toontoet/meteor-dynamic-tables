@@ -7,11 +7,12 @@ Package.describe({
   git: "https://bitbucket.org/znewsham/meteor-dynamic-tables"
 });
 
+
 Npm.depends({
   "file-saver": "1.3.8",
-  "datatables.net": "2.1.1"
+  "datatables.net": "2.1.1",
+  underscore: "1.9.1"
 });
-
 Package.onUse((api) => {
   api.versionsFrom(["METEOR@1.4"]);
   api.use([
@@ -38,8 +39,21 @@ Package.onUse((api) => {
 });
 
 Package.onTest((api) => {
-  api.use("znewsham:blaze-explorer");
+  api.use("znewsham:blaze-explorer@0.0.1");
+  api.use([
+    "fortawesome:fontawesome",
+    "peppelg:bootstrap-3-modal@1.0.4",
+    "reywood:publish-composite@1.5.2",
+    "check",
+    "ecmascript",
+    "underscore",
+    "mongo",
+    "blaze",
+    "templating",
+    "reactive-var",
+    "tracker",
+    "session"
+  ]);
   api.use("znewsham:dynamic-table");
-  api.addFiles("client/ui/components/filterModal/filterModal.test.js", "client");
   api.mainModule("dynamic-table-tests.js", "client");
 });

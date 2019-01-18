@@ -1,3 +1,5 @@
+div.dynamic-table-manage-fields div.dynamic-table-manage-fields-header {
+}
 div.dynamic-table-manage-fields hr {
   margin-top: 5px;
   margin-bottom: -5px;
@@ -10,10 +12,15 @@ div.dynamic-table-manage-fields {
   border-radius: 5px;
   padding: 5px;
   max-height: 200px;
-  overflow-y: auto;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
 }
 div.dynamic-table-manage-fields ul {
-  margin-left: 0px;
+  padding-left: 0px;
+  overflow-y: auto;
+  height: 100%;
+  margin: 0px;
 }
 .dynamic-table-manage-fields li {
   margin-bottom: 2px;

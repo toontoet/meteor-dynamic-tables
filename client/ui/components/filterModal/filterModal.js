@@ -11,7 +11,7 @@ function closeModal() {
 }
 Template.dynamicTableFilterModal.helpers({
   hasFooter() {
-    return this.filter.enabled || !this.filter.required;
+    return this.filter && (this.filter.enabled || !this.filter.required);
   },
   checkedIfWithValue() {
     return ["$between", "$in", "$all", "$regex"].includes(this.filter.operator.selected) ? { checked: "checked" } : {};
@@ -24,6 +24,12 @@ Template.dynamicTableFilterModal.helpers({
   },
   checkedIfWithoutValue() {
     return ["$nin", "$not$all", "$not"].includes(this.filter.operator.selected) ? { checked: "checked" } : {};
+  },
+  searchEnabled() {
+    if (this.filter.options) {
+      return this.filter.search && this.filter.search.enabled;
+    }
+    return this.filter.search === undefined || this.filter.search.enabled !== false;
   },
   isAny() {
     return ["$in", "$nin"].includes(Template.instance().operator.get());

@@ -5,12 +5,13 @@ import "./manageGroupFieldsModal.html";
 
 Template.dynamicTableManageGroupFieldsModal.onCreated(function onCreated() {
   this.newColumns = new ReactiveVar([]);
-  this.selectedColumns = new ReactiveVar(this.data.selectedColumns.length ? this.data.selectedColumns : [{ _id: Random.id() }]);
+  const selectedColumns = this.data.selectedColumns || [];
+  this.selectedColumns = new ReactiveVar(selectedColumns.length ? selectedColumns : [{ _id: Random.id() }]);
 });
 Template.dynamicTableManageGroupFieldsModal.onRendered(function onRendered() {
   this.maybeCallback = () => {
     const newFields = _.compact(_.toArray(this.$("select")).map(elem => $(elem).val()));
-    const oldFields = this.data.selectedColumns.map(c => c.field);
+    const oldFields = (this.data.selectedColumns || []).map(c => c.field);
     if (!_.isEqual(newFields, oldFields)) {
       const cols = _.object(this.data.availableColumns.map(c => c.field), this.data.availableColumns);
       this.data.changeCallback(newFields.map(f => cols[f]));
@@ -40,6 +41,9 @@ Template.dynamicTableManageGroupFieldsModal.events({
   }
 });
 Template.dynamicTableManageGroupFieldsModal.helpers({
+  label(field) {
+    return field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title;
+  },
   selectedColumns() {
     const selectedColumns = Template.instance().selectedColumns.get();
     return [].concat(selectedColumns, Template.instance().newColumns.get());
