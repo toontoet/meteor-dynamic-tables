@@ -38,8 +38,10 @@ div.dynamic-table-manage-fields hr {
   margin-top: 5px;
   margin-bottom: -5px;
 }
-div.dynamic-table-manage-fields {
+#dynamic-table-filter-modal {
   z-index: 2;
+}
+div.dynamic-table-manage-fields {
   width: 200px;
   background-color: #fff;
   border: 1px solid #000;

@@ -7,7 +7,10 @@ div.dynamic-table-manage-group-fields {
   max-height: 200px;
   overflow-y: auto;
 }
-
+div.dynamic-table-manage-group-fields>div {
+  clear: both;
+  width: 100%;
+}
 div.dynamic-table-manage-group-fields select {
   width: 75%;
 }
