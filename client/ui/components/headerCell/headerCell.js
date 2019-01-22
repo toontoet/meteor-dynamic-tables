@@ -3,12 +3,25 @@ import "../filterModal/filterModal.js";
 import { getPosition } from "../../../inlineSave.js";
 import { EJSON } from "meteor/ejson";
 
+Template.dynamicTableHeaderCell.onCreated(function onCreated() {
+  this.columnTitle = new ReactiveVar();
+  if (this.data.column.title) {
+    this.columnTitle.set(this.data.column.title);
+  }
+  else if (this.data.column.titleFn) {
+    this.columnTitle.set(this.data.column.titleFn());
+  }
+});
+
 Template.dynamicTableHeaderCell.helpers({
   hasFilter() {
     const templInstance = Template.instance();
     const fieldName = (templInstance.data.column.filterModal.field && templInstance.data.column.filterModal.field.name) || templInstance.data.column.data;
     const columnSearch = templInstance.data.advancedSearch[fieldName];
     return columnSearch;
+  },
+  columnTitle() {
+    return Template.instance().columnTitle.get() || "";
   }
 });
 Template.dynamicTableHeaderCell.events({
@@ -76,6 +89,10 @@ Template.dynamicTableHeaderCell.events({
 
     const filterModalOptions = {
       dataTable: templInstance.data.dataTable,
+      column: templInstance.data.column,
+      editFieldCallback(newFieldSpec) {
+        templInstance.columnTitle.set(newFieldSpec.label);
+      },
       field,
       sort,
       filter: {
@@ -100,13 +117,15 @@ Template.dynamicTableHeaderCell.events({
         templInstance.data.filterModalCallback(templInstance.data.columnIndex, optionsOrQuery, operator, sort, multiSort);
       }
     };
-    const bounds = getPosition(e.currentTarget);
+    const target = $(e.currentTarget).closest("th");
+    const bounds = getPosition(target[0]);
     const div = $("#dynamic-table-filter-modal").length ? $("#dynamic-table-filter-modal") : $("<div>");
+    const left = Math.max((bounds.left + target.outerWidth()) - 250, 0);
     div.attr("id", "dynamic-table-filter-modal")
     .html("")
     .css("position", "absolute")
-    .css("top", bounds.top - 50)
-    .css("left", bounds.left + bounds.width);
+    .css("top", bounds.top + target.outerHeight())
+    .css("left", left);
     if (div[0].__blazeTemplate) {
       Blaze.remove(div[0].__blazeTemplate);
     }
@@ -116,9 +135,5 @@ Template.dynamicTableHeaderCell.events({
       div[0]
     );
     document.body.appendChild(div[0]);
-    const tooFar = (bounds.left + div.width()) - $(window).width();
-    if (tooFar > 0) {
-      div.css("left", (bounds.left - (tooFar + 5)) + "px");
-    }
   }
 });

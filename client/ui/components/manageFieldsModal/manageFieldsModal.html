@@ -1,24 +1,58 @@
 <template name="dynamicTableManageFieldsModal">
   <div class="dynamic-table-manage-fields">
-    <div class="dynamic-table-manage-fields-header">
-      {{#if search}}
-        <input placeholder="Search..." />
-        {{#if add}}
-          <i class="fa fa-plus add-column"></i>
+    {{#if editing}}
+      <section class="dynamic-table-manage-fields-edit">
+        <div class="dynamic-table-manage-fields-edit-row">
+          <label>
+            Label
+            <input type="text" class="dynamic-table-manage-fields-edit-label" />
+          </label>
+        </div>
+        <div class="dynamic-table-manage-fields-edit-row">
+          <label>
+            Type
+            <select type="text" class="dynamic-table-manage-fields-edit-type">
+              {{#each type in types}}
+                <option value="{{type.value}}">{{type.label}}</option>
+              {{/each}}
+            </select>
+          </label>
+        </div>
+        <div class="dynamic-table-manage-fields-edit-row">
+          <label>Allow multiple values? <input type="checkbox" class="dynamic-table-manage-fields-edit-isArray" /></label>
+        </div>
+        <div class="dynamic-table-manage-fields-edit-row">
+          <label>Track values? <input type="checkbox" class="dynamic-table-manage-fields-edit-trackOptions" /></label>
+        </div>
+        <div class="dynamic-table-manage-fields-edit-row">
+          <label>Searchable? <input type="checkbox" class="dynamic-table-manage-fields-edit-searchable" /></label>
+        </div>
+        <div class="dynamic-table-manage-fields-edit-row">
+          <button class="btn btn-success btn-dynamic-table-save">Save</button>
+          <button class="btn btn-default btn-dynamic-table-cancel">Cancel</button>
+        </div>
+      </section>
+    {{else}}
+      <div class="dynamic-table-manage-fields-header">
+        {{#if search}}
+          <input class="search" placeholder="Search..." />
+          {{#if add}}
+            <i class="fa fa-plus add-column"></i>
+          {{/if}}
+        {{else}}
+          {{#if add}}
+            <span class="add-column"><i class="fa fa-plus"></i> Add a Column</span>
+            <hr />
+          {{/if}}
         {{/if}}
-      {{else}}
-        {{#if add}}
-          <span class="add-column"><i class="fa fa-plus"></i> Add a Column</span>
-          <hr />
-        {{/if}}
-      {{/if}}
-    </div>
-    <ul>
-      {{#each column in availableColumns}}
-        <li data-id="{{column.id}}" data-data="{{column.data}}">
-          <i class="fa fa-toggle-{{#if selected column}}on{{else}}off{{/if}}"></i> {{title column}}
-        </li>
-      {{/each}}
-    </ul>
+      </div>
+      <ul>
+        {{#each column in availableColumns}}
+          <li data-id="{{column.id}}" data-data="{{column.data}}">
+            <i class="fa fa-toggle-{{#if selected column}}on{{else}}off{{/if}}"></i> {{title column}}
+          </li>
+        {{/each}}
+      </ul>
+    {{/if}}
   </div>
 </template>

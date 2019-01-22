@@ -1,8 +1,8 @@
+import { ReactiveDict } from "meteor/reactive-dict";
 import "./dynamicTableGroup.html";
 import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection } from "../../../db.js";
 import { changed, getCustom, getValue } from "../../../inlineSave.js";
-
 
 
 function selectorToId(selector, tableIdSuffix) {

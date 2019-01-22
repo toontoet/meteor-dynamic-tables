@@ -3,6 +3,19 @@ import "./filterModal.js";
 
 ComponentCollection.getCollection("dynamic-tables")
 .registerComponent("Filter Modal", Template.dynamicTableFilterModal)
+.addCase("with a label", {
+  field: {
+    label: "A Field",
+    type: [String]
+  }
+}, { testSnapshot: true })
+.addCase("Editable field", {
+  field: {
+    label: "A Field",
+    edit: true,
+    type: [String]
+  }
+}, { testSnapshot: true })
 .addCase("with an alphabetical sort", {
   field: {
     type: [String]
@@ -144,5 +157,73 @@ ComponentCollection.getCollection("dynamic-tables")
   },
   callback(options, operator, sortDirection) {
     console.log(options, operator, sortDirection);
+  }
+})
+.addCase("with a numeric search", {
+  field: {
+    type: [Number]
+  },
+  filter: {
+    enabled: true,
+    operator: {
+      enabled: true
+    },
+    search: {
+      enabled: true
+    }
+  }
+})
+.addCase("with a numeric search and non-default operator", {
+  field: {
+    type: [Number]
+  },
+  filter: {
+    enabled: true,
+    operator: {
+      enabled: true,
+      selected: "$gte"
+    },
+    search: {
+      enabled: true
+    }
+  }
+})
+.addCase("Put it all together", {
+  field: {
+    label: "A Field",
+    type: [String],
+    edit: true
+  },
+  sort: {
+    enabled: true,
+    direction: 1
+  },
+  filter: {
+    search: {
+      enabled: true
+    },
+    operator: {
+      enabled: true,
+      selected: "$in"
+    },
+    enabled: true,
+    selectedOptions: ["test1", "test2"],
+    options: ["test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10"]
+  }
+})
+.addCase("Edit template", {
+  field: {
+    label: "A Field",
+    type: [String],
+    edit: {
+      spec: {
+        label: "A field",
+        isArray: true,
+        type: "string",
+        indexNumber: 3,
+        trackOptions: true
+      },
+      types: ["string", "number", { label: "Date", value: "date" }]
+    }
   }
 });

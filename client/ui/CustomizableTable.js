@@ -128,6 +128,12 @@ Template.CustomizableTable.events({
         $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageFieldsOptions);
       }
     }, templInstance.data.manageFieldsOptions || {});
+    if (manageFieldsOptions.add) {
+      manageFieldsOptions.add.addedCallback = (columnSpec) => {
+        templInstance.data.columns.push(columnSpec);
+        manageFieldsOptions.changeCallback(columnSpec, true);
+      };
+    }
     const bounds = getPosition(e.currentTarget);
     const div = $("#dynamic-table-manage-fields-modal").length ? $("#dynamic-table-manage-fields-modal") : $("<div>");
     div.attr("id", "dynamic-table-manage-fields-modal")

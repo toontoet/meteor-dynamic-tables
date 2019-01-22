@@ -1,3 +1,37 @@
+div.dynamic-table-manage-fields>div {
+  padding: 5px;
+}
+div.dynamic-table-manage-fields>ul {
+  padding: 5px;
+}
+div.dynamic-table-manage-fields>section {
+  padding: 5px;
+}
+div.dynamic-table-manage-fields>section.dynamic-table-manage-fields-edit {
+  background-color: #666;
+  color: #eee;
+}
+div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row input,select {
+  float: right;
+  max-width: 140px;
+}
+div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row input {
+  width: auto;
+}
+div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row>label {
+  width: 100%;
+}
+div.dynamic-table-manage-fields>header>.dynamic-table-manage-fields-edit-btn {
+  float: right;
+  cursor: pointer;
+  font-size: 10px;
+  color: #222;
+}
+
 div.dynamic-table-manage-fields div.dynamic-table-manage-fields-header {
 }
 div.dynamic-table-manage-fields hr {
@@ -10,8 +44,7 @@ div.dynamic-table-manage-fields {
   background-color: #fff;
   border: 1px solid #000;
   border-radius: 5px;
-  padding: 5px;
-  max-height: 200px;
+  max-height: 250px;
   overflow-y: hidden;
   display: flex;
   flex-direction: column;
