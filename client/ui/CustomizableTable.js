@@ -2,6 +2,7 @@ import "./CustomizableTable.html";
 import "./table.js";
 import "./components/manageFieldsModal/manageFieldsModal.js";
 import { getPosition, changed, getCustom } from "../inlineSave.js";
+import _ from "underscore";
 import { EJSON } from "meteor/ejson";
 
 function filterColumns(columns, selectedColumnDataOrIds) {
