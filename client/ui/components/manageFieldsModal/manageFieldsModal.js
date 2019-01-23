@@ -32,6 +32,9 @@ Template.dynamicTableManageFieldsModal.events({
     });
     templInstance.data.changeCallback(column, !selected);
   },
+  "click .dynamic-table-manage-fields-group-header"(e, templInstance) {
+    $(e.currentTarget).siblings("ul").toggleClass("display-table-manage-fields-group-hidden");
+  },
   "click .btn-dynamic-table-cancel"(e, templInstance) {
     templInstance.editing.set(false);
   },
@@ -69,7 +72,7 @@ Template.dynamicTableManageFieldsModal.helpers({
     if (Template.instance().data.search !== undefined) {
       return Template.instance().data.search;
     }
-    return Template.instance().availableColumns.get().length > 15;
+    return Template.instance().availableColumns.get().length >= 15;
   },
   add() {
     return Template.instance().data.add;
@@ -77,9 +80,45 @@ Template.dynamicTableManageFieldsModal.helpers({
   title(column) {
     return column.manageFieldsTitle || column.title;
   },
+  header() {
+    let search = false;
+    if (Template.instance().data.search !== undefined) {
+      search = Template.instance().data.search;
+    }
+    search = Template.instance().availableColumns.get().length >= 15;
+    return search || Template.instance().data.add;
+  },
   selected(column) {
     const templInstance = Template.instance();
     return _.find(templInstance.data.selectedColumns, selectedColumn  => selectedColumn.id ? selectedColumn.id === column.id : selectedColumn.data === column.data);
+  },
+  groups() {
+    let availableColumns = Template.instance().availableColumns.get();
+    const search = Template.instance().search.get();
+    if (search) {
+      availableColumns = availableColumns.filter((column) => {
+        const title = column.manageFieldsTitle || column.title;
+        return title.match(new RegExp(search, "i"));
+      });
+    }
+    const groups = _.groupBy(availableColumns, "group");
+    delete groups[undefined];
+    return _.map(groups, (columns, title) => ({
+      title,
+      columns
+    }));
+  },
+  ungroupedColumns() {
+    let availableColumns = Template.instance().availableColumns.get();
+    const search = Template.instance().search.get();
+    if (search) {
+      availableColumns = availableColumns.filter((column) => {
+        const title = column.manageFieldsTitle || column.title;
+        return title.match(new RegExp(search, "i"));
+      });
+    }
+    const groups = _.groupBy(availableColumns, "group");
+    return groups.undefined || [];
   },
   availableColumns() {
     const availableColumns = Template.instance().availableColumns.get();

@@ -12,12 +12,20 @@ div.dynamic-table-filter div.dynamic-table-filter-edit-row {
   padding-top: 5px;
   padding-bottom: 5px;
 }
-div.dynamic-table-filter div.dynamic-table-filter-edit-row input,select {
+div.dynamic-table-filter div.dynamic-table-filter-edit-row input,div.dynamic-table-filter div.dynamic-table-filter-edit-row select {
   float: right;
   max-width: 150px;
+  margin-bottom: 0px;
+  box-sizing: content-box;
+  border-radius: 0px;
+  line-height: 20px;
+  height: 20px;
 }
 div.dynamic-table-filter div.dynamic-table-filter-edit-row>label {
   width: 100%;
+  line-height: 35px;
+  margin-bottom: 0px;
+  vertical-align: middle;
 }
 div.dynamic-table-filter>header>.dynamic-table-filter-edit-btn {
   float: right;
@@ -79,7 +87,7 @@ div.dynamic-table-filter>header {
   background-color: #eee;
 }
 div.dynamic-table-filter>section {
-  padding: 20px;
+  padding: 12px;
   padding-bottom: 10px;
 }
 div.dynamic-table-filter>section label {

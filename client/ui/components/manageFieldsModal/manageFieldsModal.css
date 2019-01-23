@@ -15,15 +15,24 @@ div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row {
   padding-top: 5px;
   padding-bottom: 5px;
 }
-div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row input,select {
+div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row input,div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row select {
   float: right;
-  max-width: 140px;
-}
-div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row input {
   width: auto;
+  max-width: 140px;
+  margin-bottom: 0px;
+  box-sizing: content-box;
+  border-radius: 0px;
+  line-height: 20px;
+  height: 20px;
 }
 div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row>label {
   width: 100%;
+  line-height: 35px;
+  margin-bottom: 0px;
+  vertical-align: middle;
+}
+div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row>label.short {
+  line-height: 18px;
 }
 div.dynamic-table-manage-fields>header>.dynamic-table-manage-fields-edit-btn {
   float: right;
@@ -31,8 +40,44 @@ div.dynamic-table-manage-fields>header>.dynamic-table-manage-fields-edit-btn {
   font-size: 10px;
   color: #222;
 }
-
+div.dynamic-table-manage-fields div.dynamic-table-manage-fields-group {
+  border: 1px solid #ccc;
+  margin: 5px;
+  padding: 0px;
+}
+div.dynamic-table-manage-fields div.dynamic-table-manage-fields-container {
+  height: 100%;
+  overflow-y: auto;
+  padding: 0px;
+}
+ul.dynamic-table-manage-fields-ungrouped {
+  padding: 5px;
+}
+ul.display-table-manage-fields-group-hidden {
+  display: none;
+}
+div.dynamic-table-manage-fields-group ul {
+  border-top: 1px solid #ccc;
+}
+div.dynamic-table-manage-fields div.dynamic-table-manage-fields-group div.dynamic-table-manage-fields-group-header {
+  background-color: #f5f5f5;
+  color: #0088cc;
+  padding: 5px;
+  font-size: 18px;
+  padding-left: 10px;
+}
+div.dynamic-table-manage-fields div.dynamic-table-manage-fields-header input {
+  box-sizing: content-box;
+  height: 15px;
+  line-height: 15px;
+  font-size: 18px;
+  padding: 5px;
+}
 div.dynamic-table-manage-fields div.dynamic-table-manage-fields-header {
+  color: #222;
+  line-height: 20px;
+  padding: 5px;
+  background-color: #eee;
 }
 div.dynamic-table-manage-fields hr {
   margin-top: 5px;
@@ -44,15 +89,15 @@ div.dynamic-table-manage-fields hr {
 div.dynamic-table-manage-fields {
   width: 200px;
   background-color: #fff;
-  border: 1px solid #000;
-  border-radius: 5px;
-  max-height: 250px;
+  border: 1px solid #999;
+  box-shadow: 0px 0px 10px 0px #eee ;
+  max-height: 265px;
   overflow-y: hidden;
   display: flex;
   flex-direction: column;
 }
 div.dynamic-table-manage-fields ul {
-  padding-left: 0px;
+  padding-left: 5px;
   overflow-y: auto;
   height: 100%;
   margin: 0px;
@@ -71,7 +116,7 @@ div.dynamic-table-manage-fields ul {
   width: 150px;
 }
 .dynamic-table-manage-fields .add-column {
-  color: #0088cc;
+  color: #222;
   margin-left: 5px;
   cursor: pointer;
 }

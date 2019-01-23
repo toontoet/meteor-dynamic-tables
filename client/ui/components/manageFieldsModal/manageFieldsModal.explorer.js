@@ -84,4 +84,22 @@ ComponentCollection.getCollection("dynamic-tables")
       title: `Test Title ${i}`
     }
   ))
+})
+.addCase("15 grouped fields, and add set to true", {
+  add: true,
+  availableColumns: _.union(
+    _.times(15, i => (
+      {
+        id: `test${i}`,
+        group: `group${i % 3}`,
+        title: `Test Title ${i}`
+      }
+    )),
+    _.times(5, i => (
+      {
+        id: `test${i}`,
+        title: `Test Title ${i}`
+      }
+    ))
+  )
 });
