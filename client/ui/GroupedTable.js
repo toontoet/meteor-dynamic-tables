@@ -113,14 +113,15 @@ Template.GroupedTable.events({
         changed(templInstance.data.custom, templInstance.data.id, { newGroupChainFields: columns.map(c => c.field) });
       }
     };
-    const target = extra ? extra.target : e.currentTarget
+    const target = extra ? extra.target : e.currentTarget;
     const bounds = getPosition(target);
+    const left = Math.max((bounds.left + $(target).outerWidth()) - 350, 0);
     const div = $("#dynamic-table-manage-group-fields-modal").length ? $("#dynamic-table-manage-group-fields-modal") : $("<div>");
     div.attr("id", "dynamic-table-manage-group-fields-modal")
     .html("")
     .css("position", "absolute")
-    .css("top", bounds.top + $(target).height())
-    .css("left", bounds.left);
+    .css("top", bounds.top + $(target).outerHeight())
+    .css("left", left);
 
     if (div[0].__blazeTemplate) {
       Blaze.remove(div[0].__blazeTemplate);
@@ -131,9 +132,9 @@ Template.GroupedTable.events({
       div[0]
     );
     document.body.appendChild(div[0]);
-    const tooFar = (bounds.left + div.width()) - $(window).width();
+    const tooFar = (left + 350) - $(window).width();
     if (tooFar > 0) {
-      div.css("left", (bounds.left - (tooFar + 5)) + "px");
+      div.css("left", (left - (tooFar + 5)) + "px");
     }
   }
 });
