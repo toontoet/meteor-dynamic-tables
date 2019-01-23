@@ -11,6 +11,9 @@ function closeModal() {
   }
 }
 Template.dynamicTableFilterModal.helpers({
+  select2() {
+    return $.fn.select2;
+  },
   showOperators() {
     return Template.instance().showOperators.get();
   },
@@ -126,9 +129,8 @@ Template.dynamicTableFilterModal.helpers({
     if (!options) {
       return [];
     }
-    const search = Template.instance().search.get();
     const selectedOptions = Template.instance().selectedOptions.get().map(o => _.find(options, { value: o }));
-    return selectedOptions.filter(option => option && (!search || option.label.match(new RegExp(search, "i")))).map(o => _.extend({ _id: o.value }, o));
+    return selectedOptions.map(o => _.extend({ _id: o.value }, o));
   },
   searching() {
     return Template.instance().searching.get();
@@ -331,6 +333,26 @@ Template.dynamicTableFilterModal.events({
   "change .input-dynamic-table-search"(e, templInstance) {
     doSearch(e, templInstance);
   }
+});
+Template.dynamicTableFilterModal.onRendered(function onRendered() {
+  Tracker.autorun(() => {
+    if (this.editing.get()) {
+      Tracker.afterFlush(() => {
+        if ($.fn.select2) {
+          this.$(".dynamic-table-filter-edit-group").select2({
+            tags: true,
+            placeholder: "Select a Group",
+            allowClear: true,
+            data: _.union(
+              [{ id: "", value: "" }],
+              this.data.groupNames.map(g => ({ id: g, text: g }))
+            )
+          });
+          this.$(".dynamic-table-filter-edit-group").val(this.editableField.get().groupName).trigger("change");
+        }
+      });
+    }
+  });
 });
 
 Template.dynamicTableFilterModal.onCreated(function onCreated() {

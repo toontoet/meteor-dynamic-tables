@@ -6,6 +6,25 @@ Template.dynamicTableManageFieldsModal.onCreated(function onCreated() {
   this.editing = new ReactiveVar(false);
   this.availableColumns = new ReactiveVar(this.data.availableColumns);
 });
+Template.dynamicTableManageFieldsModal.onRendered(function onRendered() {
+  Tracker.autorun(() => {
+    if (this.editing.get()) {
+      Tracker.afterFlush(() => {
+        if ($.fn.select2) {
+          this.$(".dynamic-table-manage-fields-edit-group").select2({
+            tags: true,
+            placeholder: "Select a Group",
+            allowClear: true,
+            data: _.union(
+              [{ id: "", value: "" }],
+              _.compact(_.unique(_.pluck(this.data.availableColumns, "group"))).map(g => ({ id: g, text: g }))
+            )
+          });
+        }
+      });
+    }
+  });
+});
 
 Template.dynamicTableManageFieldsModal.events({
   "keydown input.search"(e, templInstance) {
@@ -53,6 +72,9 @@ Template.dynamicTableManageFieldsModal.events({
   }
 });
 Template.dynamicTableManageFieldsModal.helpers({
+  select2() {
+    return $.fn.select2;
+  },
   types() {
     const types = this.add.types || [];
     return types.map((t) => {

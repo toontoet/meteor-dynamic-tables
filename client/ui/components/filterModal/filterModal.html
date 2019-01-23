@@ -28,7 +28,11 @@
           <div class="dynamic-table-filter-edit-row">
             <label>
               Group
-              <input type="text" class="dynamic-table-filter-edit-group" value="{{editableField.groupName}}" />
+              {{#if select2}}
+                <select type="text" class="dynamic-table-filter-edit-group"></select>
+              {{else}}
+                <input type="text" class="dynamic-table-filter-edit-group" value="{{editableField.groupName}}" />
+              {{/if}}
             </label>
           </div>
         <div class="dynamic-table-filter-edit-row">

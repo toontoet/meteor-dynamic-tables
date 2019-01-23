@@ -84,7 +84,8 @@ Template.dynamicTableHeaderCell.events({
     }
     const field = _.extend({
       type: type || String,
-      name: fieldName
+      name: fieldName,
+      label: templInstance.data.column.title
     }, templInstance.data.column.filterModal.field || {});
 
     const filterModalOptions = {
@@ -101,10 +102,17 @@ Template.dynamicTableHeaderCell.events({
           templInstance.data.dataTable.api().ajax.reload();
           templInstance.data.filterModalCallback(templInstance.data.columnIndex, undefined, undefined, undefined, false, true, true);
         }
+
+        filterModalOptions.groupNames = templInstance.data.column.filterModal.groupNames();
+        templInstance.data.table.columns[templInstance.data.columnIndex].group = newFieldSpec.groupName;
+        templInstance.data.table.columns[templInstance.data.columnIndex].title = newFieldSpec.label;
+        templInstance.data.column.group = newFieldSpec.groupName;
+        templInstance.data.column.title = newFieldSpec.label;
         templInstance.columnTitle.set(newFieldSpec.label);
       },
       field,
       sort,
+      groupNames: templInstance.data.column.filterModal.groupNames(),
       filter: {
         enabled: true,
         search: {

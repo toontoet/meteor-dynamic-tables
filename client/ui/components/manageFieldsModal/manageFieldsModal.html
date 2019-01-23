@@ -11,7 +11,11 @@
         <div class="dynamic-table-manage-fields-edit-row">
           <label>
             Group
-            <input type="text" class="dynamic-table-manage-fields-edit-group" />
+            {{#if select2}}
+              <select type="text" class="dynamic-table-manage-fields-edit-group"></select>
+            {{else}}
+              <input type="text" class="dynamic-table-manage-fields-edit-group" />
+            {{/if}}
           </label>
         </div>
         <div class="dynamic-table-manage-fields-edit-row">
