@@ -28,7 +28,17 @@ Template.CustomizableTable.helpers({
   },
   modifyFilterCallback() {
     const templInstance = Template.instance();
-    return (newFilter, newOrder) => {
+    return (newFilter, newOrder, columns) => {
+      if (columns) {
+        const currentColumns = templInstance.selectedColumns.get();
+        columns.filter(col => col.id).forEach((col) => {
+          const oldColumn = _.findWhere(currentColumns, { id: col.id });
+          if (oldColumn.data !== col.data) {
+            oldColumn.data = col.data;
+            templInstance.selectedColumns.dep.changed();
+          }
+        });
+      }
       changed(templInstance.data.custom, templInstance.data.id, { newColumns: Tracker.nonreactive(() => templInstance.selectedColumns.get()), newFilter, newOrder });
     };
   },

@@ -155,6 +155,10 @@ export function changed(
   if (_.keys($addToSet).length) {
     update.$addToSet = $addToSet;
   }
+
+  if (!_.keys(update).length) {
+    return;
+  }
   if (_.isString(custom)) {
     Meteor.users.update(
       { _id: Meteor.userId() },

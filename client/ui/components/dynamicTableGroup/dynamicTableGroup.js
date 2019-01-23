@@ -51,7 +51,7 @@ Template.dynamicTableGroup.events({
 
     const values = templInstance.values.get();
     const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(this, values[index]);
-    changed(templInstance.data.customTableSpec.custom, tableId, true, { changeOpenGroups: { [tableId]: open } });
+    changed(templInstance.data.customTableSpec.custom, tableId, { changeOpenGroups: { [tableId]: open } });
   }
 });
 

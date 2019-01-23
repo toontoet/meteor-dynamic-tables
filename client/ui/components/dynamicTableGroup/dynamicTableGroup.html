@@ -23,7 +23,7 @@
             {{#if lastLevel}}
               {{> CustomizableTable (table value (newSelector value selector))}}
             {{else}}
-              {{> dynamicTableGroup showPrefix=showPrefix noGroups=noGroups loading=loading customTableSpec=customTableSpec expandAll=expandAll lazy=lazy groupChain=groupChain index=nextIndex tableIdSuffixChain=(tableIdSuffixChain value) selector=(newSelector value selector)}}
+              {{> dynamicTableGroup forceRefresh=forceRefresh showPrefix=showPrefix noGroups=noGroups loading=loading customTableSpec=customTableSpec expandAll=expandAll lazy=lazy groupChain=groupChain index=nextIndex tableIdSuffixChain=(tableIdSuffixChain value) selector=(newSelector value selector)}}
             {{/if}}
           {{/if}}
         </div>

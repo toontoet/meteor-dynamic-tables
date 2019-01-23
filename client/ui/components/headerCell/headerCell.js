@@ -91,6 +91,16 @@ Template.dynamicTableHeaderCell.events({
       dataTable: templInstance.data.dataTable,
       column: templInstance.data.column,
       editFieldCallback(newFieldSpec) {
+        if (newFieldSpec.data !== templInstance.data.column.data) {
+          templInstance.data.filterModalCallback(templInstance.data.columnIndex, undefined, undefined, undefined, false, false);
+          templInstance.data.column.search = newFieldSpec.search;
+          templInstance.data.column.sortableField = newFieldSpec.sortableField;
+          templInstance.data.column.data = newFieldSpec.data;
+          templInstance.data.column.mData = newFieldSpec.data;
+          templInstance.data.column.filterModal.field.name = newFieldSpec.filterModalField;
+          templInstance.data.dataTable.api().ajax.reload();
+          templInstance.data.filterModalCallback(templInstance.data.columnIndex, undefined, undefined, undefined, false, true, true);
+        }
         templInstance.columnTitle.set(newFieldSpec.label);
       },
       field,

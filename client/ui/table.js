@@ -97,7 +97,7 @@ function doExport(extraOptions) {
   }, _.isObject(extraOptions) ? extraOptions : {}));
 }
 
-function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirection, multiSort = false) {
+function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirection, multiSort = false, redraw = true, forceChange = false) {
   const columns = this.dataTable.api().context[0].aoColumns;
   const order = this.dataTable.api().order().map(o => ({
     id: columns[o[0]].id,
@@ -182,12 +182,14 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     this.advancedSearch.set(advancedSearch);
     changed = true;
   }
-  if (changed) {
+  if (changed || forceChange) {
     if (this.data.modifyFilterCallback) {
-      this.data.modifyFilterCallback(advancedSearch, order);
+      this.data.modifyFilterCallback(advancedSearch, order, columns);
     }
-    this.dataTable.loading.set(true);
-    this.dataTable.api().draw();
+    if (redraw) {
+      this.dataTable.loading.set(true);
+      this.dataTable.api().draw();
+    }
   }
 }
 /**
@@ -341,6 +343,19 @@ function ajaxSelector(data, selector, columns, caseInsensitive) {
   return querySelector;
 }
 
+function getOptions(currentData, columns) {
+  // NOTE: we want all fields defined in columns + all extraFields
+  let fields = _.union(_.unique(_.compact(_.pluck(columns, "data"))), currentData.table.extraFields);
+  fields = fields.filter(field => !field.includes(".") || !fields.includes(field.split(".")[0]));
+  const fieldsObject = _.object(fields, _.times(fields.length, () => true));
+  const options = _.extend({ fields: fieldsObject }, currentData.table.subscriptionOptions || {});
+
+  // NOTE: if we have a hard limit (e.g., no paging specified)
+  if (currentData.table.limit) {
+    options.limit = currentData.table.limit;
+  }
+  return options;
+}
 Template.DynamicTable.onRendered(function onRendered() {
   const self = this;
   const templateInstance = this;
@@ -361,18 +376,8 @@ Template.DynamicTable.onRendered(function onRendered() {
     templateInstance.tableId.get();
     const currentData = Tracker.nonreactive(() => Template.currentData());// NOTE: intentionally not reactive.
     setup.call(self);
-    // NOTE: we want all fields defined in columns + all extraFields
-    let fields = _.union(_.unique(_.compact(_.pluck(self.columns, "data"))), currentData.table.extraFields);
-    fields = fields.filter(field => !field.includes(".") || !fields.includes(field.split(".")[0]));
-    const fieldsObject = _.object(fields, _.times(fields.length, () => true));
-    const options = _.extend({ fields: fieldsObject }, currentData.table.subscriptionOptions || {});
+    const options = getOptions(currentData, self.columns);
 
-    // NOTE: if we have a hard limit (e.g., no paging specified)
-    if (currentData.table.limit) {
-      options.limit = currentData.table.limit;
-    }
-
-    // NOTE: if we have a changeSelector method specified, use it.
     // TODO: left in for compatibility - to be removed.
     const tableSpec = _.extend({
       serverSide: true,
@@ -452,9 +457,10 @@ Template.DynamicTable.onRendered(function onRendered() {
         const selector = currentData.table.changeSelector ? currentData.table.changeSelector(_selector || {}) : (_selector || {});
 
         templateInstance.completeStart = new Date().getTime();
+        const options = getOptions(currentData, data.columns);
         // NOTE: the "ajax" call triggers a subscription rerun, iff queryOptions or querySelector has changed
-        const queryOptions = ajaxOptions(data, options, self.columns);
-        const querySelector = ajaxSelector(data, selector, self.columns, currentData.table.search.caseInsensitive);
+        const queryOptions = ajaxOptions(data, options, data.columns);
+        const querySelector = ajaxSelector(data, selector, data.columns, currentData.table.search.caseInsensitive);
         const query = {
           options: queryOptions,
           selector: querySelector
@@ -767,6 +773,14 @@ Template.DynamicTable.onCreated(function onCreated() {
       });
     }
     oldColumns = columns;
+  });
+  let forceRefresh;
+  this.autorun(() => {
+    const currentData = Template.currentData();
+    if (forceRefresh && forceRefresh !== currentData.forceRefresh) {
+      this.tableId.dep.changed();
+    }
+    forceRefresh = currentData.forceRefresh;
   });
   this.autorun(() => {
     const currentData = Template.currentData();
