@@ -190,34 +190,6 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
   }
 }
 
-export function simpleTablePublicationCount(tableId, publicationName, selector, options = {}) {
-  check(tableId, String);
-  check(publicationName, String);
-  check(selector, Object);
-  check(options, Object);
-  check(publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName], Function);
-  if (Kadira && Kadira._getInfo()) {
-    Kadira._getInfo().trace.name += "_" + publicationName;
-  }
-  if (this.unblock) {
-    this.unblock();
-  }
-  const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, { fields: { _id: true } });
-  const count = publicationCursor.count();
-  this.added("groupInfo", tableId, { count });
-  const interval = Meteor.setInterval(() => {
-    const newCount = publicationCursor.count();
-    if (count !== newCount) {
-      this.changed("groupInfo", tableId, { count: newCount });
-    }
-  }, options.interval || 10000);
-  this.onStop(() => {
-    Meteor.clearInterval(interval);
-    this.removed("groupInfo", tableId);
-  });
-  this.ready();
-}
-
 export function simpleTablePublicationCounts(tableId, publicationName, field, baseSelector, queries, options = {}) {
   check(tableId, String);
   check(publicationName, String);
@@ -240,43 +212,24 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   let hasChanges = false;
   Promise.all(queries.map((query) => {
     const selector = { $and: [{ [field]: query }, publicationCursor._cursorDescription.selector] };
-    const id = JSON.stringify(query).replace(/[\{\}.:]/g, "");
-    return publicationCursor._mongo.db.collection(publicationCursor._getCollectionName()).find(selector).count()
-    .then((count) => {
-      if (result[id] !== count) {
-        changed[id] = count;
-        result[id] = count;
-        hasChanges = true;
-      }
-    });
+    const id = JSON.stringify(query).replace(/[{}.:]/g, "");
+    if (id) {
+      return publicationCursor._mongo.db.collection(publicationCursor._getCollectionName()).find(selector).count()
+      .then((count) => {
+        if (result[id] !== count) {
+          changed[id] = count;
+          result[id] = count;
+          hasChanges = true;
+        }
+      });
+    }
+    return Promise.resolve();
   }))
   .then(() => {
     if (hasChanges) {
       this.changed("groupInfo", tableId, changed);
     }
   });
-  /*const selector = countUndefined ? { $and: [{ [field]: { $exists: true } }, publicationCursor._cursorDescription.selector] } : publicationCursor._cursorDescription.selector;
-  publicationCursor._mongo.db.collection(publicationCursor._getCollectionName()).aggregate([
-    { $match: selector },
-    { $group: { _id: `$${field}`, count: { $sum: 1 } } },
-    { $match: { count: { $ne: 0 } } }
-  ])
-  .toArray()
-  .then((results) => {
-    const changed = {};
-    let hasChanges = false;
-    results.forEach((res) => {
-      const id = JSON.stringify(res._id);
-      if (result[id] !== res.count) {
-        changed[id] = res.count;
-        result[id] = res.count;
-        hasChanges = true;
-      }
-      if (hasChanges) {
-        this.changed("groupInfo", tableId, changed);
-      }
-    });
-  });*/
   this.onStop(() => {
     this.removed("groupInfo", tableId);
   });
@@ -284,7 +237,6 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
 }
 Meteor.publishComposite("simpleTablePublication", simpleTablePublication);
 Meteor.publish("simpleTablePublicationArray", simpleTablePublicationArrayNew);
-Meteor.publish("simpleTablePublicationCount", simpleTablePublicationCount);
 Meteor.publish("simpleTablePublicationCounts", simpleTablePublicationCounts);
 
 

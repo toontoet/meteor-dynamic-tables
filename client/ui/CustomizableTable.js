@@ -20,7 +20,7 @@ Template.CustomizableTable.helpers({
       const columnIndex = _.findIndex(columns, col => col.id === column.id || col.data === column.data);
       columns.splice(columnIndex, 1);
       templInstance.selectedColumns.set(columns);
-      changed(templInstance.data.custom, { newColumns: columns });
+      changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns });
     };
   },
   advancedFilter() {
@@ -29,7 +29,7 @@ Template.CustomizableTable.helpers({
   modifyFilterCallback() {
     const templInstance = Template.instance();
     return (newFilter, newOrder) => {
-      changed(templInstance.data.custom, { newColumns: Tracker.nonreactive(() => templInstance.selectedColumns.get()), newFilter, newOrder });
+      changed(templInstance.data.custom, templInstance.data.id, { newColumns: Tracker.nonreactive(() => templInstance.selectedColumns.get()), newFilter, newOrder });
     };
   },
   readyToRender() {
@@ -52,10 +52,10 @@ Template.CustomizableTable.helpers({
       }).filter(o => o[0] !== -1);
     }
     table.lengthChangeCallback = (dataTable, length) => {
-      changed(tmplInstance.data.custom, { newLimit: length, newSkip: dataTable.api().page() * length });
+      changed(tmplInstance.data.custom, tmplInstance.data.id, { newLimit: length, newSkip: dataTable.api().page() * length });
     };
     table.pageChangeCallback = (dataTable, page) => {
-      changed(tmplInstance.data.custom, { newSkip: page * tmplInstance.limit.get() });
+      changed(tmplInstance.data.custom, tmplInstance.data.id, { newSkip: page * tmplInstance.limit.get() });
     };
     table.orderCallback = (dataTable, newOrder) => {
       const columns = dataTable.api().context[0].aoColumns;
@@ -65,7 +65,7 @@ Template.CustomizableTable.helpers({
         order: o[1]
       }))));
       if (!EJSON.equals(order, Tracker.nonreactive(() => tmplInstance.order.get()))) {
-        changed(tmplInstance.data.custom, { newOrder: order });
+        changed(tmplInstance.data.custom, tmplInstance.data.id, { newOrder: order });
       }
     };
     table.colReorder = {
@@ -86,7 +86,7 @@ Template.CustomizableTable.events({
     e.preventDefault();
     const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
     tableTemplateInstance.advancedSearch.set({});
-    changed(templInstance.data.custom, { newColumns: templInstance.selectedColumns.get(), unset: "all" });
+    changed(templInstance.data.custom, templInstance.data.id, { newColumns: templInstance.selectedColumns.get(), unset: "all" });
     tableTemplateInstance.query.dep.changed();
   },
   "click a.manage-fields"(e, templInstance) {
@@ -122,7 +122,7 @@ Template.CustomizableTable.events({
           tableTemplateInstance.query.dep.changed();
           columns.splice(columns.indexOf(actualColumn), 1);
         }
-        changed(templInstance.data.custom, { newColumns: columns, unset: unsetField });
+        changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns, unset: unsetField });
         templInstance.selectedColumns.set(columns);
         manageFieldsOptions.selectedColumns = columns;
 
@@ -182,7 +182,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
   this.skip = new ReactiveVar(0);
   this.fnReorderCallback = () => {
     const columns = this.$("table").dataTable().api().context[0].aoColumns;
-    changed(this.data.custom, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
+    changed(this.data.custom, this.data.id, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
   };
   let stop = false;
   if (this.data.custom) {

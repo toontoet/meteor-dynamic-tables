@@ -51,7 +51,7 @@ Template.dynamicTableGroup.events({
 
     const values = templInstance.values.get();
     const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(this, values[index]);
-    changed(templInstance.data.customTableSpec.custom, { changeOpenGroups: { [tableId]: open } });
+    changed(templInstance.data.customTableSpec.custom, tableId, true, { changeOpenGroups: { [tableId]: open } });
   }
 });
 
@@ -212,58 +212,6 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         this.loading.set(loading);
       }
     }
-    return;
-    values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
-    .forEach((value) => {
-      let selector;
-      if (value.selector) {
-        if (currentSelector.$and) {
-          selector = _.extend({}, currentSelector);
-          selector.$and.push(value.selector);
-        }
-        else {
-          selector = { $and: [currentSelector, value.selector] };
-        }
-      }
-      if (value.query) {
-        selector = _.extend({ [current.field]: value.query }, currentSelector);
-      }
-      const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(data, value);
-      const loading = Tracker.nonreactive(() => this.loading.get());
-      if (!countWithDistinct && Tracker.nonreactive(() => Meteor.status().status !== "offline")) {
-        const sub = this.subscribe(
-          "simpleTablePublicationCount",
-          tableId,
-          data.customTableSpec.table.publication,
-          selector,
-          _.extend({ limit: value.ensureValues || current.ensureValues || undefined }, current.options) || {},
-          {
-            onError() {
-              delete loading[sub.subscriptionId];
-              self.loading.set(loading);
-            },
-            onStop() {
-              delete loading[sub.subscriptionId];
-              self.loading.set(loading);
-            }
-          }
-        );
-        loading[sub.subscriptionId] = true;
-        this.autorun(() => {
-          if (sub.ready()) {
-            const loading = Tracker.nonreactive(() => this.loading.get());
-            delete loading[sub.subscriptionId];
-            this.loading.set(loading);
-          }
-        });
-      }
-    });
-    values.filter(v => v.count !== true && v.count !== undefined)
-    .forEach((value) => {
-      this.autorun(() => {
-        getCount.call(this, value, _.extend({ [current.field]: value.query }, currentSelector));
-      });
-    });
   });
 });
 

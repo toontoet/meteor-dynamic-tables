@@ -52,21 +52,25 @@ export function getCustom(customField, callback) {
       }
     });
   }
-  if (!stop && _.isObject(customField)) {
-    callback(customField);
-  }
-  else if (!stop && _.isFunction(customField)) {
-    const result = customField(this.data.columns, (asyncResult) => {
+  if (!stop && _.isFunction(customField)) {
+    const result = customField("", false, null, (asyncResult) => {
       callback(asyncResult);
+      stop = true;
     });
     if (result instanceof Promise) {
       result.then((asyncResult) => {
         callback(asyncResult);
+        stop = true;
       });
     }
     else if (result) {
       callback(result);
+      stop = true;
     }
+  }
+  else if (!stop && _.isObject(customField)) {
+    callback(customField);
+    stop = true;
   }
   return stop;
 }
@@ -89,67 +93,79 @@ export function inlineSave(templInstance, val, extra) {
 
 export function changed(
   custom,
+  tableId,
   {
     newColumns, newFilter, newOrder, newLimit, newSkip, newGroupChainFields, changeOpenGroups, unset
   }
 ) {
+  let prefix = "";
+  const $set = {
+  };
+  const $pull = {};
+  const $addToSet = {};
   if (_.isString(custom)) {
-    const $set = {
-    };
-    const $pull = {};
-    const $addToSet = {};
-    if (changeOpenGroups) {
-      _.each(changeOpenGroups, (open, tableId) => {
-        if (open) {
-          $addToSet[`${custom}.openGroups`] = tableId;
-        }
-        else {
-          $pull[`${custom}.openGroups`] = tableId;
-        }
-      });
-    }
-
-    if (newColumns) {
-      $set[`${custom}.columns`] = newColumns.map(col => ({ data: col.data, id: col.id }));
-    }
-
-    if (newGroupChainFields) {
-      $set[`${custom}.groupChainFields`] = newGroupChainFields;
-    }
-
-    if (newFilter) {
-      $set[`${custom}.filter`] = JSON.stringify(EJSON.toJSONValue(newFilter));
-    }
-    if (newOrder) {
-      $set[`${custom}.order`] = newOrder;
-    }
-    if (newLimit) {
-      $set[`${custom}.limit`] = newLimit;
-    }
-    if (newSkip || newSkip === 0) {
-      $set[`${custom}.skip`] = newSkip;
-    }
-    if (unset) {
-      const filter = getValue(Meteor.user(), `${custom}.filter`);
-      if (filter) {
-        const actualFilter = unset === "all" ? {} : JSON.parse(filter);
-        delete actualFilter[unset];
-        $set[`${custom}.filter`] = JSON.stringify(actualFilter);
+    prefix = `${custom}.`;
+  }
+  if (changeOpenGroups) {
+    _.each(changeOpenGroups, (open, tableId) => {
+      if (open) {
+        $addToSet[`${prefix}openGroups`] = tableId;
       }
+      else {
+        $pull[`${prefix}openGroups`] = tableId;
+      }
+    });
+  }
+
+  if (newColumns) {
+    $set[`${prefix}columns`] = newColumns.map(col => ({ data: col.data, id: col.id }));
+  }
+
+  if (newGroupChainFields) {
+    $set[`${prefix}groupChainFields`] = newGroupChainFields;
+  }
+
+  if (newFilter) {
+    $set[`${prefix}filter`] = JSON.stringify(EJSON.toJSONValue(newFilter));
+  }
+  if (newOrder) {
+    $set[`${prefix}order`] = newOrder;
+  }
+  if (newLimit) {
+    $set[`${prefix}limit`] = newLimit;
+  }
+  if (newSkip || newSkip === 0) {
+    $set[`${prefix}skip`] = newSkip;
+  }
+  if (unset) {
+    const filter = getValue(Meteor.user(), `${prefix}filter`);
+    if (filter) {
+      const actualFilter = unset === "all" ? {} : JSON.parse(filter);
+      delete actualFilter[unset];
+      $set[`${prefix}filter`] = JSON.stringify(actualFilter);
     }
-    const update = {};
-    if (_.keys($set).length) {
-      update.$set = $set;
-    }
-    if (_.keys($pull).length) {
-      update.$pull = $pull;
-    }
-    if (_.keys($addToSet).length) {
-      update.$addToSet = $addToSet;
-    }
+  }
+  const update = {};
+  if (_.keys($set).length) {
+    update.$set = $set;
+  }
+  if (_.keys($pull).length) {
+    update.$pull = $pull;
+  }
+  if (_.keys($addToSet).length) {
+    update.$addToSet = $addToSet;
+  }
+  if (_.isString(custom)) {
     Meteor.users.update(
       { _id: Meteor.userId() },
       update
     );
   }
-};
+  if (_.isFunction(custom)) {
+    custom(
+      tableId, true,
+      update,
+      () => {}
+    );
+  }
+}

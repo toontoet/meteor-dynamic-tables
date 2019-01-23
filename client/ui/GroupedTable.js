@@ -110,7 +110,7 @@ Template.GroupedTable.events({
       selectedColumns: templInstance.groupChain.get(),
       changeCallback(columns) {
         templInstance.groupChain.set(columns);
-        changed(templInstance.data.custom, { newGroupChainFields: columns.map(c => c.field) });
+        changed(templInstance.data.custom, templInstance.data.id, { newGroupChainFields: columns.map(c => c.field) });
       }
     };
     const target = extra ? extra.target : e.currentTarget
