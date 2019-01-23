@@ -51,7 +51,7 @@ Template.GroupedTable.onDestroyed(function onDestroyed() {
 Template.GroupedTable.helpers({
   selector() {
     const data = Template.instance().data;
-    const selector = data.selector;
+    const selector = _.extend({}, data.selector);
     const search = Template.instance().search.get();
     let searchSelector;
     if (search) {
