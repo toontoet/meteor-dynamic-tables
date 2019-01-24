@@ -346,7 +346,7 @@ function ajaxSelector(data, selector, columns, caseInsensitive) {
 function getOptions(currentData, columns) {
   // NOTE: we want all fields defined in columns + all extraFields
   let fields = _.union(_.unique(_.compact(_.pluck(columns, "data"))), currentData.table.extraFields);
-  fields = fields.filter(field => !field.includes(".") || !fields.includes(field.split(".")[0]));
+  fields = fields.filter(field => field.includes && (!field.includes(".") || !fields.includes(field.split(".")[0])));
   const fieldsObject = _.object(fields, _.times(fields.length, () => true));
   const options = _.extend({ fields: fieldsObject }, currentData.table.subscriptionOptions || {});
 
