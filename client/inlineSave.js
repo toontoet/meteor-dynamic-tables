@@ -1,5 +1,12 @@
 import { EJSON } from "meteor/ejson";
 
+export function getColumns(columns, reactive = false) {
+  if (_.isFunction(columns)) {
+    return reactive ? columns() : Tracker.nonreactive(() => columns());
+  }
+  return columns;
+}
+
 export function getPosition(el) {
   let xPos = 0;
   let yPos = 0;

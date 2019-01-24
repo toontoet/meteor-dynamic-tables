@@ -1,7 +1,7 @@
 import "./CustomizableTable.html";
 import "./table.js";
 import "./components/manageFieldsModal/manageFieldsModal.js";
-import { getPosition, changed, getCustom } from "../inlineSave.js";
+import { getColumns, getPosition, changed, getCustom } from "../inlineSave.js";
 import _ from "underscore";
 import { EJSON } from "meteor/ejson";
 
@@ -54,7 +54,7 @@ Template.CustomizableTable.helpers({
     table.pageNumber = tmplInstance.skip.get() / table.pageLength;
     if (customOrder) {
       table.order = customOrder.map((o) => {
-        const column = _.find(table.columns, c => c.id === o.id || c.data === o.data);
+        const column = _.find(table.columns, c => (c.id && c.id === o.id) || c.data === o.data);
         return [
           table.columns.indexOf(column),
           o.order
@@ -85,12 +85,6 @@ Template.CustomizableTable.helpers({
   }
 });
 
-function getColumns(columns, reactive = false) {
-  if (_.isFunction(columns)) {
-    return reactive ? columns() : Tracker.nonreactive(() => columns());
-  }
-  return columns;
-}
 
 Template.CustomizableTable.events({
   "click a.clear-fields"(e, templInstance) {

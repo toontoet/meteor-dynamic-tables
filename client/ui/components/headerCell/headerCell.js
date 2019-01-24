@@ -30,7 +30,7 @@ Template.dynamicTableHeaderCell.events({
     e.stopPropagation();
     const order = templInstance.data.dataTable.api().order();
     const columns = templInstance.data.dataTable.api().context[0].aoColumns;
-    const column = columns.find(c => c.id === templInstance.data.column.id || c.data === templInstance.data.column.data);
+    const column = columns.find(c => (c.id && c.id === templInstance.data.column.id) || c.data === templInstance.data.column.data);
     const columnOrder = _.find(order, col => col[0] === column.idx);
     const fieldName = (templInstance.data.column.filterModal.field && templInstance.data.column.filterModal.field.name) || templInstance.data.column.data;
     const columnSearch = EJSON.fromJSONValue(templInstance.data.advancedSearch[fieldName]);

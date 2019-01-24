@@ -11,7 +11,14 @@
       </label>
       <select id="dynamic-table-manage-group-label-{{@index}}">
         <option value="">Select a Column</option>
-        {{#each field in availableColumns}}
+        {{#each group in groups}}
+          <optgroup label="{{group.title}}">
+            {{#each field in group.columns}}
+              <option value="{{field.field}}" {{selected field selectedField}}>{{label field}}</option>
+            {{/each}}
+          </optgroup>
+        {{/each}}
+        {{#each field in ungroupedColumns}}
           <option value="{{field.field}}" {{selected field selectedField}}>{{label field}}</option>
         {{/each}}
       </select>

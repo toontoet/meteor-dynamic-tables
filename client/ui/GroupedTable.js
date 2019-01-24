@@ -1,7 +1,7 @@
 import "./components/dynamicTableGroup/dynamicTableGroup.js";
 import "./GroupedTable.html";
 import "./components/manageGroupFieldsModal/manageGroupFieldsModal.js";
-import { getPosition, changed, getCustom } from "../inlineSave.js";
+import { getColumns, getPosition, changed, getCustom } from "../inlineSave.js";
 
 Template.GroupedTable.onCreated(function onCreated() {
   this.customTableSpec = this.data;
@@ -26,7 +26,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   }
 
   getCustom(this.data.custom, this.data.id, (custom) => {
-    this.customColumns.set(_.compact((custom.columns || []).map(c => _.find(this.data.columns || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
+    this.customColumns.set(_.compact((custom.columns || []).map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
     if (custom.groupChainFields) {
       this.groupChain.set(_.compact(custom.groupChainFields.map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
     }

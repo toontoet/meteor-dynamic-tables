@@ -113,7 +113,7 @@ Template.dynamicTableManageFieldsModal.helpers({
   },
   selected(column) {
     const templInstance = Template.instance();
-    return _.find(templInstance.data.selectedColumns, selectedColumn  => selectedColumn.id ? selectedColumn.id === column.id : selectedColumn.data === column.data);
+    return _.find(templInstance.data.selectedColumns, selectedColumn => (selectedColumn.id && selectedColumn.id === column.id) || selectedColumn.data === column.data);
   },
   groups() {
     let availableColumns = Template.instance().availableColumns.get();
@@ -126,10 +126,10 @@ Template.dynamicTableManageFieldsModal.helpers({
     }
     const groups = _.groupBy(availableColumns, "group");
     delete groups[undefined];
-    return _.map(groups, (columns, title) => ({
+    return _.sortBy(_.map(groups, (columns, title) => ({
       title,
-      columns
-    }));
+      columns: _.sortBy(columns, field => field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title)
+    })), "title");
   },
   ungroupedColumns() {
     let availableColumns = Template.instance().availableColumns.get();
@@ -141,7 +141,7 @@ Template.dynamicTableManageFieldsModal.helpers({
       });
     }
     const groups = _.groupBy(availableColumns, "group");
-    return groups.undefined || [];
+    return _.sortBy(groups.undefined || [], field => field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title);
   },
   availableColumns() {
     const availableColumns = Template.instance().availableColumns.get();

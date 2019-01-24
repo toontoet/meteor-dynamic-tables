@@ -54,5 +54,19 @@ Template.dynamicTableManageGroupFieldsModal.helpers({
   availableColumns() {
     const availableColumns = Template.instance().data.availableColumns;
     return availableColumns;
+  },
+  groups() {
+    const availableColumns = Template.instance().data.availableColumns;
+    const groups = _.groupBy(availableColumns, "group");
+    delete groups[undefined];
+    return _.sortBy(_.map(groups, (columns, title) => ({
+      title,
+      columns: _.sortBy(columns, field => field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title)
+    })), "title");
+  },
+  ungroupedColumns() {
+    const availableColumns = Template.instance().data.availableColumns;
+    const groups = _.groupBy(availableColumns, "group");
+    return _.sortBy(groups.undefined || [], field => field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title);
   }
 });
