@@ -63,6 +63,7 @@ Template.dynamicTableManageFieldsModal.events({
     .then((newColumnSpec) => {
       templInstance.$(".btn-dynamic-table-save").removeAttr("disabled");
       templInstance.editing.set(false);
+      templInstance.availableColumns.get().push(newColumnSpec);
       templInstance.availableColumns.dep.changed();
       templInstance.data.add.addedCallback(newColumnSpec);
     })

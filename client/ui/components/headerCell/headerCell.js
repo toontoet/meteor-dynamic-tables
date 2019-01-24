@@ -103,7 +103,9 @@ Template.dynamicTableHeaderCell.events({
           templInstance.data.filterModalCallback(templInstance.data.columnIndex, undefined, undefined, undefined, false, true, true);
         }
 
-        filterModalOptions.groupNames = templInstance.data.column.filterModal.groupNames();
+        if (templInstance.data.column.filterModal.groupNames) {
+          filterModalOptions.groupNames = templInstance.data.column.filterModal.groupNames();
+        }
         templInstance.data.table.columns[templInstance.data.columnIndex].group = newFieldSpec.groupName;
         templInstance.data.table.columns[templInstance.data.columnIndex].title = newFieldSpec.label;
         templInstance.data.column.group = newFieldSpec.groupName;
@@ -112,7 +114,7 @@ Template.dynamicTableHeaderCell.events({
       },
       field,
       sort,
-      groupNames: templInstance.data.column.filterModal.groupNames(),
+      groupNames: templInstance.data.column.filterModal.groupNames ? templInstance.data.column.filterModal.groupNames() : [],
       filter: {
         enabled: true,
         search: {

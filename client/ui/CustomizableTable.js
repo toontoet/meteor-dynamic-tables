@@ -85,10 +85,17 @@ Template.CustomizableTable.helpers({
   }
 });
 
+function getColumns(columns, reactive = false) {
+  if (_.isFunction(columns)) {
+    return reactive ? columns() : Tracker.nonreactive(() => columns());
+  }
+  return columns;
+}
+
 Template.CustomizableTable.events({
   "click a.clear-fields"(e, templInstance) {
     e.preventDefault();
-    templInstance.selectedColumns.set(templInstance.data.table ? templInstance.data.table.columns : templInstance.data.columns);
+    templInstance.selectedColumns.set(templInstance.data.table ? templInstance.data.table.columns : getColumns(templInstance.data.columns));
     templInstance.advancedFilter.set(undefined);
     templInstance.order.set(undefined);
   },
@@ -102,7 +109,7 @@ Template.CustomizableTable.events({
   "click a.manage-fields"(e, templInstance) {
     e.preventDefault();
     const manageFieldsOptions = _.extend({
-      availableColumns: templInstance.data.columns,
+      availableColumns: getColumns(templInstance.data.columns),
       selectedColumns: templInstance.selectedColumns.get(),
       tableData: templInstance.data,
       changeCallback(column, add) {
@@ -144,7 +151,9 @@ Template.CustomizableTable.events({
     }, templInstance.data.manageFieldsOptions || {});
     if (manageFieldsOptions.add) {
       manageFieldsOptions.add.addedCallback = (columnSpec) => {
-        templInstance.data.columns.push(columnSpec);
+        if (!_.isFunction(templInstance.data.columns)) {
+          templInstance.data.columns.push(columnSpec);
+        }
         manageFieldsOptions.changeCallback(columnSpec, true);
       };
     }
@@ -180,7 +189,7 @@ Template.CustomizableTable.events({
       columns.splice(columns.indexOf(column), 1);
     }
     else {
-      columns.push(_.findWhere(templInstance.data.columns, { data: columnData }));
+      columns.push(_.findWhere(getColumns(templInstance.data.columns), { data: columnData }));
     }
     templInstance.selectedColumns.set(columns);
   }
@@ -199,9 +208,9 @@ Template.CustomizableTable.onCreated(function onCreated() {
   };
   let stop = false;
   if (this.data.custom) {
-    stop = getCustom(this.data.custom, (custom) => {
+    stop = getCustom(this.data.custom, this.data.id, (custom) => {
       const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
-      this.selectedColumns.set(filterColumns(this.data.columns, columnsToUse.map(c => c.id || c.data)));
+      this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columnsToUse.map(c => c.id || c.data)));
       this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
       const oldOrder = Tracker.nonreactive(() => this.order.get());
       if (EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
@@ -219,6 +228,6 @@ Template.CustomizableTable.onCreated(function onCreated() {
     this.selectedColumns.set(this.data.table.columns);
   }
   else if (!stop) {
-    this.selectedColumns.set(this.data.columns);
+    this.selectedColumns.set(getColumns(this.data.columns));
   }
 });

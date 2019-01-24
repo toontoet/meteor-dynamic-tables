@@ -38,7 +38,7 @@ export function getValue(doc, field) {
   return obj;
 }
 
-export function getCustom(customField, callback) {
+export function getCustom(customField, tableId, callback) {
   let stop = false;
   if (_.isString(customField)) {
     Tracker.autorun(() => {
@@ -53,7 +53,7 @@ export function getCustom(customField, callback) {
     });
   }
   if (!stop && _.isFunction(customField)) {
-    const result = customField("", false, null, (asyncResult) => {
+    const result = customField(tableId, false, null, (asyncResult) => {
       callback(asyncResult);
       stop = true;
     });

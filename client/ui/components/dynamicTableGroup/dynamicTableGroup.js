@@ -92,7 +92,6 @@ function addUndefined(current, values) {
   }
 }
 Template.dynamicTableGroup.onCreated(function onCreated() {
-  const self = this;
   this.stickyEnabled = new ReactiveDict();
   this.enabled = new ReactiveDict();
   this.loading = new ReactiveVar({});
@@ -100,7 +99,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.values = new ReactiveVar([]);
   this.groupInfo = getGroupedInfoCollection(this.data.customTableSpec.table.collection._connection);
   this.custom = new ReactiveVar();
-  getCustom(this.data.customTableSpec.custom, (custom) => {
+  getCustom(this.data.customTableSpec.custom, this.data.customTableSpec.id, (custom) => {
     this.custom.set(custom);
   });
 
