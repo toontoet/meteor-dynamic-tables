@@ -118,6 +118,9 @@ Template.CustomizableTable.events({
             }
             return column.data === col.data;
           });
+          if (!actualColumn) {
+            return;
+          }
           const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
           const search = tableTemplateInstance.advancedSearch.get();
           if (actualColumn.sortableField) {
