@@ -1,5 +1,7 @@
 .dynamic-table-global-search {}
 .manage-fields {
+  display: block;
+  margin-bottom: 10px;
   color: #000;
 }
 .manage-fields:hover {

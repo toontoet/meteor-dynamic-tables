@@ -10,7 +10,7 @@ div.dynamic-table-manage-fields .select2-container {
 }
 div.dynamic-table-manage-fields .select2-selection {
   border-radius: 0px;
-  height: 35px;
+  height:30px;
 }
 div.dynamic-table-manage-fields .select2-selection__rendered {
   line-height: 35px;
@@ -19,6 +19,7 @@ div.dynamic-table-manage-fields>section {
   padding: 5px;
 }
 div.dynamic-table-manage-fields>section.dynamic-table-manage-fields-edit {
+  padding: 10px;
   background-color: #666;
   color: #eee;
 }
@@ -35,6 +36,11 @@ div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row input,d
   border-radius: 0px;
   line-height: 20px;
   height: 20px;
+}
+input,div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row select {
+  height:25px;
+  border-radius:0;
+  max-width:152px
 }
 div.dynamic-table-manage-fields div.dynamic-table-manage-fields-edit-row>label {
   width: 100%;
@@ -81,7 +87,7 @@ div.dynamic-table-manage-fields div.dynamic-table-manage-fields-header input {
   box-sizing: content-box;
   height: 15px;
   line-height: 15px;
-  font-size: 18px;
+  font-size: 14px;
   padding: 5px;
 }
 div.dynamic-table-manage-fields div.dynamic-table-manage-fields-header {
@@ -98,11 +104,11 @@ div.dynamic-table-manage-fields hr {
   z-index: 2;
 }
 div.dynamic-table-manage-fields {
-  width: 200px;
+  width:220px;
+  max-height:285px;
   background-color: #fff;
   border: 1px solid #999;
   box-shadow: 0px 0px 10px 0px #eee ;
-  max-height: 265px;
   overflow-y: hidden;
   display: flex;
   flex-direction: column;
@@ -117,14 +123,15 @@ div.dynamic-table-manage-fields ul {
   margin-bottom: 2px;
   cursor: pointer;
   list-style: none;
-  padding: 10px;
+  font-size:16px
+  padding:7px;
   padding-left: 5px;
 }
 .dynamic-table-manage-fields i.fa-toggle-on {
   color: #0f0;
 }
 .dynamic-table-manage-fields input {
-  width: 150px;
+  width:170px;
 }
 .dynamic-table-manage-fields .add-column {
   color: #222;

@@ -57,7 +57,7 @@ div.dynamic-table-filter>section.dynamic-table-filter-operator>select {
   width: 110px;
 }
 div.dynamic-table-filter>section.dynamic-table-filter-search input {
-  padding: 5px;
+  padding: 15px;
 }
 div.dynamic-table-filter>section.dynamic-table-filter-selected {
   padding-top: 5px;
