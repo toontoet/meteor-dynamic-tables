@@ -89,13 +89,16 @@ export function inlineSave(templInstance, val, extra) {
   const collection = templInstance.data.collection;
   const doc = templInstance.data.doc;
   const fieldName = templInstance.data.column.data;
-  collection.update(
-    { _id: doc._id },
-    { $set: { [fieldName]: val } },
-    (err, res) => {
-      templInstance.data.afterEditCallback(err, res);
-    }
-  );
+  const oldValue = getValue(doc, fieldName);
+  if (oldValue !== val) {
+    collection.update(
+      { _id: doc._id },
+      { $set: { [fieldName]: val } },
+      (err, res) => {
+        templInstance.data.afterEditCallback(err, res);
+      }
+    );
+  }
 }
 
 export function changed(
