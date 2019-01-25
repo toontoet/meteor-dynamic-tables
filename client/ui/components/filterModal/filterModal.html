@@ -2,7 +2,7 @@
   <div class="dynamic-table-filter">
     {{#if field.label}}
       <header class="dynamic-table-filter-header">
-        Filter by: <b>{{fieldLabel}}</b>
+        {{#if editing}}Edit{{else}}Filter by{{/if}}: <b>{{fieldLabel}}</b>
         {{#if field.edit}}
           {{#unless editing}}
             <span class="dynamic-table-filter-edit-btn">
@@ -65,10 +65,6 @@
           <p class="warning" style="display: {{#if isChanged "indexedNumber"}}block{{else}}none{{/if}};">
             Changing this field will require migrating data. You should ensure no-one is editing your {{this.label}} while this is happening.
           </p>
-        </div>
-        <div class="dynamic-table-filter-edit-row">
-          <button class="btn btn-success btn-dynamic-table-save">Save</button>
-          <button class="btn btn-default btn-dynamic-table-cancel">Cancel</button>
         </div>
       </section>
     {{else}}
@@ -166,12 +162,17 @@
       {{/if}}
     {{/if}}
     {{#if hasFooter}}
-      <footer class="dynamic-table-filter-footer">
-        {{#unless field.required}}
-          <span class="btn-dynamic-table-remove"><i class="fa fa-eye-slash"></i> Hide Column</span>
-        {{/unless}}
-        {{#if filter.enabled}}
-          <span class="btn-dynamic-table-clear"><i class="fa fa-times"></i> Clear</span>
+      <footer class="dynamic-table-filter-footer" style="{{#if editing}}text-align: right; padding: 6px;{{/if}}">
+        {{#if editing}}
+          <button class="btn btn-default btn-dynamic-table-cancel">Cancel</button>
+          <button class="btn btn-success btn-dynamic-table-save">Save</button>
+        {{else}}
+          {{#unless field.required}}
+            <span class="btn-dynamic-table-remove"><i class="fa fa-eye-slash"></i> Hide Column</span>
+          {{/unless}}
+          {{#if filter.enabled}}
+            <span class="btn-dynamic-table-clear"><i class="fa fa-times"></i> Clear</span>
+          {{/if}}
         {{/if}}
       </footer>
     {{/if}}

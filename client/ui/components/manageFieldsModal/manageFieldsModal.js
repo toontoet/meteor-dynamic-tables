@@ -20,6 +20,7 @@ Template.dynamicTableManageFieldsModal.onRendered(function onRendered() {
               _.compact(_.unique(_.pluck(this.data.availableColumns, "group"))).map(g => ({ id: g, text: g }))
             )
           });
+          this.$(".dynamic-table-manage-fields-edit-group").val(this.editing.get().groupName).trigger("change");
         }
       });
     }
@@ -39,10 +40,23 @@ Template.dynamicTableManageFieldsModal.events({
   "click .add-column"(e, templInstance) {
     templInstance.editing.set(true);
   },
+  "click li>.fa-pencil"(e, templInstance) {
+    e.preventDefault();
+    e.stopPropagation();
+    const colId = $(e.currentTarget).parent().attr("data-id");
+    const colData = $(e.currentTarget).parent().attr("data-data");
+    const column = templInstance.data.availableColumns.find((col) => {
+      if (colId) {
+        return colId === col.id;
+      }
+      return colData === col.data;
+    });
+    templInstance.editing.set(column.filterModal.field.edit.spec);
+  },
   "click li"(e, templInstance) {
     const colId = $(e.currentTarget).attr("data-id");
     const colData = $(e.currentTarget).attr("data-data");
-    const selected = $(e.currentTarget).find("i.fa-toggle-on").length;//hasClass("dynamic-table-manage-fields-selected");
+    const selected = $(e.currentTarget).find("i.fa-toggle-on").length;
     const column = templInstance.data.availableColumns.find((col) => {
       if (colId) {
         return colId === col.id;
@@ -59,13 +73,27 @@ Template.dynamicTableManageFieldsModal.events({
   },
   "click .btn-dynamic-table-save"(e, templInstance) {
     templInstance.$(".btn-dynamic-table-save").attr("disabled", "disabled");
-    templInstance.data.add.callback(e, templInstance)
+    const isEdit = templInstance.editing.get() === true ? false : templInstance.editing.get();
+    templInstance.data.edit.callback(e, templInstance, isEdit)
     .then((newColumnSpec) => {
       templInstance.$(".btn-dynamic-table-save").removeAttr("disabled");
       templInstance.editing.set(false);
-      templInstance.availableColumns.get().push(newColumnSpec);
+      if (isEdit) {
+        const columns = templInstance.availableColumns.get();
+        const realColumn = columns.find(c => c.data === newColumnSpec.data);
+        const index = columns.indexOf(realColumn);
+        columns.splice(index, 1, newColumnSpec);
+      }
+      else {
+        templInstance.availableColumns.get().push(newColumnSpec);
+      }
       templInstance.availableColumns.dep.changed();
-      templInstance.data.add.addedCallback(newColumnSpec);
+      if (isEdit) {
+        templInstance.data.edit.editedCallback(newColumnSpec);
+      }
+      else {
+        templInstance.data.edit.addedCallback(newColumnSpec);
+      }
     })
     .catch((err) => {
       console.error(err);
@@ -73,11 +101,39 @@ Template.dynamicTableManageFieldsModal.events({
   }
 });
 Template.dynamicTableManageFieldsModal.helpers({
+  selectedIfEquals(val1, val2) {
+    return val1 == val2 ? { selected: "selected" } : {};
+  },
+  checkedIfTrue(val) {
+    return val || val === 0 ? { checked: "checked" } : {};
+  },
+  fieldType() {
+    const editing = Template.instance().editing.get();
+    if (!editing || !editing.filterModal || !editing.filterModal.field || !editing.filterModal.field.type) {
+      return "string";
+    }
+    let fieldType = editing.filterModal.field.type;
+    if (fieldType && fieldType && _.isArray(fieldType)) {
+      fieldType = fieldType[0];
+    }
+    return fieldType;
+  },
+  isArray() {
+    const editing = Template.instance().editing.get();
+    if (!editing || !editing.filterModal || !editing.filterModal.field || !editing.filterModal.field.type) {
+      return false;
+    }
+    const fieldType = editing.filterModal.field.type;
+    if (fieldType && fieldType && _.isArray(fieldType)) {
+      return true;
+    }
+    return false;
+  },
   select2() {
     return $.fn.select2;
   },
   types() {
-    const types = this.add.types || [];
+    const types = this.edit.types || [];
     return types.map((t) => {
       if (_.isObject(t)) {
         return t;
@@ -142,6 +198,9 @@ Template.dynamicTableManageFieldsModal.helpers({
     }
     const groups = _.groupBy(availableColumns, "group");
     return _.sortBy(groups.undefined || [], field => field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title);
+  },
+  editable(column) {
+    return column && column.filterModal && column.filterModal.field && column.filterModal.field.edit;
   },
   availableColumns() {
     const availableColumns = Template.instance().availableColumns.get();

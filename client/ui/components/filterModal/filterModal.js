@@ -273,9 +273,6 @@ Template.dynamicTableFilterModal.events({
       if (!hasOptions) {
         operator = "$not";
       }
-      if (templInstance.$(".btn-dynamic-table-operator.btn-dynamic-table-selected").data("modifier") === "$all") {
-        operator = "$not$all";
-      }
     }
     templInstance.operator.set(operator);
   },
@@ -295,7 +292,6 @@ Template.dynamicTableFilterModal.events({
       if (!hasOptions) {
         operator = "$not";
       }
-      operator = "$not$all";
     }
     templInstance.operator.set(operator);
   },

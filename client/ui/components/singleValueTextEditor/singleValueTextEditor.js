@@ -3,7 +3,7 @@ import { inlineSave, getValue } from "../../../inlineSave.js";
 
 Template.dynamicTableSingleValueTextEditor.helpers({
   editableValue() {
-    return getValue(this.doc, this.column.data);
+    return this.value !== undefined ? this.value : getValue(this.doc, this.column.data);
   }
 });
 Template.dynamicTableSingleValueTextEditor.events({

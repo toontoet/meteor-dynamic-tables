@@ -10,10 +10,10 @@ div.dynamic-table-filter .select2-container {
 }
 div.dynamic-table-filter .select2-selection {
   border-radius: 0px;
-  height: 35px;
+  height: 30px;
 }
 div.dynamic-table-filter .select2-selection__rendered {
-  line-height: 35px;
+  line-height: 30px;
 }
 div.dynamic-table-filter>section.dynamic-table-filter-edit {
   background-color: #666;
@@ -113,10 +113,6 @@ div.dynamic-table-filter .btn-dynamic-table-sort {
   padding: 5px;
   padding-left: 10px;
   padding-right: 10px;
-}
-footer.dynamic-table-filter-footer button {
-  width: 47%;
-  margin: 2px;
 }
 div.dynamic-table-filter .btn-dynamic-table-operator {
   width: 47%;

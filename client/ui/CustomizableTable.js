@@ -143,12 +143,18 @@ Template.CustomizableTable.events({
         $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageFieldsOptions);
       }
     }, templInstance.data.manageFieldsOptions || {});
-    if (manageFieldsOptions.add) {
-      manageFieldsOptions.add.addedCallback = (columnSpec) => {
+    if (manageFieldsOptions.edit) {
+      manageFieldsOptions.edit.addedCallback = (columnSpec) => {
         if (!_.isFunction(templInstance.data.columns)) {
           templInstance.data.columns.push(columnSpec);
         }
         manageFieldsOptions.changeCallback(columnSpec, true);
+      };
+      manageFieldsOptions.edit.editedCallback = (columnSpec) => {
+        if (!_.isFunction(templInstance.data.columns)) {
+          const realColumn = templInstance.data.columns.find(c => (c.id && c.id === columnSpec.id) || c.data === columnSpec.data);
+          templInstance.data.columns.splice(templInstance.data.columns.indexOf(realColumn), 1, columnSpec);
+        }
       };
     }
     const bounds = getPosition(e.currentTarget);
