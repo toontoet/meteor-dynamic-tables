@@ -196,6 +196,11 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   check(baseSelector, Object);
   check(options, Object);
   check(publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName], Function);
+
+  if (options.throttleRefresh === undefined) {
+    options.throttleRefresh = 10000;
+  }
+
   if (Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
   }
@@ -203,34 +208,75 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
     this.unblock();
   }
 
-  const { publicationCursor } = getPublicationCursor.call(this, publicationName, baseSelector, { fields: { limit: 0, _id: true } });
+  let init = true;
+  const { publicationCursor } = getPublicationCursor.call(
+    this,
+    publicationName,
+    baseSelector,
+    { fields: { [field]: true, _id: true } }
+  );
 
   const result = {};
   this.added("groupInfo", tableId, result);
 
-  const changed = {};
-  let hasChanges = false;
-  Promise.all(queries.map((query) => {
-    const selector = { $and: [{ [field]: query }, publicationCursor._cursorDescription.selector] };
-    const id = JSON.stringify(query).replace(/[{}.:]/g, "");
-    if (id) {
-      return publicationCursor._mongo.db.collection(publicationCursor._getCollectionName()).find(selector).count()
-      .then((count) => {
-        if (result[id] !== count) {
-          changed[id] = count;
-          result[id] = count;
-          hasChanges = true;
-        }
-      });
-    }
-    return Promise.resolve();
-  }))
-  .then(() => {
-    if (hasChanges) {
-      this.changed("groupInfo", tableId, changed);
+  const updateRecords = () => {
+    const changed = {};
+    let hasChanges = false;
+    console.log("updating");
+    Promise.all(queries.map((query) => {
+      const selector = { $and: [{ [field]: query }, publicationCursor._cursorDescription.selector] };
+      const id = JSON.stringify(query).replace(/[{}.:]/g, "");
+      if (id) {
+        return publicationCursor._mongo.db
+        .collection(publicationCursor._getCollectionName())
+        .find(selector, { _id: true })
+        .count()
+        .then((count) => {
+          if (result[id] !== count) {
+            changed[id] = count;
+            result[id] = count;
+            hasChanges = true;
+          }
+        });
+      }
+      return Promise.resolve();
+    }))
+    .then(() => {
+      if (init) {
+        init = false;
+        this.added("groupInfo", tableId, changed);
+      }
+      else if (hasChanges) {
+        this.changed("groupInfo", tableId, changed);
+      }
+    });
+  };
+
+
+  const throttledUpdateRecords = options.throttleRefresh ? _.throttle(updateRecords, options.throttleRefresh, { leading: true, trailing: true }) : updateRecords;
+
+  const dataHandle = publicationCursor.observeChanges({
+    added() {
+      if (!init) {
+        throttledUpdateRecords();
+      }
+    },
+    changed() {
+      if (!init) {
+        throttledUpdateRecords();
+      }
+    },
+    removed() {
+      if (!init) {
+        throttledUpdateRecords();
+      }
     }
   });
+
+  throttledUpdateRecords();
+
   this.onStop(() => {
+    dataHandle.stop();
     this.removed("groupInfo", tableId);
   });
   this.ready();
@@ -239,7 +285,90 @@ Meteor.publishComposite("simpleTablePublication", simpleTablePublication);
 Meteor.publish("simpleTablePublicationArray", simpleTablePublicationArrayNew);
 Meteor.publish("simpleTablePublicationCounts", simpleTablePublicationCounts);
 
+function simpleTablePublicationDistinctValuesForField(tableId, publicationName, field, selector = {}, options = {}, count = false) {
+  check(tableId, String);
+  check(field, String);
+  check(publicationName, String);
+  check(selector, Object);
+  if (Kadira && Kadira._getInfo()) {
+    Kadira._getInfo().trace.name += "_" + publicationName;
+  }
 
+  if (options.throttleRefresh === undefined) {
+    options.throttleRefresh = 10000;
+  }
+
+  const { publicationCursor } = getPublicationCursor.call(
+    this,
+    publicationName,
+    selector,
+    { fields: { _id: true, [field]: true } }
+  );
+
+  let keys = {};
+  let init = true;
+  const updateRecords = () => {
+    publicationCursor._mongo.db.collection(publicationCursor._getCollectionName())
+    .distinct(field, publicationCursor._cursorDescription.selector)
+    .then((distinctValues) => {
+      const newKeys = {};
+      let changed = false;
+      distinctValues.forEach((distinctValue) => {
+        if (!newKeys[JSON.stringify(distinctValue)]) {
+          newKeys[JSON.stringify(distinctValue)] = 1;
+        }
+      });
+      const sortedOldKeys = _.sortBy(Object.keys(keys));
+      const sortedNewKeys = _.sortBy(Object.keys(newKeys));
+      changed = !_.isEqual(sortedOldKeys, sortedNewKeys);
+      if (init) {
+        init = false;
+        this.added("distinctValues", tableId, {
+          groups: distinctValues.map(dv => ({
+            value: dv
+          }))
+        });
+        this.ready();
+      }
+      else if (changed) {
+        keys = newKeys;
+        this.changed("distinctValues", tableId, {
+          groups: distinctValues.map(dv => ({
+            value: dv
+          }))
+        });
+      }
+    });
+  };
+
+  const throttledUpdateRecords = options.throttleRefresh ? _.throttle(updateRecords, options.throttleRefresh, { leading: true, trailing: true }) : updateRecords;
+
+  const dataHandle = publicationCursor.observeChanges({
+    added() {
+      if (!init) {
+        throttledUpdateRecords();
+      }
+    },
+    changed() {
+      if (!init) {
+        throttledUpdateRecords();
+      }
+    },
+    removed() {
+      if (!init) {
+        throttledUpdateRecords();
+      }
+    }
+  });
+
+  throttledUpdateRecords();
+
+  this.onStop(() => {
+    dataHandle.stop();
+    this.removed("distinctValues", tableId);
+  });
+}
+Meteor.publish("simpleTablePublicationDistinctValuesForField", simpleTablePublicationDistinctValuesForField);
 Meteor.methods({
   async dynamicTableDistinctValuesForField(tableId, publicationName, selector, field, count = false) {
     check(tableId, String);

@@ -1,7 +1,7 @@
 import { ReactiveDict } from "meteor/reactive-dict";
 import "./dynamicTableGroup.html";
 import "./dynamicTableGroup.css";
-import { getGroupedInfoCollection } from "../../../db.js";
+import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../db.js";
 import { changed, getCustom, getValue } from "../../../inlineSave.js";
 
 
@@ -91,6 +91,12 @@ function addUndefined(current, values) {
     });
   }
 }
+
+function processDistinctValues(current, distinctValues) {
+  const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(distinctValues) : distinctValues.map(v => ({ label: v, query: v }));
+  addUndefined(current, asyncValues);
+  this.values.set(asyncValues.map(v => _.extend(v, { _id: JSON.stringify(v.selector || v.query) })));
+}
 Template.dynamicTableGroup.onCreated(function onCreated() {
   this.stickyEnabled = new ReactiveDict();
   this.enabled = new ReactiveDict();
@@ -98,6 +104,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.counts = new ReactiveDict();
   this.values = new ReactiveVar([]);
   this.groupInfo = getGroupedInfoCollection(this.data.customTableSpec.table.collection._connection);
+  this.distinctValues = getDistinctValuesCollection(this.data.customTableSpec.table.collection._connection);
   this.custom = new ReactiveVar();
   getCustom(this.data.customTableSpec.custom, this.data.customTableSpec.id, (custom) => {
     this.custom.set(custom);
@@ -111,49 +118,41 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     if (_.isArray(current.values)) {
       values = current.values.slice(0, current.values.length);
       addUndefined(current, values);
+      this.values.set(values);
     }
     else if (current.values) {
       values = current.values(data.selector);
       values = values.slice(0, values.length);
       addUndefined(current, values);
+      this.values.set(values);
     }
     else {
       const loading = Tracker.nonreactive(() => this.loading.get());
       loading.distinctValues = true;
       this.loading.set(loading);
-      let promise;
       if (Tracker.nonreactive(() => Meteor.status().status === "offline")) {
         const distinctValues = _.unique(data.customTableSpec.table.collection.find(data.selector, { fields: { [current.valuesField || current.field]: 1 } }).map(i => getValue(i, current.valuesField || current.field)));
-        promise = Promise.resolve(distinctValues);
+        processDistinctValues.call(this, current, distinctValues);
       }
       else {
-        promise = new Promise((resolve) => {
-          Meteor.call("dynamicTableDistinctValuesForField", data.customTableSpec.id, data.customTableSpec.table.publication, data.selector, current.valuesField || current.field, countWithDistinct, (err, distinctValues) => {
-            if (countWithDistinct) {
-              // NOTE: this won't work
-              const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(_.pluck(distinctValues, "_id")) : _.pluck(distinctValues, "_id").map(v => ({ label: v, query: v }));
-              this.counts.clear();
-              asyncValues.forEach((value, index) => {
-                const id = this.data.customTableSpec.id + getTableIdSuffix.call(data, value);
-                const count = asyncValues[index].count;
-                this.counts.set(id, count);
-              });
-              return resolve(_.pluck(distinctValues, "_id"));
-            }
-            resolve(distinctValues || []);
-          });
-        });
+        const sub = this.subscribe(
+          "simpleTablePublicationDistinctValuesForField",
+          data.customTableSpec.id,
+          data.customTableSpec.table.publication,
+          current.valuesField || current.field,
+          data.selector,
+          {},
+          countWithDistinct
+        );
+        if (sub.ready()) {
+          const loading = Tracker.nonreactive(() => this.loading.get());
+          delete loading.distinctValues;
+          this.loading.set(loading);
+          const distinctValues = (this.distinctValues.findOne({ _id: data.customTableSpec.id }) || { groups: [] }).groups.map(v => v.value);
+          processDistinctValues.call(this, current, distinctValues);
+        }
       }
-      promise.then((distinctValues) => {
-        const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(distinctValues) : distinctValues.map(v => ({ label: v, query: v }));
-        addUndefined(current, asyncValues);
-        this.values.set(asyncValues);
-        const loading = Tracker.nonreactive(() => this.loading.get());
-        delete loading.distinctValues;
-        this.loading.set(loading);
-      });
     }
-    this.values.set(values);
   });
   this.autorun(() => {
     const data = Template.currentData();
