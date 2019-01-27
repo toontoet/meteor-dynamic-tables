@@ -185,7 +185,7 @@ Template.dynamicTableExportModal.events({
     }
 
     const sub = templateInstance.subscribe(
-      "simpleTablePublication",
+      "__dynamicTableResults",
       `${data.tableId}-export`,
       data.publication,
       data.compositePublicationNames,

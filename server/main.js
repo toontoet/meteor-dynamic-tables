@@ -83,10 +83,10 @@ function getDataHandleAndInterval(tableId, publicationCursor, options, canOverri
     const recordsTotal = options.skipCount ? options.skip + recordIds.length + 1 : publicationCursor.count();
     publicationCursor._cursorDescription.options.limit = oldLimit;
     if (!initializing) {
-      this.changed("tableInformation", tableId, { _ids: recordIds, recordsFiltered: recordsTotal, recordsTotal });
+      this.changed("__dynamicTableInformation", tableId, { _ids: recordIds, recordsFiltered: recordsTotal, recordsTotal });
     }
     else {
-      this.added("tableInformation", tableId, { _ids: recordIds, recordsFiltered: recordsTotal, recordsTotal });
+      this.added("__dynamicTableInformation", tableId, { _ids: recordIds, recordsFiltered: recordsTotal, recordsTotal });
     }
   };
 
@@ -217,12 +217,11 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   );
 
   const result = {};
-  this.added("groupInfo", tableId, result);
+  this.added("__dynamicTableGroupInfo", tableId, result);
 
   const updateRecords = () => {
     const changed = {};
     let hasChanges = false;
-    console.log("updating");
     Promise.all(queries.map((query) => {
       const selector = { $and: [{ [field]: query }, publicationCursor._cursorDescription.selector] };
       const id = JSON.stringify(query).replace(/[{}.:]/g, "");
@@ -244,10 +243,10 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
     .then(() => {
       if (init) {
         init = false;
-        this.added("groupInfo", tableId, changed);
+        this.added("__dynamicTableGroupInfo", tableId, changed);
       }
       else if (hasChanges) {
-        this.changed("groupInfo", tableId, changed);
+        this.changed("__dynamicTableGroupInfo", tableId, changed);
       }
     });
   };
@@ -277,13 +276,10 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
 
   this.onStop(() => {
     dataHandle.stop();
-    this.removed("groupInfo", tableId);
+    this.removed("__dynamicTableGroupInfo", tableId);
   });
   this.ready();
 }
-Meteor.publishComposite("simpleTablePublication", simpleTablePublication);
-Meteor.publish("simpleTablePublicationArray", simpleTablePublicationArrayNew);
-Meteor.publish("simpleTablePublicationCounts", simpleTablePublicationCounts);
 
 function simpleTablePublicationDistinctValuesForField(tableId, publicationName, field, selector = {}, options = {}, count = false) {
   check(tableId, String);
@@ -323,7 +319,7 @@ function simpleTablePublicationDistinctValuesForField(tableId, publicationName, 
       changed = !_.isEqual(sortedOldKeys, sortedNewKeys);
       if (init) {
         init = false;
-        this.added("distinctValues", tableId, {
+        this.added("__dynamicTableDistinctValues", tableId, {
           groups: distinctValues.map(dv => ({
             value: dv
           }))
@@ -332,7 +328,7 @@ function simpleTablePublicationDistinctValuesForField(tableId, publicationName, 
       }
       else if (changed) {
         keys = newKeys;
-        this.changed("distinctValues", tableId, {
+        this.changed("__dynamicTableDistinctValues", tableId, {
           groups: distinctValues.map(dv => ({
             value: dv
           }))
@@ -365,29 +361,10 @@ function simpleTablePublicationDistinctValuesForField(tableId, publicationName, 
 
   this.onStop(() => {
     dataHandle.stop();
-    this.removed("distinctValues", tableId);
+    this.removed("__dynamicTableDistinctValues", tableId);
   });
 }
-Meteor.publish("simpleTablePublicationDistinctValuesForField", simpleTablePublicationDistinctValuesForField);
-Meteor.methods({
-  async dynamicTableDistinctValuesForField(tableId, publicationName, selector, field, count = false) {
-    check(tableId, String);
-    check(field, String);
-    check(publicationName, String);
-    check(selector, Object);
-    if (Kadira && Kadira._getInfo()) {
-      Kadira._getInfo().trace.name += "_" + publicationName;
-    }
-    const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, { fields: { limit: 0, _id: true } });
-    if (count) {
-      const values = await publicationCursor._mongo.db.collection(publicationCursor._getCollectionName()).aggregate([
-        { $match: _.extend({ [field]: { $exists: true } }, publicationCursor._cursorDescription.selector) },
-        { $unwind: `$${field}` },
-        { $group: { _id: `$${field}`, count: { $sum: 1 } } }
-      ]).toArray();
-      return values;
-    }
-    const values = await publicationCursor._mongo.db.collection(publicationCursor._getCollectionName()).distinct(field, publicationCursor._cursorDescription.selector);
-    return values;
-  }
-});
+Meteor.publishComposite("__dynamicTableResults", simpleTablePublication);
+Meteor.publish("__dynamicTableResultsArray", simpleTablePublicationArrayNew);
+Meteor.publish("__dynamicTableGroupCounts", simpleTablePublicationCounts);
+Meteor.publish("__dynaicTableDistinctValuesForField", simpleTablePublicationDistinctValuesForField);

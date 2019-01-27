@@ -558,7 +558,7 @@ Template.DynamicTable.onRendered(function onRendered() {
     ) {
       templateInstance.loaded.set(false);
       newSub = self.subManager.subscribe(
-        "simpleTablePublicationArray",
+        "__dynamicTableResultsArray",
         currentData.id,
         currentData.table.publication,
         _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
@@ -569,7 +569,7 @@ Template.DynamicTable.onRendered(function onRendered() {
     else {
       templateInstance.loaded.set(false);
       newSub = self.subManager.subscribe(
-        "simpleTablePublication",
+        "__dynamicTableResults",
         currentData.id,
         currentData.table.publication,
         currentData.table.compositePublicationNames,

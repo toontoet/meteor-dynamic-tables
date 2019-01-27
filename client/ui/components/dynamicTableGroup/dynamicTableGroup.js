@@ -136,7 +136,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       }
       else {
         const sub = this.subscribe(
-          "simpleTablePublicationDistinctValuesForField",
+          "__dynaicTableDistinctValuesForField",
           data.customTableSpec.id,
           data.customTableSpec.table.publication,
           current.valuesField || current.field,
@@ -196,7 +196,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       loading.countValues = true;
       this.loading.set(loading);
       const sub = this.subscribe(
-        "simpleTablePublicationCounts",
+        "__dynamicTableGroupCounts",
         data.customTableSpec.id + getTableIdSuffix.call(this.data),
         data.customTableSpec.table.publication,
         current.field,
