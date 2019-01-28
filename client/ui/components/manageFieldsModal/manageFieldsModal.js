@@ -154,7 +154,7 @@ Template.dynamicTableManageFieldsModal.helpers({
     return Template.instance().availableColumns.get().length >= 15;
   },
   add() {
-    return Template.instance().data.add;
+    return Template.instance().data.edit;
   },
   title(column) {
     return column.manageFieldsTitle || column.title;
@@ -165,7 +165,7 @@ Template.dynamicTableManageFieldsModal.helpers({
       search = Template.instance().data.search;
     }
     search = Template.instance().availableColumns.get().length >= 15;
-    return search || Template.instance().data.add;
+    return search || Template.instance().data.edit;
   },
   selected(column) {
     const templInstance = Template.instance();
