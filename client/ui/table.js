@@ -468,6 +468,10 @@ Template.DynamicTable.onRendered(function onRendered() {
           options: queryOptions,
           selector: querySelector
         };
+        const oldQuery = Tracker.nonreactive(() => self.query.get());
+        if (oldQuery && JSON.stringify(oldQuery && oldQuery.options && oldQuery.options.sort) !== JSON.stringify(queryOptions.sort)) {
+          templateInstance.sorting = true;
+        }
         if (JSON.stringify(Tracker.nonreactive(() => self.query.get())) !== JSON.stringify(query)) {
           self.query.set(query);
           templateInstance.ajaxCallback = callback;
@@ -517,7 +521,9 @@ Template.DynamicTable.onRendered(function onRendered() {
         if (!templateInstance.dataTable.isReady) {
           return;
         }
-        tableSpec.orderCallback(templateInstance.dataTable, templateInstance.dataTable.api().order());
+        if (tableSpec.orderCallback) {
+          tableSpec.orderCallback(templateInstance.dataTable, templateInstance.dataTable.api().order());
+        }
       });
     }
     if (tableSpec.sortable) {
@@ -616,7 +622,10 @@ Template.DynamicTable.onRendered(function onRendered() {
       // NOTE: tableInfo._ids already contains the ids of the documents to find - so no skip
       const cursor = Tracker.nonreactive(() => currentData.table.collection.find({ _id: { $in: tableInfo._ids } }, _.omit(queryOptions, "skip")));
       const count = cursor.count(); // MUST BE REACTIVE to track document removals and additions in the case that we hit this line before all data is really added.
-      const docs = Tracker.nonreactive(() => cursor.fetch());
+      let docs = Tracker.nonreactive(() => cursor.fetch());
+      if (!this.sorting && currentData.table.sort) {
+        docs = _.sortBy(docs, currentData.table.sort);
+      }
       templateInstance.handle = cursor.observeChanges({
         _suppress_initial: true,
         // NOTE: the entire autorun block reruns when data is added/removed
@@ -709,12 +718,16 @@ Template.DynamicTable.onRendered(function onRendered() {
       }
 
       // NOTE: if we have all the fields we need to sort on, we dont need to use the non-oplog observe call on the server, but we have to sort client side.
-      const hasSortableFields = _.keys(queryOptions.fields || {}).length === 0 || _.intersection(_.keys(queryOptions.fields || {}), _.keys(queryOptions.sort || {})).length === _.keys(queryOptions.sort || {}).length;
+      const hasSortableFields = (!this.sorting && currentData.table.sort) || _.keys(queryOptions.fields || {}).length === 0 || _.intersection(_.keys(queryOptions.fields || {}), _.keys(queryOptions.sort || {})).length === _.keys(queryOptions.sort || {}).length;
       templateInstance.ajaxCallback({
         data: hasSortableFields ? docs : _.sortBy(docs, row => tableInfo._ids.indexOf(row._id)),
         recordsFiltered: tableInfo.recordsFiltered,
         recordsTotal: tableInfo.recordsTotal
       });
+      if (this.sorting && currentData.table.sortable) {
+        currentData.table.sortable.stop();
+      }
+      this.sorting = false;
     }
   });
 });
