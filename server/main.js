@@ -222,15 +222,14 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   const updateRecords = () => {
     const changed = {};
     let hasChanges = false;
-    Promise.all(queries.map((query) => {
-      const selector = { $and: [{ [field]: query }, publicationCursor._cursorDescription.selector] };
-      const id = JSON.stringify(query).replace(/[{}.:]/g, "");
+    Promise.all(queries.map((value) => {
+      const selector = { $and: [{ [field]: value.query }, publicationCursor._cursorDescription.selector] };
+      const id = JSON.stringify(value.query).replace(/[{}.:]/g, "");
       if (id) {
         return publicationCursor._mongo.db
         .collection(publicationCursor._getCollectionName())
         .find(selector, { _id: true })
-        .count()
-        .then((count) => {
+        .count(selector, value.options).then((count) => {
           if (result[id] !== count) {
             changed[id] = count;
             result[id] = count;

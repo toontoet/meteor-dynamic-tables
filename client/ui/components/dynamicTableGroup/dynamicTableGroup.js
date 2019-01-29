@@ -201,7 +201,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         data.customTableSpec.table.publication,
         current.field,
         currentSelector,
-        values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues)).map(v => v.query),
+        values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
+        .map(v => ({ options: { limit: v.ensureValues || (v.ensureValues === undefined && current.ensureValues) }, query: v.query })),
         current.options || {}
       );
       if (sub.ready()) {
