@@ -85,6 +85,7 @@ Template.dynamicTableHeaderCell.events({
     const field = _.extend({
       type: type || String,
       name: fieldName,
+      required: templInstance.data.column.required,
       label: templInstance.data.column.title
     }, templInstance.data.column.filterModal.field || {});
 

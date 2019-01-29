@@ -73,7 +73,7 @@
             <ul class="display-table-manage-fields-group-hidden">
               {{#each column in group.columns}}
                 <li data-id="{{column.id}}" data-data="{{column.data}}">
-                  <i class="fa fa-toggle-{{#if selected column}}on{{else}}off{{/if}}"></i> {{title column}}
+                  <i class="fa fa-toggle-{{#if selected column}}on{{else}}off{{/if}} {{#if required column}}required{{/if}}"></i> {{title column}}
                   {{#if editable column}}<i class="fa fa-pencil"></i>{{/if}}
                 </li>
               {{/each}}
@@ -83,7 +83,7 @@
         <ul class="dynamic-table-manage-fields-ungrouped">
           {{#each column in ungroupedColumns}}
             <li data-id="{{column.id}}" data-data="{{column.data}}">
-              <i class="fa fa-toggle-{{#if selected column}}on{{else}}off{{/if}}"></i> {{title column}}
+              <i class="fa fa-toggle-{{#if selected column}}on{{else}}off{{/if}} {{#if required column}}required{{/if}}"></i> {{title column}}
               {{#if editable column}}<i class="fa fa-pencil"></i>{{/if}}
             </li>
           {{/each}}

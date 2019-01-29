@@ -139,6 +139,9 @@ div.dynamic-table-manage-fields ul {
 .dynamic-table-manage-fields i.fa-toggle-on {
   color: #0f0;
 }
+.dynamic-table-manage-fields i.fa-toggle-on.required {
+  color: #f00;
+}
 .dynamic-table-manage-fields input {
   width:170px;
 }

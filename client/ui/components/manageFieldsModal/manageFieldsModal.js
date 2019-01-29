@@ -63,6 +63,9 @@ Template.dynamicTableManageFieldsModal.events({
       }
       return colData === col.data;
     });
+    if (column.required) {
+      return;
+    }
     templInstance.data.changeCallback(column, !selected);
   },
   "click .dynamic-table-manage-fields-group-header"(e, templInstance) {
@@ -166,6 +169,9 @@ Template.dynamicTableManageFieldsModal.helpers({
     }
     search = Template.instance().availableColumns.get().length >= 15;
     return search || Template.instance().data.edit;
+  },
+  required(column) {
+    return column.required;
   },
   selected(column) {
     const templInstance = Template.instance();
