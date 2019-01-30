@@ -226,10 +226,13 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
       const selector = { $and: [{ [field]: value.query }, publicationCursor._cursorDescription.selector] };
       const id = JSON.stringify(value.query).replace(/[{}.:]/g, "");
       if (id) {
-        return publicationCursor._mongo.db
+        let cursor = publicationCursor._mongo.db
         .collection(publicationCursor._getCollectionName())
-        .find(selector, { _id: true })
-        .count(selector, value.options).then((count) => {
+        .find(selector, { _id: true });
+        if (value.options && value.options.limit) {
+          cursor = cursor.limit(value.options.limit);
+        }
+        return cursor.count(true).then((count) => {
           if (result[id] !== count) {
             changed[id] = count;
             result[id] = count;
