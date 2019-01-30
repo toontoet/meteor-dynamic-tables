@@ -215,7 +215,10 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
 });
 
 function shouldDisplaySection(current, value) {
-  if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow) || (value.count === undefined && current.count === undefined && value.ensureValues === undefined && current.ensureValues === undefined)) {
+  if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow)) {
+    return true;
+  }
+  if (!value.count && !current.count && !value.ensureValues && !current.ensureValues) {
     return true;
   }
   const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
