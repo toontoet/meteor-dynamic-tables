@@ -116,7 +116,7 @@ function getPublicationCursor(publicationName, selector, options) {
   if (_.isArray(publicationResult)) {
     publicationCursor = publicationResult[0];
     if (canOverride === undefined) {
-      canOverride = publicationResult.length === 1;
+      canOverride = true;
     }
   }
   else {
@@ -182,12 +182,7 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
     }
     recordIds.splice(0, recordIds.length);
   });
-  if (canOverride) {
-    this.ready();
-  }
-  else {
-    return publicationResult.slice(1);
-  }
+  return _.isArray(publicationResult) ? publicationResult.slice(1) : publicationResult;
 }
 
 export function simpleTablePublicationCounts(tableId, publicationName, field, baseSelector, queries, options = {}) {
