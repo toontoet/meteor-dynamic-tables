@@ -460,7 +460,7 @@ Template.DynamicTable.onRendered(function onRendered() {
         const selector = currentData.table.changeSelector ? currentData.table.changeSelector(_selector || {}) : (_selector || {});
 
         templateInstance.completeStart = new Date().getTime();
-        const columns = self.dataTable ? self.dataTable.api().context[0].aoColumns : self.columns;
+        const columns = self.dataTable && self.dataTable.api().context[0] ? self.dataTable.api().context[0].aoColumns : self.columns;
         const options = getOptions(currentData, columns);
         // NOTE: the "ajax" call triggers a subscription rerun, iff queryOptions or querySelector has changed
         const queryOptions = ajaxOptions(data, options, columns);
