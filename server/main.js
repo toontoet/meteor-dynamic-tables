@@ -186,7 +186,7 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
     this.ready();
   }
   else {
-    return publicationResult;
+    return publicationResult.slice(1);
   }
 }
 
@@ -209,7 +209,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   }
 
   let init = true;
-  const { publicationCursor } = getPublicationCursor.call(
+  const { publicationCursor } = !queries.length ? { publicationCursor: null } : getPublicationCursor.call(
     this,
     publicationName,
     baseSelector,
@@ -217,12 +217,11 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   );
 
   const result = {};
-  this.added("__dynamicTableGroupInfo", tableId, result);
 
   const updateRecords = () => {
     const changed = {};
     let hasChanges = false;
-    Promise.all(queries.map((value) => {
+    return Promise.all(queries.map((value) => {
       const selector = { $and: [{ [field]: value.query }, publicationCursor._cursorDescription.selector] };
       const id = JSON.stringify(value.query).replace(/[{}.:]/g, "");
       if (id) {
@@ -246,6 +245,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
       if (init) {
         init = false;
         this.added("__dynamicTableGroupInfo", tableId, changed);
+        this.ready();
       }
       else if (hasChanges) {
         this.changed("__dynamicTableGroupInfo", tableId, changed);
@@ -256,31 +256,35 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
 
   const throttledUpdateRecords = options.throttleRefresh ? _.throttle(updateRecords, options.throttleRefresh, { leading: true, trailing: true }) : updateRecords;
 
-  const dataHandle = publicationCursor.observeChanges({
-    added() {
-      if (!init) {
-        throttledUpdateRecords();
+  let dataHandle;
+  if (publicationCursor) {
+    dataHandle = publicationCursor.observeChanges({
+      added() {
+        if (!init) {
+          throttledUpdateRecords();
+        }
+      },
+      changed() {
+        if (!init) {
+          throttledUpdateRecords();
+        }
+      },
+      removed() {
+        if (!init) {
+          throttledUpdateRecords();
+        }
       }
-    },
-    changed() {
-      if (!init) {
-        throttledUpdateRecords();
-      }
-    },
-    removed() {
-      if (!init) {
-        throttledUpdateRecords();
-      }
-    }
-  });
+    });
+  }
 
-  throttledUpdateRecords();
+  updateRecords();
 
   this.onStop(() => {
-    dataHandle.stop();
+    if (dataHandle) {
+      dataHandle.stop();
+    }
     this.removed("__dynamicTableGroupInfo", tableId);
   });
-  this.ready();
 }
 
 function simpleTablePublicationDistinctValuesForField(tableId, publicationName, field, selector = {}, options = {}, count = false) {
@@ -359,7 +363,7 @@ function simpleTablePublicationDistinctValuesForField(tableId, publicationName, 
     }
   });
 
-  throttledUpdateRecords();
+  updateRecords();
 
   this.onStop(() => {
     dataHandle.stop();
