@@ -1,8 +1,8 @@
 <template name="bulkEditModal">
-  <div class="genericModal">
+  <div class="bulkEditModal">
     <div
       class="modal fade in {{ class }}"
-      id="{{ id }}"
+      id="bulk-edit-modal"
       tabindex="-1"
       role="dialog"
       aria-labelledby="modal-{{ id }}"
@@ -15,10 +15,23 @@
             <h4 class="modal-title" id="modal-{{ id }}">{{ title }}</h4>
           </div>
           <div class="modal-body">
-            Modal Body
+            <div class="container-fluid">
+              <div class="form-group" style="clear: both;">
+                {{#dismissable class="alert alert-blocks"}}
+                  Warning: Editing fields in bulk will overwrite all existing values in the selected {{ set }}.
+                {{/dismissable}}
+                {{#each field in fields}}
+                <label class="col-md-2 control-label">{{ field.title }}:</label>
+                <div class="col-md-10 no-padding" style="padding-bottom: 1px;">
+                  <input id="{{ field.data }}-input" class="form-control" type="text" />
+                </div>
+                {{/each}}
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
-            Modal Footer
+            <button type="submit" class="btn btn-inverse" id="update">Submit</button>
+            <button type="button" class="btn btn-default" id="cancel">Cancel</button>
           </div>
         </div>
       </div>
