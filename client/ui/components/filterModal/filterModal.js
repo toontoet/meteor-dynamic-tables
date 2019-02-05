@@ -129,7 +129,7 @@ Template.dynamicTableFilterModal.helpers({
     if (!options) {
       return [];
     }
-    const selectedOptions = Template.instance().selectedOptions.get().map(o => _.find(options, { value: o }));
+    const selectedOptions = _.compact(Template.instance().selectedOptions.get().map(o => _.find(options, { value: o })));
     return selectedOptions.map(o => _.extend({ _id: o.value }, o));
   },
   searching() {

@@ -106,10 +106,19 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.groupInfo = getGroupedInfoCollection(this.data.customTableSpec.table.collection._connection);
   this.distinctValues = getDistinctValuesCollection(this.data.customTableSpec.table.collection._connection);
   this.custom = new ReactiveVar();
+  let lastGroupChain = {};
   getCustom(this.data.customTableSpec.custom, this.data.customTableSpec.id, (custom) => {
     this.custom.set(custom);
   });
 
+  this.autorun(() => {
+    const data = Template.currentData();
+    if (JSON.stringify(lastGroupChain) !== JSON.stringify(data.groupChain)) {
+      this.enabled.destroy();
+      this.stickyEnabled.destroy();
+    }
+    lastGroupChain = data.groupChain;
+  });
   this.autorun(() => {
     const data = Template.currentData();
     const current = data.groupChain[data.index];

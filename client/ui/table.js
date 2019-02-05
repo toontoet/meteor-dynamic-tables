@@ -592,6 +592,7 @@ Template.DynamicTable.onRendered(function onRendered() {
 
   // NOTE: wait for the subscription and then fetch and observe the data.
   this.autorun(() => {
+    const ajaxCallback = templateInstance.ajaxCallback;
     templateInstance.tableId.get();
     const currentData = templateInstance.data;
     const query = templateInstance.query.get();
@@ -720,7 +721,7 @@ Template.DynamicTable.onRendered(function onRendered() {
 
       // NOTE: if we have all the fields we need to sort on, we dont need to use the non-oplog observe call on the server, but we have to sort client side.
       const hasSortableFields = (!this.sorting && currentData.table.sort) || _.keys(queryOptions.fields || {}).length === 0 || _.intersection(_.keys(queryOptions.fields || {}), _.keys(queryOptions.sort || {})).length === _.keys(queryOptions.sort || {}).length;
-      templateInstance.ajaxCallback({
+      ajaxCallback({
         data: hasSortableFields ? docs : _.sortBy(docs, row => tableInfo._ids.indexOf(row._id)),
         recordsFiltered: tableInfo.recordsFiltered,
         recordsTotal: tableInfo.recordsTotal
