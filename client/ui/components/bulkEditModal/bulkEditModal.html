@@ -23,7 +23,7 @@
                 {{#each field in fields}}
                 <label class="col-md-2 control-label">{{ field.title }}:</label>
                 <div class="col-md-10 no-padding" style="padding-bottom: 1px;">
-                  <input id="{{ field.data }}-input" class="form-control" type="text" />
+                  {{> Template.dynamic template=field.editTemplateViewName data=field.editTemplateContext }}
                 </div>
                 {{/each}}
               </div>
