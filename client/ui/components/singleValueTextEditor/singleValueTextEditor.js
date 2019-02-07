@@ -7,6 +7,9 @@ Template.dynamicTableSingleValueTextEditor.helpers({
   },
   inputId() {
     return this.id !== undefined ? this.id : "";
+  },
+  placeholder() {
+    return this.placeholder !== undefined ? this.placeholder : "";
   }
 });
 Template.dynamicTableSingleValueTextEditor.events({
