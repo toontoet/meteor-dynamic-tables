@@ -21,7 +21,7 @@ Template.bulkEditModal.events({
     const $set = {};
 
     fields.forEach((field) => {
-      $set[field.data] = $(`#${field.data}-input`).val();
+      $set[field.data] = $(document.getElementById(`${field.data}-input`)).val();
     });
 
     const documentsUpdateSuccess = [];
