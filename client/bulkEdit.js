@@ -1,11 +1,18 @@
 import "./ui/components/bulkEditModal/bulkEditModal.js";
+import { getValue } from "./inlineSave.js";
 
 function getBulkEditValue(collection, documentIds, field) {
   const fields = {};
   fields[field] = true;
   const data = collection.find({ _id: { $in: documentIds } }, { fields });
   if (data) {
-    const values = _.uniq(data.map(d => d[field]));
+    const values = _.uniq(data.map((d) => {
+      if (d[field]) {
+        return d[field];
+      }
+      const value = getValue(d, field);
+      return value !== undefined ? value.value : value;
+    }));
     return {
       value: (values.length !== 1 || values[0] === undefined) ? "" : values[0],
       placeholder: values.length > 1 ? "Multiple Values" : ""
