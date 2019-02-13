@@ -27,6 +27,7 @@ function getAjaxConfig(origOptions, optionsResult) {
 }
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   let options = this.data.options;
+  const expandOnEdit = this.data.expandOnEdit || false;
   const val = this.data.value || getValue(this.data.doc, this.data.column.data) || [];
   const origOptions = options;
   if (_.isFunction(options)) {
@@ -34,6 +35,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   }
   this.$("select").select2({
     multiple: !!this.data.multiple,
+    triggerEditOnChange: !!this.data.triggerEditOnChange || true,
     allowClear: true,
     tags: this.data.tags || !options,
     createTag: _.isFunction(this.data.createTag) ? this.data.createTag : ((params) => {
@@ -61,8 +63,13 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     }
   });
   this.$("select").val(val);
-  this.$("select").trigger("change");
-  this.$("select").select2("open");
+  // this.$("select").trigger("change");
+  // this.$("select").select2("open");
+  if (!expandOnEdit) {
+    this.$("select").trigger("change");
+    this.$("select").select2("open");
+  }
+
   if (this.handler) {
     document.removeEventListener("mousedown", this.handler, false);
   }
@@ -92,6 +99,20 @@ Template.dynamicTableSelect2ValueEditor.events({
     }
     templInstance.waiting = setTimeout(() => {
       if (!templInstance.data.multiple) {
+        inlineSave(templInstance, $(target).val(), templInstance.$("select").data("select2").data());
+      }
+      if (!templInstance.data.triggerEditOnChange) {
+        inlineSave(templInstance, $(target).val(), templInstance.$("select").data("select2").data());
+      }
+    }, 100);
+  },
+  "select2:change select"(e, templInstance) {
+    const target = e.currentTarget;
+    if (templInstance.waiting) {
+      clearTimeout(templInstance.waiting);
+    }
+    templInstance.waiting = setTimeout(() => {
+      if (!templInstance.data.triggerEditOnChange) {
         inlineSave(templInstance, $(target).val(), templInstance.$("select").data("select2").data());
       }
     }, 100);
