@@ -4,17 +4,17 @@ import { getValue } from "./inlineSave.js";
 function getBulkEditValue(editableRowData, field) {
   const data = editableRowData.map(rowData => ({
     value: rowData.data.filter(d => d.data === field)[0].value,
-    options: rowData.data.filter(d => d.data === field)[0].options || []
+    context: rowData.data.filter(d => d.data === field)[0].editTmplContext || []
   }));
 
-  const allValues = data.map(d => (typeof d.value === "object" ? d.value.value : d.value));
-  const allOptions = data.map(d => (typeof d.options === "object" ? d.options : []));
+  const allValues = data.map(d => (typeof d.context === "object" && d.context.value ? d.context.value : d.value));
+  const allContexts = data.map(d => (typeof d.context === "object" ? d.context : {}));
   if (allValues) {
     const values = _.uniq(allValues);
     return {
       value: (values.length !== 1 || values[0] === undefined) ? "" : values[0],
       placeholder: values.length > 1 ? "Multiple Values" : "",
-      options: allOptions[0]
+      context: allContexts[0]
     };
   }
   return "";
@@ -32,12 +32,10 @@ function getEditableRowData(collection, documentIds, editableCols) {
       };
       const value = getValue(doc, field.data);
       const editTmplContext = field.editTmplContext ? field.editTmplContext(editRowData) : editRowData;
-      const options = (editTmplContext.options && _.isFunction(editTmplContext.options)) ? editTmplContext.options : () => [];
       return {
         value,
         data: field.data,
-        editTmplContext,
-        options: options(doc, field.data, value)
+        editTmplContext
       };
     });
     data.push({ _id: doc._id, data: colData });
@@ -51,19 +49,19 @@ export function bulkEdit(documentIds, tableData, set) {
   let editableCols = columns.filter(col => !!col.editTmpl);
   const editableRowData = getEditableRowData(collection, documentIds, editableCols);
 
-  console.log(editableRowData);
-
-
   editableCols = editableCols.map((col) => {
-    const { value, placeholder, options } = getBulkEditValue(editableRowData, col.data);
+    const {
+      value, placeholder, context
+    } = getBulkEditValue(editableRowData, col.data);
+
     col.editTemplateViewName = col.editTmpl.viewName.split(".")[1];
-    col.editTemplateContext = {
+    col.editTemplateContext = Object.assign(context, {
       id: `${col.data}-input`,
-      value,
-      options,
+      value: value || [],
       placeholder,
       bulkEdit: true
-    };
+    });
+
     return col;
   });
 

@@ -28,11 +28,13 @@ Template.bulkEditModal.events({
           collection
         };
         const editTemplateData = field.editTmplContext ? field.editTmplContext(editRowData) : editRowData;
-        const fieldValue = $(document.getElementById(`${field.data}-input`)).val();
+        const fieldSelector = $(document.getElementById(`${field.data}-input`));
+        const fieldValue = fieldSelector.val();
+        const extra = fieldSelector.data("select2") ? fieldSelector.data("select2").data() : undefined;
         if (editTemplateData.editCallback) {
           editTemplateData.editCallback(doc._id, fieldValue, doc, () => {
             // Handle success
-          });
+          }, extra);
         }
         else {
           const $set = {};
