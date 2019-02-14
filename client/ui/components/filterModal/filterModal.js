@@ -202,7 +202,9 @@ Template.dynamicTableFilterModal.events({
     templInstance.data.field.edit.callback(e, templInstance)
     .then((newFieldSpec) => {
       templInstance.$(".btn-dynamic-table-save").removeAttr("disabled");
-      templInstance.editableField.set(newFieldSpec);
+      Tracker.nonreactive(() => {
+        templInstance.editableField.set(newFieldSpec);
+      });
       let fieldType = newFieldSpec.type;
       if (fieldType === "string") {
         fieldType = String;
@@ -217,7 +219,6 @@ Template.dynamicTableFilterModal.events({
       templInstance.fieldType.set(fieldType);
       templInstance.fieldLabel.set(newFieldSpec.label);
       templInstance.editing.set(false);
-      debugger;
       templInstance.data.editFieldCallback(newFieldSpec);
     })
     .catch((err) => {
