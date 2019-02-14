@@ -150,10 +150,14 @@ Template.CustomizableTable.events({
         }
         manageFieldsOptions.changeCallback(columnSpec, true);
       };
-      manageFieldsOptions.edit.editedCallback = (columnSpec) => {
+      manageFieldsOptions.edit.editedCallback = (columnSpec, prevColumnSpec) => {
         if (!_.isFunction(templInstance.data.columns)) {
           const realColumn = templInstance.data.columns.find(c => (c.id && c.id === columnSpec.id) || c.data === columnSpec.data);
           templInstance.data.columns.splice(templInstance.data.columns.indexOf(realColumn), 1, columnSpec);
+          const headerCellInstance = Blaze.getView(templInstance.$(`span[data-title="${prevColumnSpec.title}"]`)[0]).templateInstance();
+          if (headerCellInstance) {
+            headerCellInstance.columnTitle.set(columnSpec.title);
+          }
         }
       };
     }

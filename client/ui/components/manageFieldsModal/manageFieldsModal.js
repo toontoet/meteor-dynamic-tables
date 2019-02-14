@@ -89,18 +89,19 @@ Template.dynamicTableManageFieldsModal.events({
     .then((newColumnSpec) => {
       templInstance.$(".btn-dynamic-table-save").removeAttr("disabled");
       templInstance.editing.set(false);
+      let prevColumnSpec;
       if (isEdit) {
         const columns = templInstance.availableColumns.get();
         const realColumn = columns.find(c => c.data === newColumnSpec.data);
         const index = columns.indexOf(realColumn);
-        columns.splice(index, 1, newColumnSpec);
+        prevColumnSpec = columns.splice(index, 1, newColumnSpec);
       }
       else {
         templInstance.availableColumns.get().push(newColumnSpec);
       }
       templInstance.availableColumns.dep.changed();
       if (isEdit) {
-        templInstance.data.edit.editedCallback(newColumnSpec);
+        templInstance.data.edit.editedCallback(newColumnSpec, prevColumnSpec[0]);
       }
       else {
         templInstance.data.edit.addedCallback(newColumnSpec);
