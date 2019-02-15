@@ -34,7 +34,7 @@ Template.bulkEditModal.events({
         if (editTemplateData.editCallback) {
           editTemplateData.editCallback(doc._id, fieldValue, doc, () => {
             // Handle success
-          }, extra);
+          }, extra, true);
         }
         else {
           const $set = {};
