@@ -77,7 +77,6 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     try {
       const container = this.$("select").data("select2").$container;
       if (!container.has($(e.target)).length) {
-      // if (!container.has($(e.target)).length && !this.data.isInitialized) {
         inlineSave(this, this.$("select").val(), this.$("select").data("select2").data());
       }
     }
@@ -104,16 +103,15 @@ Template.dynamicTableSelect2ValueEditor.events({
       }
     }, 100);
   },
-  "select2:select"(e, templInstance) {
+  "change"(e, templInstance) {
     const target = e.currentTarget;
-    if (templInstance.waiting) {
-      clearTimeout(templInstance.waiting);
+    if (typeof templInstance.data.triggerEditOnChange !== "undefined"
+      && !templInstance.data.triggerEditOnChange
+      && typeof templInstance.data.trackOptions !== "undefined"
+      && templInstance.data.trackOptions) {
+      templInstance.data.docId = templInstance.data.doc.id;
+      inlineSave(templInstance, $(target).val(), templInstance.$("select").data("select2").data());
     }
-    templInstance.waiting = setTimeout(() => {
-      if (!templInstance.data.triggerEditOnChange) {
-        templInstance.data.doc._id = templInstance.data.column.id;
-        inlineSave(templInstance, $(target).val(), templInstance.$("select").data("select2").data());
-      }
-    }, 100);
   }
+
 });
