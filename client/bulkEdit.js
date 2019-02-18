@@ -10,10 +10,27 @@ function getBulkEditValue(editableRowData, field) {
   const allValues = data.map(d => (typeof d.context === "object" && d.context.value ? d.context.value : d.value));
   const allContexts = data.map(d => (typeof d.context === "object" ? d.context : {}));
   if (allValues) {
-    const values = _.uniq(allValues);
+    let value = "";
+    let placeholder = "";
+    if (_.isArray(allValues[0])) {
+      const allValuesIncludingEmpty = allValues.map(v => (!v.length ? [""] : v));
+      const values = _.union(...allValuesIncludingEmpty);
+      if (values.length === allValuesIncludingEmpty[0].length) {
+        value = values;
+      }
+      else {
+        placeholder = "Multiple Values";
+      }
+    }
+    else {
+      const values = _.uniq(allValues);
+      value = (values.length !== 1 || values[0] === undefined) ? "" : values[0];
+      placeholder = values.length > 1 ? "Multiple Values" : "";
+    }
+
     return {
-      value: (values.length !== 1 || values[0] === undefined) ? "" : values[0],
-      placeholder: values.length > 1 ? "Multiple Values" : "",
+      value,
+      placeholder,
       context: allContexts[0]
     };
   }
@@ -53,6 +70,8 @@ export function bulkEdit(documentIds, tableData, set) {
     const {
       value, placeholder, context
     } = getBulkEditValue(editableRowData, col.data);
+    // console.log({ value, placeholder, context });
+
 
     col.editTemplateViewName = col.editTmpl.viewName.split(".")[1];
     col.editTemplateContext = Object.assign(context, {

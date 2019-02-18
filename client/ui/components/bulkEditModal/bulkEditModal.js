@@ -29,24 +29,38 @@ Template.bulkEditModal.events({
         };
         const editTemplateData = field.editTmplContext ? field.editTmplContext(editRowData) : editRowData;
         const fieldSelector = $(document.getElementById(`${field.data}-input`));
-        const fieldValue = fieldSelector.val();
+        const fieldValue = fieldSelector.val() || "";
+
         const extra = fieldSelector.data("select2") ? fieldSelector.data("select2").data() : undefined;
+
         if (editTemplateData.editCallback) {
-          editTemplateData.editCallback(doc._id, fieldValue, doc, () => {
-            // Handle success
-          }, extra, true);
+          const placeholder = fieldSelector.data("select2") ? fieldSelector.data("select2").results.placeholder.text : fieldSelector.attr("placeholder");
+          if (!fieldValue || !extra || (!fieldValue.length && placeholder === "Multiple Values")) {
+            // Skip
+          }
+          else {
+            editTemplateData.editCallback(doc._id, fieldValue, doc, () => {
+              // Handle success
+            }, extra, true);
+          }
         }
         else {
-          const $set = {};
-          $set[field.data] = fieldValue;
-          collection.update({ _id: doc._id }, { $set }, (err, res) => {
-            if (err) {
-              // Handle error
-            }
-            else {
-              // Handle success
-            }
-          });
+          const placeholder = fieldSelector.attr("placeholder");
+          if (!fieldValue && placeholder === "Multiple Values") {
+            // Skip
+          }
+          else {
+            const $set = {};
+            $set[field.data] = fieldValue;
+            collection.update({ _id: doc._id }, { $set }, (err, res) => {
+              if (err) {
+                // Handle error
+              }
+              else {
+                // Handle success
+              }
+            });
+          }
         }
       });
     }))))
