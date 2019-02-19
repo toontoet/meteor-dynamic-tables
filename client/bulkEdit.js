@@ -15,7 +15,13 @@ function getBulkEditValue(editableRowData, field) {
     if (_.isArray(allValues[0])) {
       const allValuesIncludingEmpty = allValues.map(v => (!v.length ? [""] : v));
       const values = _.union(...allValuesIncludingEmpty);
-      if (values.length === allValuesIncludingEmpty[0].length) {
+      let hasMultiple = false;
+      allValuesIncludingEmpty.forEach((v) => {
+        if (v.length !== values.length) {
+          hasMultiple = true;
+        }
+      });
+      if (!hasMultiple) {
         value = values.filter(v => !!v);
       }
       else {
