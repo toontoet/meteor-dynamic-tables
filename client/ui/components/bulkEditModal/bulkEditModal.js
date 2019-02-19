@@ -29,9 +29,12 @@ Template.bulkEditModal.events({
         };
         const editTemplateData = field.editTmplContext ? field.editTmplContext(editRowData) : editRowData;
         const fieldSelector = $(document.getElementById(`${field.data}-input`));
-        const fieldValue = fieldSelector.val() || "";
-
+        let fieldValue = fieldSelector.val();
         const extra = fieldSelector.data("select2") ? fieldSelector.data("select2").data() : undefined;
+
+        if (fieldValue && _.isArray(fieldValue) && fieldValue.length) {
+          fieldValue = fieldValue.filter(v => !!v);
+        }
 
         if (editTemplateData.editCallback) {
           const placeholder = fieldSelector.data("select2") ? fieldSelector.data("select2").results.placeholder.text : fieldSelector.attr("placeholder");

@@ -70,8 +70,6 @@ export function bulkEdit(documentIds, tableData, set) {
     const {
       value, placeholder, context
     } = getBulkEditValue(editableRowData, col.data);
-    // console.log({ value, placeholder, context });
-
 
     col.editTemplateViewName = col.editTmpl.viewName.split(".")[1];
     col.editTemplateContext = Object.assign(context, {
