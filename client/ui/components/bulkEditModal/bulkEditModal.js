@@ -38,7 +38,7 @@ Template.bulkEditModal.events({
 
         if (editTemplateData.editCallback) {
           const placeholder = fieldSelector.data("select2") ? fieldSelector.data("select2").results.placeholder.text : fieldSelector.attr("placeholder");
-          if (!fieldValue || !extra || (!fieldValue.length && placeholder === "Multiple Values")) {
+          if (!fieldValue || (!fieldValue.length && placeholder === "Multiple Values")) {
             // Skip
           }
           else {
