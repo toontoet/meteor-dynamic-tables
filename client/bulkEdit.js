@@ -16,7 +16,7 @@ function getBulkEditValue(editableRowData, field) {
       const allValuesIncludingEmpty = allValues.map(v => (!v.length ? [""] : v));
       const values = _.union(...allValuesIncludingEmpty);
       if (values.length === allValuesIncludingEmpty[0].length) {
-        value = values;
+        value = values.filter(v => !!v);
       }
       else {
         placeholder = "Multiple Values";
