@@ -81,9 +81,7 @@ Template.dynamicTableManageFieldsModal.events({
     templInstance.$(".btn-dynamic-table-save").attr("disabled", "disabled");
     const isEdit = templInstance.editableField.get();
     if (isEdit) {
-      Tracker.nonreactive(() => {
-        templInstance.editableField.set(null);
-      });
+      templInstance.editableField.set(null);
     }
     templInstance.data.edit.callback(e, templInstance, isEdit)
     .then((newColumnSpec) => {
