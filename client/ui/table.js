@@ -220,7 +220,7 @@ function setup() {
 
       column.createdCell = function createdCell(td, value, rowData, row, col) {
         const rawRowData = rowData;
-        const rawContent = td.innerHTML !== undefined ? td.innerHTML : value;
+        const rawContent = td.innerHTML ? td.innerHTML : value;
         td.innerHTML = "";
         if (column.tmplContext && rowData) {
           rowData = column.tmplContext(rowData, self.data);
