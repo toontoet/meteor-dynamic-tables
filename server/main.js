@@ -2,6 +2,54 @@ const publicationFunctions = {};
 export function registerPubFunction(name, fn) {
   publicationFunctions[name] = fn;
 }
+
+
+function onStop(recordIds, publicationCursor, dataHandle, interval) {
+  dataHandle.stop();
+  if (interval) {
+    Meteor.clearInterval(interval);
+  }
+
+  // NOTE: this was a hack to fix a symptom where multiple observers were being tracked per field (custom pub handle + returning the cursor)
+  /* recordIds.forEach((recordId) => {
+    const docView = this._session.getCollectionView(publicationCursor._cursorDescription.collectionName).documents[recordId];
+    const dummy = {};
+    if (docView) {
+      Object.keys(docView.dataByKey).forEach(key => docView.clearField(this._subscriptionHandle, key, dummy));
+    }
+  });
+  */
+  recordIds.splice(0, recordIds.length);
+}
+
+function deepToFlatExtension(doc, toDepth, deleteOrig, ...accessors) {
+  if (!accessors || accessors.length === 0) {
+    accessors = Object.keys(doc).filter(k => !_.isArray(doc[k]) && _.isObject(doc[k]));
+  }
+  const toProcess = accessors.map(k => ({ fullKey: k, key: k, parent: doc, depth: 0 }));
+  for (let i = 0; i < toProcess.length; i++) {
+    const { key, parent, fullKey, depth } = toProcess[i];
+    if (toDepth && toDepth === depth) {
+      break;
+    }
+    const newKeys = Object.keys(parent[key]);
+    newKeys.forEach((k) => {
+      doc[`${fullKey}.${k}`] = parent[key][k];
+      if (!_.isArray(parent[key][k]) && _.isObject(parent[key][k])) {
+        toProcess.push({
+          fullKey: `${fullKey}.${k}`,
+          key: k,
+          parent: parent[key],
+          depth: depth + 1
+        });
+      }
+    });
+    if (deleteOrig) {
+      //delete parent[key];
+    }
+  }
+  return doc;
+}
 function getDataHandleAndInterval(tableId, publicationCursor, options, canOverride) {
   const sortKeys = _.keys(options.sort || {});
   const fieldKeys = _.keys(options.fields || {});
@@ -27,6 +75,9 @@ function getDataHandleAndInterval(tableId, publicationCursor, options, canOverri
       added: (id, fields) => {
         recordIds.push(id);
         if (canOverride) {
+          // NOTE: yuck, we need to flatten deep objects, in case we have
+          // changed our publication to include new fields within the same top level object
+          // const convert = this._session.getCollectionView(publicationCursor._cursorDescription.collectionName).documents[id];
           this.added(publicationCursor._cursorDescription.collectionName, id, fields);
         }
         if (!initializing) {
@@ -53,6 +104,7 @@ function getDataHandleAndInterval(tableId, publicationCursor, options, canOverri
       addedBefore: (_id, doc, beforeId) => {
         recordIds.splice(recordIds.indexOf(beforeId), 0, _id);
         if (canOverride) {
+          // const convert = this._session.getCollectionView(publicationCursor._cursorDescription.collectionName).documents[_id];
           this.added(publicationCursor._cursorDescription.collectionName, _id, doc);
         }
         if (!initializing) {
@@ -141,11 +193,7 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
   const { dataHandle, interval, recordIds } = getDataHandleAndInterval.call(this, tableId, publicationCursor, options, false);
 
   this.onStop(() => {
-    dataHandle.stop();
-    if (interval) {
-      Meteor.clearInterval(interval);
-    }
-    recordIds.splice(0, recordIds.length);
+    onStop.call(this, recordIds, publicationCursor, dataHandle, interval);
   });
   return {
     find() {
@@ -163,7 +211,6 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
     })
   };
 }
-
 export function simpleTablePublicationArrayNew(tableId, publicationName, selector, options) {
   check(tableId, String);
   check(publicationName, String);
@@ -176,13 +223,9 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
   const { publicationResult, publicationCursor, canOverride } = getPublicationCursor.call(this, publicationName, selector, options);
   const { dataHandle, interval, recordIds } = getDataHandleAndInterval.call(this, tableId, publicationCursor, options, canOverride);
   this.onStop(() => {
-    dataHandle.stop();
-    if (interval) {
-      Meteor.clearInterval(interval);
-    }
-    recordIds.splice(0, recordIds.length);
+    onStop.call(this, recordIds, publicationCursor, dataHandle, interval);
   });
-  return _.isArray(publicationResult) ? publicationResult.slice(1) : publicationResult;
+  return _.isArray(publicationResult) ? publicationResult.slice(1) : [];
 }
 
 export function simpleTablePublicationCounts(tableId, publicationName, field, baseSelector, queries, options = {}) {
@@ -278,7 +321,6 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
     if (dataHandle) {
       dataHandle.stop();
     }
-    this.removed("__dynamicTableGroupInfo", tableId);
   });
 }
 
@@ -362,7 +404,6 @@ function simpleTablePublicationDistinctValuesForField(tableId, publicationName, 
 
   this.onStop(() => {
     dataHandle.stop();
-    this.removed("__dynamicTableDistinctValues", tableId);
   });
 }
 Meteor.publishComposite("__dynamicTableResults", simpleTablePublication);
