@@ -13,7 +13,7 @@ function getBulkEditValue(editableRowData, field) {
     let value = "";
     let placeholder = "";
     if (_.isArray(allValues[0])) {
-      const allValuesIncludingEmpty = allValues.map(v => (!v.length ? [""] : v));
+      const allValuesIncludingEmpty = allValues.map(v => (!v || !v.length ? [""] : v));
       const values = _.union(...allValuesIncludingEmpty);
       let hasMultiple = false;
       allValuesIncludingEmpty.forEach((v) => {

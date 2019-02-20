@@ -71,6 +71,12 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   this.$(document.getElementById(`${this.selectId}`)).val(val);
   this.$(document.getElementById(`${this.selectId}`)).trigger("change");
   this.$(document.getElementById(`${this.selectId}`)).select2("open");
+  if (this.data.bulkEdit) {
+    this.$(document.getElementById(`${this.selectId}`)).select2("close");
+    setTimeout(() => {
+      this.$(document.getElementById(`${this.selectId}`)).trigger("change");
+    }, 100);
+  }
   if (this.handler) {
     document.removeEventListener("mousedown", this.handler, false);
   }
@@ -78,7 +84,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     try {
       const container = this.$(document.getElementById(`${this.selectId}`)).data("select2").$container;
       if (!container.has($(e.target)).length) {
-        if (!this.bulkEdit) {
+        if (!this.data.bulkEdit) {
           inlineSave(this, this.$(document.getElementById(`${this.selectId}`)).val(), this.$(document.getElementById(`${this.selectId}`)).data("select2").data());
         }
       }
