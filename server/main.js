@@ -134,7 +134,7 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
   check(selector, Object);
   check(options, Object);
   check(publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName], Function);
-  if (Kadira && Kadira._getInfo()) {
+  if (typeof Kadira !== "undefined" && Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
   }
   const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, options);
@@ -170,7 +170,7 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
   check(selector, Object);
   check(options, Object);
   check(publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName], Function);
-  if (Kadira && Kadira._getInfo()) {
+  if (typeof Kadira !== "undefined" && Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
   }
   const { publicationResult, publicationCursor, canOverride } = getPublicationCursor.call(this, publicationName, selector, options);
@@ -196,7 +196,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
     options.throttleRefresh = 10000;
   }
 
-  if (Kadira && Kadira._getInfo()) {
+  if (typeof Kadira !== "undefined" && Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
   }
   if (this.unblock) {
@@ -287,7 +287,7 @@ function simpleTablePublicationDistinctValuesForField(tableId, publicationName, 
   check(field, String);
   check(publicationName, String);
   check(selector, Object);
-  if (Kadira && Kadira._getInfo()) {
+  if (typeof Kadira !== "undefined" && Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
   }
 
