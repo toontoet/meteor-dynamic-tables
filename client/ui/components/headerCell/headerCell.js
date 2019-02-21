@@ -97,6 +97,17 @@ Template.dynamicTableHeaderCell.events({
           templInstance.data.filterModalCallback(templInstance.data.columnIndex, undefined, undefined, undefined, false, false);
           templInstance.data.column.search = newFieldSpec.search;
           templInstance.data.column.sortableField = newFieldSpec.sortableField;
+          const actualColumn = templInstance.data.dataTable.api().context[0].aoColumns.find(c => c.data === templInstance.data.column.data);
+          if (actualColumn) {
+            actualColumn.data = newFieldSpec.data;
+            actualColumn.mData = newFieldSpec.data;
+            const mData = $.fn.dataTable.ext.internal._fnGetObjectDataFn(actualColumn.mData);
+            const mRender = actualColumn.mRender ? $.fn.dataTable.ext.internal._fnGetObjectDataFn(actualColumn.mRender) : null;
+            actualColumn.fnGetData = function fnGetData(rowData, _type, meta) {
+              const innerData = mData(rowData, _type, undefined, meta);
+              return mRender && _type ? mRender(innerData, _type, rowData, meta) : innerData;
+            };
+          }
           templInstance.data.column.data = newFieldSpec.data;
           templInstance.data.column.mData = newFieldSpec.data;
           templInstance.data.column.filterModal.field.name = newFieldSpec.filterModalField;
