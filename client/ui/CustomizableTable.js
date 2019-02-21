@@ -212,7 +212,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
   this.skip = new ReactiveVar(0);
   this.fnReorderCallback = () => {
     const columns = this.$("table").dataTable().api().context[0].aoColumns;
-    const newColumns = _.sortBy(this.selectedColumns.get(), c1 => columns.indexOf(_.find(columns, c2 => (c2.id && c2.id == c1.id) || c2.data == c1.data)));
+    const newColumns = _.sortBy(this.selectedColumns.get(), c1 => columns.indexOf(_.find(columns, c2 => (c2.id && c2.id === c1.id) || c2.data === c1.data)));
     this.selectedColumns.set(newColumns);
     changed(this.data.custom, this.data.id, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
   };
