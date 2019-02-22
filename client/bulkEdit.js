@@ -66,13 +66,27 @@ function getEditableRowData(collection, documentIds, editableCols) {
   return data;
 }
 
-export function bulkEdit(documentIds, tableData, set) {
+function getAllTableColumns(collection, table, set, FlexTemplates) {
+  const ft = Tracker.nonreactive(() => FlexTemplates.findOne({ teamId: Meteor.teamId(), collectionName: set }));
+  if (ft && ft.fields) {
+    return _.union(
+      table.extraColumns,
+      table.columns,
+      ft.fields.map(field => ft.flexColumnForField(field, collection, undefined))
+    );
+  }
+  return table.columns;
+}
+
+export function bulkEdit(documentIds, tableData, set, FlexTemplates) {
   const columns = tableData.table.columns ? tableData.table.columns : [];
   const collection = tableData.table.collection;
-  let editableCols = columns.filter(col => !!col.editTmpl);
-  const editableRowData = getEditableRowData(collection, documentIds, editableCols);
+  const allColumns = getAllTableColumns(collection, tableData.table, set, FlexTemplates);
+  const editableCols = columns.filter(col => !!col.editTmpl).map(col => col.data);
+  let allEditableCols = allColumns.filter(col => !!col.editTmpl);
+  const editableRowData = getEditableRowData(collection, documentIds, allEditableCols);
 
-  editableCols = editableCols.map((col) => {
+  allEditableCols = allEditableCols.map((col) => {
     const {
       value, placeholder, context
     } = getBulkEditValue(editableRowData, col.data);
@@ -84,6 +98,7 @@ export function bulkEdit(documentIds, tableData, set) {
       placeholder,
       bulkEdit: true
     });
+    col.bulkEditDisplay = editableCols.indexOf(col.data) > -1;
 
     return col;
   });
@@ -92,7 +107,7 @@ export function bulkEdit(documentIds, tableData, set) {
     class: "modal-medium-height",
     title: `Edit ${documentIds.length} ${set}`,
     set,
-    fields: editableCols,
+    fields: allEditableCols,
     collection,
     documentIds
   });

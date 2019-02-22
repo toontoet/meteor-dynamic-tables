@@ -3,8 +3,33 @@ import { Template } from "meteor/templating";
 import "./bulkEditModal.html";
 import "./bulkEditModal.css";
 
-Template.bulkEditModal.helpers({
+Template.bulkEditModal.onCreated(function onCreated() {
+  this.showAddEditableColumns = new ReactiveVar(false);
+  this.fields = new ReactiveVar(this.data.fields);
+});
 
+Template.bulkEditModal.helpers({
+  displayFields() {
+    const editableColumns = Template.instance().fields.get();
+    return editableColumns.filter(col => col.bulkEditDisplay);
+  },
+  hasUnselectedEditableColumns() {
+    const unselectedEditableColumns = Template.instance().fields.get();
+    let foundFlag = false;
+    unselectedEditableColumns.forEach((col) => {
+      if (!col.bulkEditDisplay) {
+        foundFlag = true;
+      }
+    });
+    return foundFlag;
+  },
+  showAddEditableColumns() {
+    return Template.instance().showAddEditableColumns.get();
+  },
+  unselectedEditableColumns() {
+    const editableColumns = Template.instance().fields.get();
+    return editableColumns.filter(col => !col.bulkEditDisplay);
+  }
 });
 
 Template.bulkEditModal.events({
@@ -14,10 +39,12 @@ Template.bulkEditModal.events({
   },
   "click #update"(e) {
     e.preventDefault();
-    const fields = Template.currentData().fields;
+    let fields = Template.instance().fields.get();
     const collection = Template.currentData().collection;
     const documentIds = Template.currentData().documentIds;
     const set = Template.currentData().set;
+
+    fields = fields.filter(field => field.bulkEditDisplay);
 
     const documentsToUpdate = collection.find({ _id: { $in: documentIds } }, { fields: { _id: true } });
     Promise.all(documentsToUpdate.map(doc => new Promise(((resolve, reject) => {
@@ -76,5 +103,20 @@ Template.bulkEditModal.events({
       Notifications.error(`Couldn't update fields for the ${set}.`, err.reason, { timeout: 5000 });
     });
     $("#bulk-edit-modal").modal("hide");
+  },
+  "click #add-editable-column"(e) {
+    const editableColId = $("#add-editable-column-id").val();
+    let editableColumns = Template.instance().fields.get();
+    editableColumns = editableColumns.map((col) => {
+      if (col.data === editableColId) {
+        col.bulkEditDisplay = true;
+      }
+      return col;
+    });
+    Template.instance().fields.set(editableColumns);
+    Template.instance().showAddEditableColumns.set(false);
+  },
+  "click #show-add-editable-column"(e) {
+    Template.instance().showAddEditableColumns.set(true);
   }
 });
