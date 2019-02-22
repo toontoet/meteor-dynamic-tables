@@ -155,9 +155,13 @@ Template.CustomizableTable.events({
           const realColumn = templInstance.data.columns.find(c => (c.id && c.id === columnSpec.id) || c.data === columnSpec.data);
           templInstance.data.columns.splice(templInstance.data.columns.indexOf(realColumn), 1, columnSpec);
         }
-        const headerCellInstance = Blaze.getView(templInstance.$(`span[data-title="${prevColumnSpec.title}"]`)[0]).templateInstance();
-        if (headerCellInstance) {
-          headerCellInstance.columnTitle.set(columnSpec.title);
+        const columns = templInstance.$("table").dataTable().api().context[0].aoColumns;
+        const actualColumn = columns.find(c => (c.id && c.id === columnSpec.id) || c.data === columnSpec.data);
+        if (actualColumn) {
+          if (actualColumn.nTh) {
+            actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.replace(actualColumn.title, columnSpec.title);
+          }
+          actualColumn.title = columnSpec.label;
         }
       };
     }
@@ -207,6 +211,8 @@ Template.CustomizableTable.onCreated(function onCreated() {
   this.skip = new ReactiveVar(0);
   this.fnReorderCallback = () => {
     const columns = this.$("table").dataTable().api().context[0].aoColumns;
+    const newColumns = _.sortBy(this.selectedColumns.get(), c1 => columns.indexOf(_.find(columns, c2 => (c2.id && c2.id === c1.id) || c2.data === c1.data)));
+    this.selectedColumns.set(newColumns);
     changed(this.data.custom, this.data.id, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
   };
   let stop = false;
