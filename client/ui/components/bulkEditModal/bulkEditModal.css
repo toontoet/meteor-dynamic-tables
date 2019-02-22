@@ -3,7 +3,17 @@
 }
 .select2-selection.select2-selection--multiple{
   min-height: 50px;
+  font-size: medium;
+  font-family: 'Economica', sans-serif;
 }
 .select2-selection.select2-selection--single{
   min-height: 50px;
+  font-size: medium;
+  font-family: 'Economica', sans-serif;
+}
+.select2-selection.select2-selection--multiple input{
+  font-family: 'Economica', sans-serif;
+}
+.select2-selection.select2-selection--single input{
+  font-family: 'Economica', sans-serif;
 }
