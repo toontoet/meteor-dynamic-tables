@@ -123,8 +123,9 @@ Template.dynamicTableHeaderCell.events({
         templInstance.data.column.group = newFieldSpec.groupName;
         templInstance.data.column.title = newFieldSpec.label;
         if (actualColumn) {
-          if (actualColumn.nTh) {
-            actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.replace(new RegExp(actualColumn.title, "g"), newFieldSpec.label);
+          if (actualColumn.nTh && actualColumn.nTh.children.length) {
+            Blaze.getView(actualColumn.nTh.children[0]).templateInstance().columnTitle.set(newFieldSpec.label);
+            //actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.replace(new RegExp(actualColumn.title, "g"), newFieldSpec.label);
           }
           actualColumn.title = newFieldSpec.label;
         }
