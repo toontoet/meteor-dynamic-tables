@@ -3,7 +3,7 @@
 Package.describe({
   name: "znewsham:dynamic-table",
   summary: "Flexible datatables for large collections in Meteor",
-  version: "1.0.3",
+  version: "1.0.4",
   git: "https://bitbucket.org/znewsham/meteor-dynamic-tables"
 });
 
@@ -34,7 +34,7 @@ Package.onUse((api) => {
   // before any tabular tables are rendered
   api.use(["jquery"], "client", { weak: true });
 
-  api.mainModule("server/main.js", "server");
+  api.mainModule("server/main.js", "server", { lazy: true });
   api.mainModule("client/main.js", "client");
 });
 
