@@ -124,7 +124,7 @@ Template.dynamicTableHeaderCell.events({
         templInstance.data.column.title = newFieldSpec.label;
         if (actualColumn) {
           if (actualColumn.nTh) {
-            actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.replace(actualColumn.title, newFieldSpec.label);
+            actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.replace(new RegExp(actualColumn.title, "g"), newFieldSpec.label);
           }
           actualColumn.title = newFieldSpec.label;
         }
