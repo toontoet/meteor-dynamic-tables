@@ -1,11 +1,32 @@
 import { Template } from "meteor/templating";
+import { getAllEditableColumns } from "../../../bulkEditUtils.js";
 
 import "./bulkEditModal.html";
 import "./bulkEditModal.css";
 
 Template.bulkEditModal.onCreated(function onCreated() {
+  const documentIds = this.data.documentIds;
+  const tableData = this.data.tableData;
+  const set = this.data.set;
+  const FlexTemplates = this.data.FlexTemplates;
+  const allEditableColumns = getAllEditableColumns(documentIds, tableData, set, FlexTemplates);
+
   this.showAddEditableColumns = new ReactiveVar(false);
-  this.fields = new ReactiveVar(this.data.fields);
+  this.additionalCols = new ReactiveVar([]);
+  this.fields = new ReactiveVar(allEditableColumns);
+  this.collection = tableData.table.collection;
+
+  const self = this;
+  this.autorun(() => {
+    const additionalCols = self.additionalCols.get();
+    const handle = Meteor.subscribe(tableData.table.publication, { _id: { $in: documentIds } }, {});
+    this.autorun(() => {
+      const isReady = handle.ready();
+      if (isReady) {
+        self.fields.set(getAllEditableColumns(documentIds, tableData, set, FlexTemplates, additionalCols));
+      }
+    });
+  });
 });
 
 Template.bulkEditModal.helpers({
@@ -40,7 +61,7 @@ Template.bulkEditModal.events({
   "click #update"(e) {
     e.preventDefault();
     let fields = Template.instance().fields.get();
-    const collection = Template.currentData().collection;
+    const collection = Template.instance().collection;
     const documentIds = Template.currentData().documentIds;
     const set = Template.currentData().set;
 
@@ -106,14 +127,9 @@ Template.bulkEditModal.events({
   },
   "click #add-editable-column"(e) {
     const editableColId = $("#add-editable-column-id").val();
-    let editableColumns = Template.instance().fields.get();
-    editableColumns = editableColumns.map((col) => {
-      if (col.data === editableColId) {
-        col.bulkEditDisplay = true;
-      }
-      return col;
-    });
-    Template.instance().fields.set(editableColumns);
+    const additionalCols = Template.instance().additionalCols.get();
+    additionalCols.push(editableColId);
+    Template.instance().additionalCols.set(additionalCols);
     Template.instance().showAddEditableColumns.set(false);
   },
   "click #show-add-editable-column"(e) {
