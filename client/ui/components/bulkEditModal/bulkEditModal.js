@@ -32,7 +32,12 @@ Template.bulkEditModal.onCreated(function onCreated() {
 Template.bulkEditModal.helpers({
   displayFields() {
     const editableColumns = Template.instance().fields.get();
-    return editableColumns.filter(col => col.bulkEditDisplay);
+    const additionalCols = Template.instance().additionalCols.get();
+    const displayColumns = editableColumns.filter(col => col.bulkEditDisplay && additionalCols.indexOf(col.data) === -1);
+    additionalCols.forEach((addCol) => {
+      displayColumns.push(editableColumns.find(col => col.data === addCol));
+    });
+    return displayColumns;
   },
   hasUnselectedEditableColumns() {
     const unselectedEditableColumns = Template.instance().fields.get();
