@@ -19,7 +19,7 @@ Template.bulkEditModal.onCreated(function onCreated() {
   const self = this;
   this.autorun(() => {
     const additionalCols = self.additionalCols.get();
-    const handle = Meteor.subscribe(tableData.table.publication, { _id: { $in: documentIds } }, {});
+    const handle = self.subscribe(tableData.table.publication, { _id: { $in: documentIds } }, {});
     this.autorun(() => {
       const isReady = handle.ready();
       if (isReady) {
