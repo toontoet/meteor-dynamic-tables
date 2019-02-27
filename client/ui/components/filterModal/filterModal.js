@@ -107,8 +107,9 @@ Template.dynamicTableFilterModal.helpers({
     }
     return opA === opB ? { checked: "checked" } : {};
   },
-  checkedIfSelected(value) {
-    return Template.instance().selectedOptions.get().includes(value) ? { checked: "checked" } : {};
+  checkedIfSelected(o) {
+    const found = _.find(Template.instance().selectedOptions.get(), ({ value }) => value instanceof Date ? value.toString() === o.toString() : value === o);
+    return found;
   },
   hasOptions() {
     if (Template.instance().asyncOptions.get()) {
