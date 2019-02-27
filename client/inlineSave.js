@@ -99,6 +99,9 @@ export function inlineSave(templInstance, val, extra) {
       }
     );
   }
+  else {
+    templInstance.data.afterEditCallback(undefined, undefined);
+  }
 }
 
 export function changed(
