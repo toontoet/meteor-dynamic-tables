@@ -15,6 +15,7 @@ Template.bulkEditModal.onCreated(function onCreated() {
   this.additionalCols = new ReactiveVar([]);
   this.fields = new ReactiveVar(allEditableColumns);
   this.collection = tableData.table.collection;
+  this.bulkEditOptions = tableData.table.bulkEditOptions;
 
   const self = this;
   this.autorun(() => {
@@ -67,66 +68,82 @@ Template.bulkEditModal.events({
     e.preventDefault();
     let fields = Template.instance().fields.get();
     const collection = Template.instance().collection;
+    const bulkEditOptions = Template.instance().bulkEditOptions;
     const documentIds = Template.currentData().documentIds;
-    const set = Template.currentData().set;
 
     fields = fields.filter(field => field.bulkEditDisplay);
 
+    const updatedEntries = [];
+    const skippedEntries = [];
+    const failedEntries = [];
     const documentsToUpdate = collection.find({ _id: { $in: documentIds } }, { fields: { _id: true } });
     Promise.all(documentsToUpdate.map(doc => new Promise(((resolve, reject) => {
-      fields.forEach((field) => {
-        const editRowData = {
-          doc,
-          column: field,
-          collection
-        };
-        const editTemplateData = field.editTmplContext ? field.editTmplContext(editRowData) : editRowData;
-        const fieldSelector = $(document.getElementById(`${field.data}-input`));
-        let fieldValue = fieldSelector.val();
-        const extra = fieldSelector.data("select2") ? fieldSelector.data("select2").data() : undefined;
+      try {
+        fields.forEach((field) => {
+          const editRowData = {
+            doc,
+            column: field,
+            collection
+          };
+          const editTemplateData = field.editTmplContext ? field.editTmplContext(editRowData) : editRowData;
+          const fieldSelector = $(document.getElementById(`${field.data}-input`));
+          let fieldValue = fieldSelector.val();
+          const extra = fieldSelector.data("select2") ? fieldSelector.data("select2").data() : undefined;
 
-        if (fieldValue && _.isArray(fieldValue) && fieldValue.length) {
-          fieldValue = fieldValue.filter(v => !!v);
-        }
+          if (fieldValue && _.isArray(fieldValue) && fieldValue.length) {
+            fieldValue = fieldValue.filter(v => !!v);
+          }
 
-        if (editTemplateData.editCallback) {
-          const placeholder = fieldSelector.data("select2") ? fieldSelector.data("select2").results.placeholder.text : fieldSelector.attr("placeholder");
-          if (!fieldValue || (!fieldValue.length && placeholder === "Multiple Values")) {
-            // Skip
-          }
-          else {
-            editTemplateData.editCallback(doc._id, fieldValue, doc, () => {
-              // Handle success
-            }, extra, true);
-          }
-        }
-        else {
-          const placeholder = fieldSelector.attr("placeholder");
-          if (!fieldValue && placeholder === "Multiple Values") {
-            // Skip
-          }
-          else {
-            const $set = {};
-            $set[field.data] = fieldValue;
-            collection.update({ _id: doc._id }, { $set }, (err, res) => {
-              if (err) {
-                // Handle error
-              }
-              else {
+          if (editTemplateData.editCallback) {
+            const placeholder = fieldSelector.data("select2") ? fieldSelector.data("select2").results.placeholder.text : fieldSelector.attr("placeholder");
+            if (!fieldValue || (!fieldValue.length && placeholder === "Multiple Values")) {
+              // Skip (Field has multiple initial values and no new entries added by user)
+              skippedEntries.push({ _id: doc._id, field: field.title });
+            }
+            else {
+              editTemplateData.editCallback(doc._id, fieldValue, doc, () => {
                 // Handle success
-              }
-            });
+                updatedEntries.push({ _id: doc._id, field: field.title });
+              }, extra, true);
+            }
           }
-        }
-      });
+          else {
+            const placeholder = fieldSelector.attr("placeholder");
+            if (!fieldValue && placeholder === "Multiple Values") {
+              // Skip (Field has multiple initial values and no new entries added by user)
+              skippedEntries.push({ _id: doc._id, field: field.title });
+            }
+            else {
+              const $set = {};
+              $set[field.data] = fieldValue;
+              collection.update({ _id: doc._id }, { $set }, (err, res) => {
+                if (err) {
+                  // Handle error
+                  failedEntries.push({ _id: doc._id, field: field.title, err });
+                }
+                else {
+                  // Handle success
+                  updatedEntries.push({ _id: doc._id, field: field.title });
+                }
+              });
+            }
+          }
+        });
+        resolve();
+      }
+      catch (error) {
+        reject(error);
+      }
     }))))
     .then(() => {
-      Notifications.success(`Fields updated successful for ${set}.`, "", { timeout: 2000 });
+      if (bulkEditOptions && typeof bulkEditOptions.onSuccess === "function") {
+        bulkEditOptions.onSuccess(updatedEntries, skippedEntries, failedEntries);
+      }
     })
     .catch((err) => {
-      console.log({ err });
-
-      Notifications.error(`Couldn't update fields for the ${set}.`, err.reason, { timeout: 5000 });
+      if (bulkEditOptions && typeof bulkEditOptions.onError === "function") {
+        bulkEditOptions.onError(err);
+      }
     });
     $("#bulk-edit-modal").modal("hide");
   },
