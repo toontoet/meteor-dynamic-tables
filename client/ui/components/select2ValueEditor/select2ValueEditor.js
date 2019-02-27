@@ -90,9 +90,10 @@ Template.dynamicTableSelect2ValueEditor.events({
     if (templInstance.waiting) {
       clearTimeout(templInstance.waiting);
     }
+    const data = templInstance.$("select").data("select2").data();
     templInstance.waiting = setTimeout(() => {
       if (!templInstance.data.multiple) {
-        inlineSave(templInstance, $(target).val(), templInstance.$("select").data("select2").data());
+        inlineSave(templInstance, $(target).val(), data);
       }
     }, 100);
   }
