@@ -150,7 +150,7 @@ Template.CustomizableTable.events({
         }
         manageFieldsOptions.changeCallback(columnSpec, true);
       };
-      manageFieldsOptions.edit.editedCallback = (columnSpec) => {
+      manageFieldsOptions.edit.editedCallback = (columnSpec, prevColumnSpec) => {
         if (!_.isFunction(templInstance.data.columns)) {
           const realColumn = templInstance.data.columns.find(c => (c.id && c.id === columnSpec.id) || c.data === columnSpec.data);
           templInstance.data.columns.splice(templInstance.data.columns.indexOf(realColumn), 1, columnSpec);
@@ -173,7 +173,6 @@ Template.CustomizableTable.events({
     .css("top", bounds.top + $(e.currentTarget).height())
     .css("left", bounds.left)
     .css("z-index", 1);
-
     if (div[0].__blazeTemplate) {
       Blaze.remove(div[0].__blazeTemplate);
     }
