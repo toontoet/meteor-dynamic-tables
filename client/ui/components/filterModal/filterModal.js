@@ -129,8 +129,11 @@ Template.dynamicTableFilterModal.helpers({
     if (!options) {
       return [];
     }
-    const selectedOptions = _.compact(Template.instance().selectedOptions.get().map(o => _.find(options, { value: o })));
-    return selectedOptions.map(o => _.extend({ _id: o.value }, o));
+    const selectedOptions = _.compact(Template.instance().selectedOptions.get().map((o) => {
+      const match = _.filter(options, ({ value }) => value instanceof Date ? value.toString() === o.toString() : value === o);
+      return match;
+    }));
+    return selectedOptions.map(o => _.extend({ _id: o.value instanceof Date ? o.value.toString() : o.value }, o));
   },
   searching() {
     return Template.instance().searching.get();
