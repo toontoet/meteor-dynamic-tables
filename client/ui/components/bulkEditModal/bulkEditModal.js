@@ -7,9 +7,8 @@ import "./bulkEditModal.css";
 Template.bulkEditModal.onCreated(function onCreated() {
   const documentIds = this.data.documentIds;
   const tableData = this.data.tableData;
-  const set = this.data.set;
   const FlexTemplates = this.data.FlexTemplates;
-  const allEditableColumns = getAllEditableColumns(documentIds, tableData, set, FlexTemplates);
+  const allEditableColumns = getAllEditableColumns(documentIds, tableData, FlexTemplates);
 
   this.showAddEditableColumns = new ReactiveVar(false);
   this.additionalCols = new ReactiveVar([]);
@@ -24,7 +23,7 @@ Template.bulkEditModal.onCreated(function onCreated() {
     this.autorun(() => {
       const isReady = handle.ready();
       if (isReady) {
-        self.fields.set(getAllEditableColumns(documentIds, tableData, set, FlexTemplates, additionalCols));
+        self.fields.set(getAllEditableColumns(documentIds, tableData, FlexTemplates, additionalCols));
       }
     });
   });

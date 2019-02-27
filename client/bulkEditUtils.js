@@ -66,8 +66,8 @@ function getEditableRowData(collection, documentIds, editableCols) {
   return data;
 }
 
-function getAllTableColumns(collection, table, set, FlexTemplates) {
-  const ft = Tracker.nonreactive(() => FlexTemplates.findOne({ teamId: Meteor.teamId(), collectionName: set }));
+function getAllTableColumns(collection, table, FlexTemplates) {
+  const ft = Tracker.nonreactive(() => FlexTemplates.findOne({ teamId: Meteor.teamId(), collectionName: table.collection._name }));
   if (ft && ft.fields) {
     return _.uniq(_.union(
       table.extraColumns,
@@ -78,10 +78,10 @@ function getAllTableColumns(collection, table, set, FlexTemplates) {
   return table.columns;
 }
 
-export function getAllEditableColumns(documentIds, tableData, set, FlexTemplates, additionalCols = []) {
+export function getAllEditableColumns(documentIds, tableData, FlexTemplates, additionalCols = []) {
   const columns = tableData.table.columns ? tableData.table.columns : [];
   const collection = tableData.table.collection;
-  const allColumns = getAllTableColumns(collection, tableData.table, set, FlexTemplates);
+  const allColumns = getAllTableColumns(collection, tableData.table, FlexTemplates);
   const editableCols = columns.filter(col => !!col.editTmpl).map(col => col.data);
   let allEditableCols = allColumns.filter(col => !!col.editTmpl);
   const editableRowData = getEditableRowData(collection, documentIds, allEditableCols);

@@ -7,7 +7,6 @@ export function bulkEdit(documentIds, tableData, set, FlexTemplates) {
     title: `Edit ${documentIds.length} ${set}`,
     documentIds,
     tableData,
-    set,
     FlexTemplates
   });
 }
