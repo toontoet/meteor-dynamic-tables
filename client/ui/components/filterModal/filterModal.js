@@ -118,7 +118,7 @@ Template.dynamicTableFilterModal.helpers({
     return options && options.length;
   },
   options() {
-    return Template.instance().options.get().map(o => _.extend({ _id: o.value }, o));
+    return Template.instance().options.get().map(o => _.extend({ _id: o.value instanceof Date ? o.value.toString() : o.value }, o));
   },
   hasSelectedOptions() {
     const options = Template.instance().selectedOptions.get();
