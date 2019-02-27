@@ -3,7 +3,7 @@
 Package.describe({
   name: "znewsham:dynamic-table",
   summary: "Flexible datatables for large collections in Meteor",
-  version: "1.0.5",
+  version: "1.0.14",
   git: "https://bitbucket.org/znewsham/meteor-dynamic-tables"
 });
 
@@ -39,7 +39,7 @@ Package.onUse((api) => {
 });
 
 Package.onTest((api) => {
-  api.use("znewsham:blaze-explorer@0.0.1");
+  //api.use("znewsham:blaze-explorer@0.0.1");
   api.use([
     "fortawesome:fontawesome",
     "peppelg:bootstrap-3-modal@1.0.4",

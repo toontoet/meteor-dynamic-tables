@@ -799,7 +799,9 @@ Template.DynamicTable.onCreated(function onCreated() {
     if (columns.length < oldColumns.length) {
       const context = this.dataTable.api().context[0];
       const missingColumn = context.aoColumns.find(nc => !_.find(columns, oc => oc._id ? oc._id === nc._id : oc.data === nc.data));
-      const index = missingColumn.idx;
+      let index = missingColumn.idx;
+      const tdorh = this.$("thead").find(`td[data-column-index=${index}],th[data-column-index=${index}]`)[0];
+      index = _.toArray(this.$("thead>tr")[0].children).indexOf(tdorh);
       this.$("thead").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.$("tbody>tr").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.dataTable.api().context[0].aoColumns.splice(index, 1);
