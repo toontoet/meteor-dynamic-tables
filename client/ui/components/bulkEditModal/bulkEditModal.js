@@ -19,7 +19,8 @@ Template.bulkEditModal.onCreated(function onCreated() {
   const self = this;
   this.autorun(() => {
     const additionalCols = self.additionalCols.get();
-    const handle = self.subscribe(tableData.table.publication, { _id: { $in: documentIds } }, {});
+    const subsFields = additionalCols.map(f => ({ [f]: 1 })).reduce((acc, val) => Object.assign(acc, val), {});
+    const handle = self.subscribe(tableData.table.publication, { _id: { $in: documentIds } }, { /* fields: subsFields */ });
     this.autorun(() => {
       const isReady = handle.ready();
       if (isReady) {
