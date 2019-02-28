@@ -90,8 +90,9 @@ Template.dynamicTableFilterModal.helpers({
     }
     return opA === opB ? { checked: "checked" } : {};
   },
-  checkedIfSelected(value) {
-    return Template.instance().selectedOptions.get().includes(value) ? { checked: "checked" } : {};
+  checkedIfSelected(o) {
+    const found = _.find(Template.instance().selectedOptions.get(), (value) => value instanceof Date ? value.toString() === o.toString() : value === o);
+    return found ? { checked: "checked"} : {};
   },
   hasOptions() {
     if (Template.instance().asyncOptions.get()) {
@@ -101,7 +102,7 @@ Template.dynamicTableFilterModal.helpers({
     return options && options.length;
   },
   options() {
-    return Template.instance().options.get().map(o => _.extend({ _id: o.value }, o));
+    return Template.instance().options.get().map(o => _.extend({ _id: o.value instanceof Date ? o.value.toString() : o.value }, o));
   },
   hasSelectedOptions() {
     const options = Template.instance().selectedOptions.get();
@@ -112,8 +113,11 @@ Template.dynamicTableFilterModal.helpers({
     if (!options) {
       return [];
     }
-    const selectedOptions = _.compact(Template.instance().selectedOptions.get().map(o => _.find(options, { value: o })));
-    return selectedOptions.map(o => _.extend({ _id: o.value }, o));
+    const selectedOptions = _.compact(Template.instance().selectedOptions.get().map((o) => {
+      const match = _.find(options, ({ value }) => value instanceof Date ? value.toString() === o.toString() : value === o);
+      return match;
+    }));
+    return selectedOptions.map(o => _.extend({ _id: o.value instanceof Date ? o.value.toString() : o.value }, o));
   },
   searching() {
     return Template.instance().searching.get();
@@ -283,7 +287,7 @@ Template.dynamicTableFilterModal.events({
   "click .label-dynamic-table-selected"(e, templInstance) {
     const selectedOptions = templInstance.selectedOptions.get();
     const newOption = $(e.currentTarget).data("value");
-    templInstance.selectedOptions.set(_.without(selectedOptions, newOption));
+    templInstance.selectedOptions.set(selectedOptions.filter(f => f instanceof Date ? f.toString() !== newOption : f !== newOption));
   },
   "click .input-dynamic-table-option"(e, templInstance) {
     const selectedOptions = templInstance.selectedOptions.get();
@@ -292,7 +296,7 @@ Template.dynamicTableFilterModal.events({
       templInstance.selectedOptions.set(_.union(selectedOptions, [newOption]));
     }
     else {
-      templInstance.selectedOptions.set(_.without(selectedOptions, newOption));
+      templInstance.selectedOptions.set(selectedOptions.filter(f => f instanceof Date ? f.toString() !== newOption : f !== newOption));
     }
   },
   "keyup .input-dynamic-table-search"(e, templInstance) {
