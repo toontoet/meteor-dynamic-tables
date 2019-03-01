@@ -4,6 +4,13 @@ import { getValue } from "../../../inlineSave.js";
 import "./bulkEditModal.html";
 import "./bulkEditModal.css";
 
+/**
+ *
+ * @param {object} editableRowData - An object containing values for all fields from selected list of rows for bulk edit
+ * @param {string} field - The current fields name for which bulk edit value need to be calculated
+ *
+ * @returns {object} - The initial value/placeholder to be used in the bulk edit modal
+ */
 function getBulkEditValue(editableRowData, field) {
   const data = editableRowData.map(rowData => ({
     value: rowData.data.filter(d => d.data === field)[0].value,
@@ -46,6 +53,14 @@ function getBulkEditValue(editableRowData, field) {
   return "";
 }
 
+/**
+ *
+ * @param {object} collection - Mongo collection
+ * @param {object} documentIds - List of ids being editted
+ * @param {object} editableCols - List of columns that are editable
+ *
+ * @returns {object} - List of all rows that are being editted along with data for editable columns
+ */
 function getEditableRowData(collection, documentIds, editableCols) {
   const documentsToUpdate = collection.find({ _id: { $in: documentIds } });
   const data = [];
@@ -69,6 +84,15 @@ function getEditableRowData(collection, documentIds, editableCols) {
   return data;
 }
 
+/**
+ *
+ * @param {object} documentIds - List of ids being editted
+ * @param {object} tableData
+ * @param {object} allColumns - List of all columns in the table
+ * @param {object} additionalCols - (Optional) Additional columns to be added
+ *
+ * @returns - List of all editable columns with data to be used for displaying in bulk edit modal
+ */
 function getAllEditableColumns(documentIds, tableData, allColumns, additionalCols = []) {
   const columns = tableData.table.columns ? tableData.table.columns : [];
   const collection = tableData.table.collection;
