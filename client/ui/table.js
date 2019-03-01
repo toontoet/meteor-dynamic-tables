@@ -103,13 +103,14 @@ function doExport(extraOptions) {
 */
 function doBulkEdit(extraOptions) {
   const templateInstance = this;
+  const allColumns = templateInstance.data.allColumns;
 
   Modal.show("bulkEditModal", {
     class: "modal-medium-height",
     title: `Edit ${extraOptions.selectedIds.length} ${extraOptions.set}`,
     documentIds: extraOptions.selectedIds,
     tableData: this.data,
-    FlexTemplates: extraOptions.FlexTemplates
+    allColumns
   });
 }
 

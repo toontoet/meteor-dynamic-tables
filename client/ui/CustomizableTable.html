@@ -2,7 +2,7 @@
   {{#if readyToRender}}
     <div style="position: relative;">
       <a class="manage-fields" href="#"><i class="fa fa-eye-slash"></i> Hide/Show Columns</a>
-      {{> DynamicTable forceRefresh=forceRefresh id=id table=buildTable class=class selector=selector removeColumn=removeColumn style=style modifyFilterCallback=modifyFilterCallback advancedFilter=advancedFilter}}
+      {{> DynamicTable forceRefresh=forceRefresh id=id table=buildTable class=class selector=selector removeColumn=removeColumn style=style modifyFilterCallback=modifyFilterCallback advancedFilter=advancedFilter allColumns=allColumns}}
     </div>
   {{/if}}
 </template>

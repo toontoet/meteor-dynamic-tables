@@ -69,22 +69,9 @@ function getEditableRowData(collection, documentIds, editableCols) {
   return data;
 }
 
-function getAllTableColumns(collection, table, FlexTemplates) {
-  const ft = Tracker.nonreactive(() => FlexTemplates.findOne({ teamId: Meteor.teamId(), collectionName: table.collection._name }));
-  if (ft && ft.fields) {
-    return _.uniq(_.union(
-      table.extraColumns,
-      table.columns,
-      ft.fields.map(field => ft.flexColumnForField(field, collection, undefined))
-    ), false, t => t.data);
-  }
-  return table.columns;
-}
-
-function getAllEditableColumns(documentIds, tableData, FlexTemplates, additionalCols = []) {
+function getAllEditableColumns(documentIds, tableData, allColumns, additionalCols = []) {
   const columns = tableData.table.columns ? tableData.table.columns : [];
   const collection = tableData.table.collection;
-  const allColumns = getAllTableColumns(collection, tableData.table, FlexTemplates);
   const editableCols = columns.filter(col => !!col.editTmpl).map(col => col.data);
   let allEditableCols = allColumns.filter(col => !!col.editTmpl);
   const editableRowData = getEditableRowData(collection, documentIds, allEditableCols);
@@ -112,8 +99,8 @@ function getAllEditableColumns(documentIds, tableData, FlexTemplates, additional
 Template.bulkEditModal.onCreated(function onCreated() {
   const documentIds = this.data.documentIds;
   const tableData = this.data.tableData;
-  const FlexTemplates = this.data.FlexTemplates;
-  const allEditableColumns = getAllEditableColumns(documentIds, tableData, FlexTemplates);
+  const allColumns = this.data.allColumns;
+  const allEditableColumns = getAllEditableColumns(documentIds, tableData, allColumns);
 
   this.showAddEditableColumns = new ReactiveVar(false);
   this.additionalCols = new ReactiveVar([]);
@@ -129,7 +116,7 @@ Template.bulkEditModal.onCreated(function onCreated() {
     this.autorun(() => {
       const isReady = handle.ready();
       if (isReady) {
-        self.fields.set(getAllEditableColumns(documentIds, tableData, FlexTemplates, additionalCols));
+        self.fields.set(getAllEditableColumns(documentIds, tableData, allColumns, additionalCols));
       }
     });
   });
