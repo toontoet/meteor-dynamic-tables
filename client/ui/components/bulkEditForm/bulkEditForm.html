@@ -1,0 +1,36 @@
+<template name="dynamicTableBulkEditForm">
+  <div class="form-group" style="clear: both;">
+    {{#dismissable class="alert alert-blocks"}}
+      Warning: Editing fields in bulk will overwrite all existing values in the selected {{ set }}.
+    {{/dismissable}}
+    {{#each field in displayFields}}
+      <label class="col-md-2 control-label">{{ field.title }}:</label>
+      <div class="col-md-10 no-padding" style="padding-bottom: 1px;">
+        {{> Template.dynamic template=field.editTemplateViewName data=field.editTemplateContext }}
+      </div>
+    {{/each}}
+  </div>
+  {{#if hasUnselectedEditableColumns}}
+    <div class="form-group" style="clear: both;">
+    {{#if showAddEditableColumns}}
+        <div class="col-md-3"></div>
+        <div class="col-md-6">
+            <select id="add-editable-column-id" style="width: 100%">
+              {{#each unselectedEditableColumn in unselectedEditableColumns}}
+                <option value="{{unselectedEditableColumn.data}}">{{unselectedEditableColumn.title}}</option>
+              {{/each}}
+            </select>
+        </div>
+        <div class="col-md-3">
+          <button id="add-editable-column" class="pull-right btn btn-default"><i class="fa fa-plus"></i> Add</button>
+        </div>
+    {{else}}
+        <div class="col-md-12">
+          <div class="pull-right">
+            <a id="show-add-editable-column" href="#"><i class="fa fa-plus"></i> New Field</a>
+          </div>
+        </div>
+    {{/if}}
+    </div>
+  {{/if}}
+</template>

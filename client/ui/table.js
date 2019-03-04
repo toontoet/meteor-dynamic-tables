@@ -105,7 +105,7 @@ function doBulkEdit(extraOptions) {
   const templateInstance = this;
   const allColumns = templateInstance.data.allColumns;
 
-  Modal.show("bulkEditModal", {
+  Modal.show("dynamicTableBulkEditModal", {
     class: "modal-medium-height",
     title: `Edit ${extraOptions.selectedIds.length} ${extraOptions.set}`,
     documentIds: extraOptions.selectedIds,

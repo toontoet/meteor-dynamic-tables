@@ -1,5 +1,5 @@
-<template name="bulkEditModal">
-  <div class="bulkEditModal">
+<template name="dynamicTableBulkEditModal">
+  <div class="dynamicTableBulkEditModal">
     <div
       class="modal fade in {{ class }}"
       id="bulk-edit-modal"
@@ -16,15 +16,16 @@
           </div>
           <div class="modal-body">
             <div class="container-fluid">
+              {{> dynamicTableBulkEditForm this}}
               <div class="form-group" style="clear: both;">
                 {{#dismissable class="alert alert-blocks"}}
                   Warning: Editing fields in bulk will overwrite all existing values in the selected {{ set }}.
                 {{/dismissable}}
                 {{#each field in displayFields}}
-                <label class="col-md-2 control-label">{{ field.title }}:</label>
-                <div class="col-md-10 no-padding" style="padding-bottom: 1px;">
-                  {{> Template.dynamic template=field.editTemplateViewName data=field.editTemplateContext }}
-                </div>
+                  <label class="col-md-2 control-label">{{ field.title }}:</label>
+                  <div class="col-md-10 no-padding" style="padding-bottom: 1px;">
+                    {{> Template.dynamic template=field.editTemplateViewName data=field.editTemplateContext }}
+                  </div>
                 {{/each}}
               </div>
               {{#if hasUnselectedEditableColumns}}

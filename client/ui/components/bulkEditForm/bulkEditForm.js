@@ -1,9 +1,7 @@
 import { Template } from "meteor/templating";
 import { getValue } from "../../../inlineSave.js";
 
-import "./bulkEditModal.html";
-import "./bulkEditModal.css";
-import "../bulkEditForm/bulkEditForm.js";
+import "./bulkEditForm.html";
 
 /**
  *
@@ -126,7 +124,7 @@ function getAllEditableColumns(documentIds, tableData, allColumns, additionalCol
   return allEditableCols;
 }
 
-Template.dynamicTableBulkEditModal.onCreated(function onCreated() {
+Template.dynamicTableBulkEditForm.onCreated(function onCreated() {
   const documentIds = this.data.documentIds;
   const tableData = this.data.tableData;
   const allColumns = this.data.allColumns;
@@ -152,7 +150,7 @@ Template.dynamicTableBulkEditModal.onCreated(function onCreated() {
   });
 });
 
-Template.dynamicTableBulkEditModal.helpers({
+Template.dynamicTableBulkEditForm.helpers({
   displayFields() {
     const editableColumns = Template.instance().fields.get();
     const additionalCols = Template.instance().additionalCols.get();
@@ -181,7 +179,7 @@ Template.dynamicTableBulkEditModal.helpers({
   }
 });
 
-Template.dynamicTableBulkEditModal.events({
+Template.dynamicTableBulkEditForm.events({
   "click #cancel"(e) {
     e.preventDefault();
     $("#bulk-edit-modal").modal("hide");
