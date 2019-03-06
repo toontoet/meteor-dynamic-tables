@@ -64,7 +64,7 @@ function getBulkEditValue(editableRowData, field) {
 function getEditableRowData(collection, documentIds, editableCols) {
   const documentsToUpdate = collection.find({ _id: { $in: documentIds } });
   const data = [];
-  Promise.all(documentsToUpdate.map(doc => new Promise((() => {
+  documentsToUpdate.forEach((doc) => {
     const colData = editableCols.map((field) => {
       const editRowData = {
         doc,
@@ -80,7 +80,7 @@ function getEditableRowData(collection, documentIds, editableCols) {
       };
     });
     data.push({ _id: doc._id, data: colData });
-  }))));
+  });
   return data;
 }
 
