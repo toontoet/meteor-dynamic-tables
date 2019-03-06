@@ -5,7 +5,7 @@ Template.dynamicTableSingleValueTextEditor.helpers({
   editableValue() {
     return this.value !== undefined ? this.value : getValue(this.doc, this.column.data);
   },
-  inputId() {
+  inputClass() {
     return this.id !== undefined ? this.id : "";
   },
   placeholder() {

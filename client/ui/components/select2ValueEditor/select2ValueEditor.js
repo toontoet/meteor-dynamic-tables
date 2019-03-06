@@ -12,7 +12,7 @@ function getAjaxConfig(origOptions, optionsResult) {
       const val = self.data.value || getValue(self.data.doc, self.data.column.data) || [];
       origOptions(self.data.doc, self.data.column, val, params.data.q, (results) => {
         if (results.length && !hadResults) {
-          const select = self.$(document.getElementById(`${self.selectId}`));
+          const select = self.$(document.getElementsByClassName(`${self.selectId}`));
           select.empty();
           results.forEach((result) => {
             select.append($("<option selected=\"selected\" aria-selected=\"true\">").text(result.text).val(result.id));
@@ -40,7 +40,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   if (_.isFunction(options)) {
     options = options(this.data.doc, this.data.column, val);
   }
-  this.$(document.getElementById(`${this.selectId}`)).select2({
+  this.$(document.getElementsByClassName(`${this.selectId}`)).select2({
     multiple: !!this.data.multiple,
     allowClear: true,
     tags: this.data.tags || !options,
@@ -68,13 +68,13 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
       text: this.placeholder
     }
   });
-  this.$(document.getElementById(`${this.selectId}`)).val(val);
-  this.$(document.getElementById(`${this.selectId}`)).trigger("change");
-  this.$(document.getElementById(`${this.selectId}`)).select2("open");
+  this.$(document.getElementsByClassName(`${this.selectId}`)).val(val);
+  this.$(document.getElementsByClassName(`${this.selectId}`)).trigger("change");
+  this.$(document.getElementsByClassName(`${this.selectId}`)).select2("open");
   if (this.data.bulkEdit) {
-    this.$(document.getElementById(`${this.selectId}`)).select2("close");
+    this.$(document.getElementsByClassName(`${this.selectId}`)).select2("close");
     setTimeout(() => {
-      this.$(document.getElementById(`${this.selectId}`)).trigger("change");
+      this.$(document.getElementsByClassName(`${this.selectId}`)).trigger("change");
     }, 100);
   }
   if (this.handler) {
@@ -82,10 +82,10 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   }
   this.handler = (e) => {
     try {
-      const container = this.$(document.getElementById(`${this.selectId}`)).data("select2").$container;
+      const container = this.$(document.getElementsByClassName(`${this.selectId}`)).data("select2").$container;
       if (!container.has($(e.target)).length) {
         if (!this.data.bulkEdit) {
-          inlineSave(this, this.$(document.getElementById(`${this.selectId}`)).val(), this.$(document.getElementById(`${this.selectId}`)).data("select2").data());
+          inlineSave(this, this.$(document.getElementsByClassName(`${this.selectId}`)).val(), this.$(document.getElementsByClassName(`${this.selectId}`)).data("select2").data());
         }
       }
     }
@@ -97,12 +97,12 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
 });
 
 Template.dynamicTableSelect2ValueEditor.onDestroyed(function onDestroyed() {
-  this.$(document.getElementById(`${this.selectId}`)).select2("destroy");
+  this.$(document.getElementsByClassName(`${this.selectId}`)).select2("destroy");
   document.removeEventListener("mousedown", this.handler, false);
 });
 
 Template.dynamicTableSelect2ValueEditor.helpers({
-  inputId() {
+  inputClass() {
     return Template.instance().selectId;
   }
 });
