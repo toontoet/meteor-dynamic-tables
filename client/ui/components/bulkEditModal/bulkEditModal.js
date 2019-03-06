@@ -176,11 +176,11 @@ Template.bulkEditModal.helpers({
 });
 
 Template.bulkEditModal.events({
-  "click #cancel"(e) {
+  "click .cancelBtn"(e) {
     e.preventDefault();
-    $("#bulk-edit-modal").modal("hide");
+    $(".bulk-edit-modal").modal("hide");
   },
-  "click #update"(e) {
+  "click .updateBtn"(e) {
     e.preventDefault();
     let fields = Template.instance().fields.get();
     const collection = Template.instance().collection;
@@ -261,16 +261,16 @@ Template.bulkEditModal.events({
         bulkEditOptions.onError(err);
       }
     });
-    $("#bulk-edit-modal").modal("hide");
+    $(".bulk-edit-modal").modal("hide");
   },
-  "click #add-editable-column"(e) {
-    const editableColId = $("#add-editable-column-id").val();
+  "click .add-editable-column"(e) {
+    const editableColId = $(".add-editable-column-id").val();
     const additionalCols = Template.instance().additionalCols.get();
     additionalCols.push(editableColId);
     Template.instance().additionalCols.set(additionalCols);
     Template.instance().showAddEditableColumns.set(false);
   },
-  "click #show-add-editable-column"(e) {
+  "click .show-add-editable-column"(e) {
     Template.instance().showAddEditableColumns.set(true);
   }
 });

@@ -1,18 +1,16 @@
 <template name="bulkEditModal">
   <div class="bulkEditModal">
     <div
-      class="modal fade in {{ class }}"
-      id="bulk-edit-modal"
+      class="modal fade in {{ class }} bulk-edit-modal"
       tabindex="-1"
       role="dialog"
-      aria-labelledby="modal-{{ id }}"
       aria-hidden="false"
       style="display: none;"
     >
       <div class="modal-dialog-new {{ class }}">
         <div class="modal-content">
           <div class="modal-header">
-            <h4 class="modal-title" id="modal-{{ id }}">{{ title }}</h4>
+            <h4 class="modal-title">{{ title }}</h4>
           </div>
           <div class="modal-body">
             <div class="container-fluid">
@@ -32,19 +30,19 @@
                 {{#if showAddEditableColumns}}
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
-                        <select id="add-editable-column-id" style="width: 100%">
+                        <select class="add-editable-column-id" style="width: 100%">
                           {{#each unselectedEditableColumn in unselectedEditableColumns}}
                             <option value="{{unselectedEditableColumn.data}}">{{unselectedEditableColumn.title}}</option>
                           {{/each}}
                         </select>
                     </div>
                     <div class="col-md-3">
-                      <button id="add-editable-column" class="pull-right btn btn-default"><i class="fa fa-plus"></i> Add</button>
+                      <button class="pull-right btn btn-default add-editable-column"><i class="fa fa-plus"></i> Add</button>
                     </div>
                 {{else}}
                     <div class="col-md-12">
                       <div class="pull-right">
-                        <a id="show-add-editable-column" href="#"><i class="fa fa-plus"></i> New Field</a>
+                        <a class="show-add-editable-column" href="#"><i class="fa fa-plus"></i> New Field</a>
                       </div>
                     </div>
                 {{/if}}
@@ -53,8 +51,8 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="submit" class="btn btn-inverse" id="update">Submit</button>
-            <button type="button" class="btn btn-default" id="cancel">Cancel</button>
+            <button type="submit" class="btn btn-inverse updateBtn">Submit</button>
+            <button type="button" class="btn btn-default cancelBtn">Cancel</button>
           </div>
         </div>
       </div>
