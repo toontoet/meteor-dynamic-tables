@@ -1,5 +1,5 @@
 import "./singleValueTextEditor.html";
-import { inlineSave, getValue } from "../../../inlineSave.js";
+import { inlineSave, getValue, nextField } from "../../../inlineSave.js";
 
 Template.dynamicTableSingleValueTextEditor.helpers({
   editableValue() {
@@ -13,6 +13,11 @@ Template.dynamicTableSingleValueTextEditor.events({
   "keydown input"(e, templInstance) {
     if (e.keyCode === 13) {
       inlineSave(templInstance, $(e.currentTarget).val());
+    }
+    else if (e.keyCode === 9) {
+      e.preventDefault();
+      inlineSave(templInstance, $(e.currentTarget).val());
+      nextField(templInstance);
     }
   },
   "blur input"(e, templInstance) {
