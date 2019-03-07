@@ -86,70 +86,44 @@ function getEditableRowData(collection, documentIds, editableCols) {
 
 /**
  *
- * @param {object} documentIds - List of ids being editted
- * @param {object} tableData
- * @param {object} allColumns - List of all columns in the table
- * @param {object} additionalCols - (Optional) Additional columns to be added
+ * @param {object} editableCols - List of editable columns
+ * @param {object} additionalCols - Additional columns to be added
+ * @param {object} colData - Column data field name
  *
- * @returns - List of all editable columns with data to be used for displaying in bulk edit modal
+ * @returns {boolean} - True if current field need to be displayed in bulk edit form
  */
-function getAllEditableColumns(documentIds, tableData, allColumns, additionalCols = []) {
-  const columns = tableData.table.columns ? tableData.table.columns : [];
-  const collection = tableData.table.collection;
-  const editableCols = columns.filter(col => !!col.editTmpl).map(col => col.data);
-  let allEditableCols = allColumns.filter(col => !!col.editTmpl);
-  const editableRowData = getEditableRowData(collection, documentIds, allEditableCols);
-
-  allEditableCols = allEditableCols.map((col) => {
-    const {
-      value, placeholder, context
-    } = getBulkEditValue(editableRowData, col.data);
-
-    col.editTemplateContext = Object.assign(context, {
-      id: `${col.data}-input`,
-      value: value || [],
-      placeholder,
-      bulkEdit: true
-    });
-    col.bulkEditDisplay = editableCols.indexOf(col.data) > -1 || additionalCols.indexOf(col.data) > -1;
-
-    return col;
-  });
-
-  return allEditableCols;
+function bulkEditDisplay(editableCols, additionalCols, colData) {
+  return editableCols.indexOf(colData) > -1 || additionalCols.indexOf(colData) > -1;
 }
 
 Template.bulkEditModal.onCreated(function onCreated() {
   const documentIds = this.data.documentIds;
   const tableData = this.data.tableData;
   const allColumns = this.data.allColumns;
-  const allEditableColumns = getAllEditableColumns(documentIds, tableData, allColumns);
+  const columns = tableData.table.columns ? tableData.table.columns : [];
+  const allEditableCols = allColumns.filter(col => !!col.editTmpl);
 
   this.showAddEditableColumns = new ReactiveVar(false);
   this.additionalCols = new ReactiveVar([]);
-  this.fields = new ReactiveVar(allEditableColumns);
   this.collection = tableData.table.collection;
   this.bulkEditOptions = tableData.table.bulkEditOptions;
+  this.editableCols = columns.filter(col => !!col.editTmpl).map(col => col.data);
+  this.editableRowData = getEditableRowData(tableData.table.collection, documentIds, allEditableCols);
+  this.fields = allEditableCols;
 
   const self = this;
   this.autorun(() => {
     const additionalCols = self.additionalCols.get();
     // const subsFields = additionalCols.map(f => ({ [f]: 1 })).reduce((acc, val) => Object.assign(acc, val), {});
-    const handle = self.subscribe(tableData.table.publication, { _id: { $in: documentIds } }, { /* fields: subsFields */ });
-    this.autorun(() => {
-      const isReady = handle.ready();
-      if (isReady) {
-        self.fields.set(getAllEditableColumns(documentIds, tableData, allColumns, additionalCols));
-      }
-    });
+    self.subscribe(tableData.table.publication, { _id: { $in: documentIds } }, { /* fields: subsFields */ });
   });
 });
 
 Template.bulkEditModal.helpers({
   displayFields() {
-    const editableColumns = Template.instance().fields.get();
+    const editableColumns = Template.instance().fields;
     const additionalCols = Template.instance().additionalCols.get();
-    const displayColumns = editableColumns.filter(col => col.bulkEditDisplay && additionalCols.indexOf(col.data) === -1);
+    const displayColumns = editableColumns.filter(col => bulkEditDisplay(Template.instance().editableCols, additionalCols, col.data) && additionalCols.indexOf(col.data) === -1);
     additionalCols.forEach((addCol) => {
       displayColumns.push(editableColumns.find(col => col.data === addCol));
     });
@@ -158,11 +132,23 @@ Template.bulkEditModal.helpers({
   templateViewName() {
     return this.editTmpl.viewName.split(".")[1];
   },
+  editTemplateContext() {
+    const editableRowData = Template.instance().editableRowData;
+    const { value, placeholder, context } = getBulkEditValue(editableRowData, this.data);
+
+    return Object.assign(context, {
+      id: `${this.data}-input`,
+      value: value || [],
+      placeholder,
+      bulkEdit: true
+    });
+  },
   hasUnselectedEditableColumns() {
-    const unselectedEditableColumns = Template.instance().fields.get();
+    const unselectedEditableColumns = Template.instance().fields;
+    const additionalCols = Template.instance().additionalCols.get();
     let foundFlag = false;
     unselectedEditableColumns.forEach((col) => {
-      if (!col.bulkEditDisplay) {
+      if (!bulkEditDisplay(Template.instance().editableCols, additionalCols, col.data)) {
         foundFlag = true;
       }
     });
@@ -172,8 +158,9 @@ Template.bulkEditModal.helpers({
     return Template.instance().showAddEditableColumns.get();
   },
   unselectedEditableColumns() {
-    const editableColumns = Template.instance().fields.get();
-    return editableColumns.filter(col => !col.bulkEditDisplay);
+    const editableColumns = Template.instance().fields;
+    const additionalCols = Template.instance().additionalCols.get();
+    return editableColumns.filter(col => !bulkEditDisplay(Template.instance().editableCols, additionalCols, col.data));
   }
 });
 
@@ -184,12 +171,13 @@ Template.bulkEditModal.events({
   },
   "click .updateBtn"(e) {
     e.preventDefault();
-    let fields = Template.instance().fields.get();
+    let fields = Template.instance().fields;
     const collection = Template.instance().collection;
     const bulkEditOptions = Template.instance().bulkEditOptions;
     const documentIds = Template.currentData().documentIds;
+    const additionalCols = Template.instance().additionalCols.get();
 
-    fields = fields.filter(field => field.bulkEditDisplay);
+    fields = fields.filter(field => bulkEditDisplay(Template.instance().editableCols, additionalCols, field.data));
 
     const updatedEntries = [];
     const skippedEntries = [];
