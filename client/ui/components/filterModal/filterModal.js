@@ -322,7 +322,7 @@ Template.dynamicTableFilterModal.events({
       doSearch(e, templInstance);
       return;
     }
-    if (_.isArray(data.filter.options) || !data.filter.options) {
+    if (_.isArray(data.filter.options)) {
       templInstance.search.set(elem.val());
     }
     else {
