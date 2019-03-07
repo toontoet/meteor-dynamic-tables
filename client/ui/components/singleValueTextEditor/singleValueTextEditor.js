@@ -6,7 +6,7 @@ Template.dynamicTableSingleValueTextEditor.helpers({
     return this.value !== undefined ? this.value : getValue(this.doc, this.column.data);
   },
   type() {
-    return this.column.type;
+    return (this.column && this.column.type) ? this.column.type : "text";
   }
 });
 Template.dynamicTableSingleValueTextEditor.events({
