@@ -4,6 +4,9 @@ import { inlineSave, getValue } from "../../../inlineSave.js";
 Template.dynamicTableSingleValueTextEditor.helpers({
   editableValue() {
     return this.value !== undefined ? this.value : getValue(this.doc, this.column.data);
+  },
+  type() {
+    return this.column.type;
   }
 });
 Template.dynamicTableSingleValueTextEditor.events({

@@ -59,7 +59,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     }].concat(options || []),
     placeholder: {
       id: [],
-      text: "Add tags"
+      text: expandOnEdit ? `Search by ${this.data.column.label}` : "Add tags"
     }
   });
   this.$("select").val(val);
