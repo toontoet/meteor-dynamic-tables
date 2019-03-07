@@ -105,7 +105,6 @@ function getAllEditableColumns(documentIds, tableData, allColumns, additionalCol
       value, placeholder, context
     } = getBulkEditValue(editableRowData, col.data);
 
-    col.editTemplateViewName = col.editTmpl.viewName.split(".")[1];
     col.editTemplateContext = Object.assign(context, {
       id: `${col.data}-input`,
       value: value || [],
@@ -155,6 +154,9 @@ Template.bulkEditModal.helpers({
       displayColumns.push(editableColumns.find(col => col.data === addCol));
     });
     return displayColumns;
+  },
+  templateViewName() {
+    return this.editTmpl.viewName.split(".")[1];
   },
   hasUnselectedEditableColumns() {
     const unselectedEditableColumns = Template.instance().fields.get();
