@@ -141,7 +141,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
 
   // NOTE: we only want to run this code when triggered, not by an advanced search change.
   const advancedSearch = Tracker.nonreactive(() => this.advancedSearch.get());
-
+  const startsWith = !columns[columnIndex].fullSearch;
   if (optionsOrQuery) {
     let newAdvancedSearchField;
     if (operator === "$between") {
@@ -164,10 +164,10 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       }
     }
     else if (!_.isArray(optionsOrQuery) && optionsOrQuery !== "") {
-      newAdvancedSearchField = operator === "$regex" ? { $regex: `^${optionsOrQuery}` } : { $not: new RegExp(`^${optionsOrQuery}`) };
+      newAdvancedSearchField = operator === "$regex" ? { $regex: `${startsWith ? "^" : ""}${optionsOrQuery}` } : { $not: new RegExp(`${startsWith ? "^" : ""}${optionsOrQuery}`) };
     }
     if (columns[columnIndex].search) {
-      newAdvancedSearchField = columns[columnIndex].search(newAdvancedSearchField, true);
+      newAdvancedSearchField = columns[columnIndex].search(_.extend({}, newAdvancedSearchField, { $options: columns[columnIndex].searchOptions }), true);
       let arrayToReplaceIn = advancedSearch.$and || [];
       let found = false;
       arrayToReplaceIn = arrayToReplaceIn.map((obj) => {
@@ -191,7 +191,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     }
     else if (!EJSON.equals(EJSON.toJSONValue(advancedSearch[fieldName]), EJSON.toJSONValue(newAdvancedSearchField))) {
       if (newAdvancedSearchField) {
-        advancedSearch[fieldName] = newAdvancedSearchField;
+        advancedSearch[fieldName] = _.extend({}, newAdvancedSearchField, { $options: columns[columnIndex].searchOptions });
       }
       this.advancedSearch.set(advancedSearch);
       changed = true;
@@ -203,7 +203,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     changed = true;
   }
   else if (columns[columnIndex].search) {
-    const searchResult = columns[columnIndex].search("");
+    const searchResult = columns[columnIndex].search({ $regex: "" });
     let arrayToReplaceIn = advancedSearch.$and || [];
     arrayToReplaceIn = arrayToReplaceIn.map((obj) => {
       const arr = obj.$or || obj.$and;
