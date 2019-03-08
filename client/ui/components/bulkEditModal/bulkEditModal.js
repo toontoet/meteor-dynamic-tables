@@ -108,14 +108,20 @@ Template.bulkEditModal.onCreated(function onCreated() {
   this.collection = tableData.table.collection;
   this.bulkEditOptions = tableData.table.bulkEditOptions;
   this.editableCols = columns.filter(col => !!col.editTmpl).map(col => col.data);
-  this.editableRowData = getEditableRowData(tableData.table.collection, documentIds, allEditableCols);
+  this.editableRowData = new ReactiveVar(getEditableRowData(tableData.table.collection, documentIds, allEditableCols));
   this.fields = allEditableCols;
 
   const self = this;
   this.autorun(() => {
     const additionalCols = self.additionalCols.get();
-    // const subsFields = additionalCols.map(f => ({ [f]: 1 })).reduce((acc, val) => Object.assign(acc, val), {});
-    self.subscribe(tableData.table.publication, { _id: { $in: documentIds } }, { /* fields: subsFields */ });
+    const subsFields = additionalCols.map(f => ({ [f]: 1 })).reduce((acc, val) => Object.assign(acc, val), {});
+    const handle = self.subscribe(tableData.table.publication, { _id: { $in: documentIds } }, { fields: subsFields });
+    this.autorun(() => {
+      const isReady = handle.ready();
+      if (isReady) {
+        self.editableRowData.set(getEditableRowData(tableData.table.collection, documentIds, allEditableCols));
+      }
+    });
   });
 });
 
@@ -133,7 +139,7 @@ Template.bulkEditModal.helpers({
     return this.editTmpl.viewName.split(".")[1];
   },
   editTemplateContext() {
-    const editableRowData = Template.instance().editableRowData;
+    const editableRowData = Template.instance().editableRowData.get();
     const { value, placeholder, context } = getBulkEditValue(editableRowData, this.data);
 
     return Object.assign(context, {
