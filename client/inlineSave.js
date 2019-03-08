@@ -3,8 +3,12 @@ import { EJSON } from "meteor/ejson";
 export function nextField(templInstance) {
   nextField.inProgress = true;
   try {
-    const tableTmplInstance = Blaze.getView(templInstance.$("input,select").closest("table")[0]).templateInstance();
-    const editableColumns = tableTmplInstance.columns.filter(c => c.editTmpl || c.editable);
+    const tableTmplInstance = Blaze.getView(templInstance.$("input,select").closest("table")[0]).templateInstance()
+    const actualColumns = tableTmplInstance.dataTable.api().context[0].aoColumns;
+    const editableColumns = _.sortBy(
+      tableTmplInstance.columns,
+      column => actualColumns.indexOf(actualColumns.find(c => (c.id && c.id === column.id) || c.data === column.data))
+    ).filter(c => c.editTmpl || c.editable);
     const currentColumnIndex = editableColumns.indexOf(templInstance.data.column);
     let useNextRow = false;
     if (currentColumnIndex === -1) {
@@ -14,7 +18,7 @@ export function nextField(templInstance) {
       useNextRow = true;
     }
     const nextColumn = editableColumns[useNextRow ? 0 : currentColumnIndex + 1];
-    const actualColumn = tableTmplInstance.dataTable.api().context[0].aoColumns.find(c => (c.id && c.id === nextColumn.id) || c.data === nextColumn.data);
+    const actualColumn = actualColumns.find(c => (c.id && c.id === nextColumn.id) || c.data === nextColumn.data);
     const nextColumnTh = tableTmplInstance.$(`th[data-column-index=${actualColumn.idx}],td[data-column-index=${actualColumn.idx}]`)[0];
     const nextColumnThIndex = _.toArray(nextColumnTh.parentElement.children).indexOf(nextColumnTh);
     const $currentTr = templInstance.$("input,select").closest("tr");
