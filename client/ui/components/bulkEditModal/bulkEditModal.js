@@ -22,7 +22,10 @@ function getBulkEditValue(editableRowData, field) {
   if (allValues) {
     let value = "";
     let placeholder = "";
-    if (_.isArray(allValues[0])) {
+    if (!allValues.every(v => typeof v === typeof allValues[0])) {
+      placeholder = "Multiple Values";
+    }
+    else if (_.isArray(allValues[0])) {
       const allValuesIncludingEmpty = allValues.map(v => (!v || !v.length ? [""] : v));
       const values = _.union(...allValuesIncludingEmpty);
       let hasMultiple = false;
