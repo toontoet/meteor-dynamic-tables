@@ -75,7 +75,9 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     this.$(document.getElementsByClassName(`${this.selectId}`)).select2("close");
     setTimeout(() => {
       this.$(document.getElementsByClassName(`${this.selectId}`)).trigger("change");
-    }, 100);
+      this.$(document.getElementsByClassName(`${this.selectId}`)).select2("open");
+      this.$(document.getElementsByClassName(`${this.selectId}`)).select2("close");
+    }, 300);
   }
   if (this.handler) {
     document.removeEventListener("mousedown", this.handler, false);

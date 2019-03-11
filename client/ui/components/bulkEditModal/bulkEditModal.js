@@ -105,6 +105,7 @@ Template.bulkEditModal.onCreated(function onCreated() {
 
   this.showAddEditableColumns = new ReactiveVar(false);
   this.additionalCols = new ReactiveVar([]);
+  this.subscribedAdditionalCols = new ReactiveVar([]);
   this.collection = tableData.table.collection;
   this.bulkEditOptions = tableData.table.bulkEditOptions;
   this.editableCols = columns.filter(col => !!col.editTmpl).map(col => col.data);
@@ -120,6 +121,7 @@ Template.bulkEditModal.onCreated(function onCreated() {
       const isReady = handle.ready();
       if (isReady) {
         self.editableRowData.set(getEditableRowData(tableData.table.collection, documentIds, allEditableCols));
+        self.subscribedAdditionalCols.set(additionalCols);
       }
     });
   });
@@ -128,7 +130,7 @@ Template.bulkEditModal.onCreated(function onCreated() {
 Template.bulkEditModal.helpers({
   displayFields() {
     const editableColumns = Template.instance().fields;
-    const additionalCols = Template.instance().additionalCols.get();
+    const additionalCols = Template.instance().subscribedAdditionalCols.get();
     const displayColumns = editableColumns.filter(col => bulkEditDisplay(Template.instance().editableCols, additionalCols, col.data) && additionalCols.indexOf(col.data) === -1);
     additionalCols.forEach((addCol) => {
       displayColumns.push(editableColumns.find(col => col.data === addCol));
