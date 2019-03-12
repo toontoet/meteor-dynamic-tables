@@ -52,9 +52,16 @@ export function getColumns(columns, reactive = false) {
   return columns;
 }
 
+function offset(el) {
+  const rect = el.getBoundingClientRect();
+  const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  return { top: rect.top + scrollTop, left: rect.left + scrollLeft };
+}
 export function getPosition(el) {
   let xPos = 0;
   let yPos = 0;
+  const off = offset(el);
   const width = $(el).width();
   while (el) {
     if (el.tagName === "BODY") {
@@ -74,8 +81,8 @@ export function getPosition(el) {
     el = el.offsetParent;
   }
   return {
-    left: xPos,
-    top: yPos,
+    left: Math.max(off.left, xPos),
+    top: Math.max(off.top, yPos),
     width
   };
 }
