@@ -12,12 +12,15 @@ Template.bulkEditModal.events({
   "click .updateBtn"(e) {
     e.preventDefault();
     let fields = Template.currentData().allColumns.filter(col => !!col.editTmpl);
-    const collection = Template.instance().collection;
-    const bulkEditOptions = Template.instance().bulkEditOptions;
+    const tableData = Template.currentData().tableData;
     const documentIds = Template.currentData().documentIds;
+    const columns = tableData.table.columns ? tableData.table.columns : [];
+    const editableCols = columns.filter(col => !!col.editTmpl).map(col => col.data);
+    const collection = tableData.table.collection;
+    const bulkEditOptions = tableData.table.bulkEditOptions;
     const additionalCols = Template.dynamicTableBulkEditForm.additionalCols;
 
-    fields = fields.filter(field => Template.instance().editableCols.indexOf(field.data) > -1 || additionalCols.indexOf(field.data) > -1);
+    fields = fields.filter(field => editableCols.indexOf(field.data) > -1 || additionalCols.indexOf(field.data) > -1);
 
     const updatedEntries = [];
     const skippedEntries = [];
