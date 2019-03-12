@@ -1,5 +1,5 @@
 import "./select2ValueEditor.html";
-import { getValue, inlineSave } from "../../../inlineSave.js";
+import { getValue, inlineSave, nextField } from "../../../inlineSave.js";
 
 function getAjaxConfig(origOptions, optionsResult) {
   const self = this;
@@ -25,6 +25,31 @@ function getAjaxConfig(origOptions, optionsResult) {
     }
   };
 }
+
+function handler(e) {
+  if (nextField.inProgress) {
+    return;
+  }
+  let $select = $(e.currentTarget).closest("td").find(".dynamicTableSelect2ValueEditor");
+  if (!$select.length) {
+    const possibles = _.toArray($(".select2-container"));
+    $select = $(possibles
+    .find(elem => $(elem).data("element").data("select2").$dropdown.find(e.currentTarget).length))
+    .closest("td").find(".dynamicTableSelect2ValueEditor");
+  }
+  const tmplInstance = Blaze.getView($select[0]).templateInstance();
+  if (e.keyCode === 9) {
+    inlineSave(tmplInstance, $select.val());
+    nextField(tmplInstance);
+  }
+}
+
+// NOTE: not sure why we need different handlers for multi vs single? Could be JP-common code?
+jQuery(document).ready(($) => {
+  $(document).on('keydown', '.select2-search--dropdown input.select2-search__field', handler);
+  $(document).on('keyup', '.select2-selection--multiple input.select2-search__field', handler);
+});
+
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   let options = this.data.options;
   const val = this.data.value || getValue(this.data.doc, this.data.column.data) || [];
@@ -90,9 +115,10 @@ Template.dynamicTableSelect2ValueEditor.events({
     if (templInstance.waiting) {
       clearTimeout(templInstance.waiting);
     }
+    const data = templInstance.$("select").data("select2").data();
     templInstance.waiting = setTimeout(() => {
       if (!templInstance.data.multiple) {
-        inlineSave(templInstance, $(target).val(), templInstance.$("select").data("select2").data());
+        inlineSave(templInstance, $(target).val(), data);
       }
     }, 100);
   }

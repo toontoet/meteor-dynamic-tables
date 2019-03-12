@@ -1,5 +1,50 @@
 import { EJSON } from "meteor/ejson";
 
+export function nextField(templInstance) {
+  nextField.inProgress = true;
+  try {
+    const tableTmplInstance = Blaze.getView(templInstance.$("input,select").closest("table")[0]).templateInstance()
+    const actualColumns = tableTmplInstance.dataTable.api().context[0].aoColumns;
+    const editableColumns = _.sortBy(
+      tableTmplInstance.columns,
+      column => actualColumns.indexOf(actualColumns.find(c => (c.id && c.id === column.id) || c.data === column.data))
+    ).filter(c => c.editTmpl || c.editable);
+    const currentColumnIndex = editableColumns.indexOf(templInstance.data.column);
+    let useNextRow = false;
+    if (currentColumnIndex === -1) {
+      return;
+    }
+    if (currentColumnIndex + 1 >= editableColumns.length) {
+      useNextRow = true;
+    }
+    const nextColumn = editableColumns[useNextRow ? 0 : currentColumnIndex + 1];
+    const actualColumn = actualColumns.find(c => (c.id && c.id === nextColumn.id) || c.data === nextColumn.data);
+    const nextColumnTh = tableTmplInstance.$(`th[data-column-index=${actualColumn.idx}],td[data-column-index=${actualColumn.idx}]`)[0];
+    // NOTE: data-column-index is only added when colReorder is used
+    const nextColumnThIndex = nextColumnTh ? _.toArray(nextColumnTh.parentElement.children).indexOf(nextColumnTh) : actualColumn.idx;
+    const $currentTr = templInstance.$("input,select").closest("tr");
+    let $nextTr = $currentTr;
+    if (useNextRow) {
+      const trs = _.toArray($currentTr.parent().children());
+      const nextTrIndex = trs.indexOf($currentTr[0]) + 1;
+      if (nextTrIndex >= trs.length) {
+        return;
+      }
+      $nextTr = $(trs[nextTrIndex]);
+    }
+    const nextColumnTd = $nextTr.find("td")[nextColumnThIndex];
+    $(nextColumnTd).find(".dynamic-table-enable-editing").trigger("click");
+  }
+  catch (e) {
+    throw e;
+  }
+  finally {
+    setTimeout(() => {
+      nextField.inProgress = false;
+    }, 100);
+  }
+}
+
 export function getColumns(columns, reactive = false) {
   if (_.isFunction(columns)) {
     return reactive ? columns() : Tracker.nonreactive(() => columns());
@@ -90,7 +135,9 @@ export function inlineSave(templInstance, val, extra) {
   const doc = templInstance.data.doc;
   const fieldName = templInstance.data.column.data;
   const oldValue = getValue(doc, fieldName);
-  if (oldValue !== val) {
+
+  // NOTE: intentionally not tripple.
+  if (oldValue != val) {
     collection.update(
       { _id: doc._id },
       { $set: { [fieldName]: val } },
@@ -98,6 +145,9 @@ export function inlineSave(templInstance, val, extra) {
         templInstance.data.afterEditCallback(err, res);
       }
     );
+  }
+  else {
+    templInstance.data.afterEditCallback(undefined, undefined);
   }
 }
 

@@ -1,7 +1,8 @@
 import "./headerCell.html";
 import "../filterModal/filterModal.js";
-import { getPosition } from "../../../inlineSave.js";
+
 import { EJSON } from "meteor/ejson";
+import { getPosition } from "../../../inlineSave.js";
 
 Template.dynamicTableHeaderCell.onCreated(function onCreated() {
   this.columnTitle = new ReactiveVar();
@@ -17,6 +18,18 @@ Template.dynamicTableHeaderCell.helpers({
   hasFilter() {
     const templInstance = Template.instance();
     const fieldName = (templInstance.data.column.filterModal.field && templInstance.data.column.filterModal.field.name) || templInstance.data.column.data;
+    const searchFunction = templInstance.data.column.search;
+    if (searchFunction) {
+      const searchResult = searchFunction("");
+      const advanceSearchAnd = templInstance.data.advancedSearch.$and || [];
+      if (advanceSearchAnd) {
+        return advanceSearchAnd.some((query) => {
+          const queryElements = query.$or || query.$and;
+          return _.isEqual(_.sortBy(_.keys(queryElements)), _.sortBy(_.keys(searchResult)));
+        });
+      }
+      return false;
+    }
     const columnSearch = templInstance.data.advancedSearch[fieldName];
     return columnSearch;
   },
@@ -62,6 +75,25 @@ Template.dynamicTableHeaderCell.events({
       }
       else if (columnSearch[operator]) {
         selectedOptions = columnSearch[operator];
+      }
+    }
+    else {
+      const orColumnPreviousSearch = templInstance.data.advancedSearch.$and || [];
+      const searchFunction = templInstance.data.column.search;
+      if (searchFunction) {
+        const searchResult = searchFunction("custom_String--Match_ME-JUSTPLAYSS");
+        const advanceSearchColQuery = orColumnPreviousSearch.find(query => _.isEqual(_.sortBy(_.keys(query.$or || query.$and)), _.sortBy(_.keys(searchResult))));
+        const previousSearchObj = advanceSearchColQuery ? _.deepToFlat(advanceSearchColQuery.$or || advanceSearchColQuery.$and) : {};
+        const newSearchObject = _.deepToFlat(searchResult);
+        const madeUpField = _.find(_.keys(newSearchObject), k => newSearchObject[k] === "custom_String--Match_ME-JUSTPLAYSS");
+        if (previousSearchObj[`${madeUpField}.$not`]) {
+          operator = "$not";
+          searchValue = previousSearchObj[`${madeUpField}.$not`].toString().split("/").join("").slice(1);
+        }
+        else if (previousSearchObj[`${madeUpField}.$regex`]) {
+          operator = "$regex";
+          searchValue = previousSearchObj[`${madeUpField}.$regex`].slice(1);
+        }
       }
     }
     let sort = templInstance.data.column.filterModal.sort;
