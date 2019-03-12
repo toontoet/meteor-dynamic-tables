@@ -54,7 +54,9 @@ Template.dynamicTableManageFieldsModal.events({
       return colData === col.data;
     });
     templInstance.editing.set(true);
-    templInstance.editableField.set(column.filterModal.field.edit.spec);
+    const spec = (column.manageFieldsModal && column.manageFieldsModal.field.edit.spec) ||
+                (column.filterModal && column.filterModal.field.edit.spec);
+    templInstance.editableField.set(spec);
   },
   "click li"(e, templInstance) {
     const colId = $(e.currentTarget).attr("data-id");
@@ -198,7 +200,9 @@ Template.dynamicTableManageFieldsModal.helpers({
     return _.sortBy(groups.undefined || [], field => field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title);
   },
   editable(column) {
-    return column && column.filterModal && column.filterModal.field && column.filterModal.field.edit;
+    const editable = (column && column.manageFieldsModal && column.manageFieldsModal.field && column.manageFieldsModal.field.edit) ||
+                  (column && column.filterModal && column.filterModal.field && column.filterModal.field.edit);
+    return editable;
   },
   availableColumns() {
     const availableColumns = Template.instance().availableColumns.get();
