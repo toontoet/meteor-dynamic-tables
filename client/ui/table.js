@@ -13,7 +13,6 @@ import "./components/singleValueTextEditor/singleValueTextEditor.js";
 import "./components/select2ValueEditor/select2ValueEditor.js";
 import { getTableRecordsCollection } from "../db.js";
 
-
 /**
   @this Template.instance()
 */
@@ -141,8 +140,10 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
 
   // NOTE: we only want to run this code when triggered, not by an advanced search change.
   const advancedSearch = Tracker.nonreactive(() => this.advancedSearch.get());
+  const startsWith = !columns[columnIndex].fullSearch;
 
-  if (fieldName && optionsOrQuery) {
+  // NOTE: added .length to ensure correctness when disabling all options (e.g., add diagrams modal)
+  if (optionsOrQuery && optionsOrQuery.length) {
     let newAdvancedSearchField;
     if (operator === "$between") {
       newAdvancedSearchField = {
@@ -164,17 +165,34 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       }
     }
     else if (!_.isArray(optionsOrQuery) && optionsOrQuery !== "") {
-      newAdvancedSearchField = operator === "$regex" ? { $regex: `^${optionsOrQuery}` } : { $not: new RegExp(`^${optionsOrQuery}`) };
+      newAdvancedSearchField = operator === "$regex" ? { $regex: `${startsWith ? "^" : ""}${optionsOrQuery}` } : { $not: new RegExp(`${startsWith ? "^" : ""}${optionsOrQuery}`) };
     }
-    if (!EJSON.equals(EJSON.toJSONValue(advancedSearch[fieldName]), EJSON.toJSONValue(newAdvancedSearchField))) {
-      if (newAdvancedSearchField) {
-        if (columns[columnIndex].search) {
-          newAdvancedSearchField = columns[columnIndex].search(newAdvancedSearchField, true);
+    if (columns[columnIndex].search) {
+      newAdvancedSearchField = columns[columnIndex].search(_.extend({}, newAdvancedSearchField, { $options: columns[columnIndex].searchOptions }), true);
+      let arrayToReplaceIn = advancedSearch.$and || [];
+      let found = false;
+      arrayToReplaceIn = arrayToReplaceIn.map((obj) => {
+        const arr = obj.$or || obj.$and;
+        const matches = newAdvancedSearchField.some(searchObj => arr.find(oldObj => _.isEqual(_.sortBy(_.keys(searchObj)), _.sortBy(_.keys(oldObj)))));
+        if (matches) {
+          found = true;
+          return { [obj.$or ? "$or" : "$and"]: newAdvancedSearchField };
         }
-        advancedSearch[fieldName] = newAdvancedSearchField;
+        return obj;
+      });
+      if (!found) {
+        const someOperator = operator === "$regex" ? "$or" : "$and";
+        arrayToReplaceIn.push({ [someOperator]: newAdvancedSearchField });
       }
-      else {
-        delete advancedSearch[fieldName];
+      if (!EJSON.equals(EJSON.toJSONValue(arrayToReplaceIn), EJSON.toJSONValue(advancedSearch.$and))) {
+        advancedSearch.$and = arrayToReplaceIn;
+        this.advancedSearch.set(advancedSearch);
+        changed = true;
+      }
+    }
+    else if (!EJSON.equals(EJSON.toJSONValue(advancedSearch[fieldName]), EJSON.toJSONValue(newAdvancedSearchField))) {
+      if (newAdvancedSearchField) {
+        advancedSearch[fieldName] = _.extend({}, newAdvancedSearchField, { $options: columns[columnIndex].searchOptions });
       }
       this.advancedSearch.set(advancedSearch);
       changed = true;
@@ -182,6 +200,27 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
   }
   else if (fieldName && advancedSearch[fieldName]) {
     delete advancedSearch[fieldName];
+    this.advancedSearch.set(advancedSearch);
+    changed = true;
+  }
+  else if (columns[columnIndex].search) {
+    const searchResult = columns[columnIndex].search({ $regex: "" });
+    let arrayToReplaceIn = advancedSearch.$and || [];
+    arrayToReplaceIn = arrayToReplaceIn.map((obj) => {
+      const arr = obj.$or || obj.$and;
+      const matches = searchResult.some(searchObj => arr.find(oldObj => _.isEqual(_.sortBy(_.keys(searchObj)), _.sortBy(_.keys(oldObj)))));
+      if (matches) {
+        return null;
+      }
+      return obj;
+    });
+    arrayToReplaceIn = _.compact(arrayToReplaceIn);
+    if (arrayToReplaceIn && arrayToReplaceIn.length) {
+      advancedSearch.$and = arrayToReplaceIn;
+    }
+    else {
+      delete advancedSearch.$and;
+    }
     this.advancedSearch.set(advancedSearch);
     changed = true;
   }
@@ -561,8 +600,8 @@ Template.DynamicTable.onRendered(function onRendered() {
       return;
     }
     if (
-      currentData.table.useArrayPublication ||
-      (currentData.table.useArrayPublication === undefined && (!currentData.table.compositePublicationNames || currentData.table.compositePublicationNames.length === 0))
+      currentData.table.useArrayPublication
+      || (currentData.table.useArrayPublication === undefined && (!currentData.table.compositePublicationNames || currentData.table.compositePublicationNames.length === 0))
     ) {
       templateInstance.loaded.set(false);
       newSub = self.subManager.subscribe(
@@ -571,7 +610,7 @@ Template.DynamicTable.onRendered(function onRendered() {
         currentData.table.publication,
         _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
         queryOptions
-      )
+      );
       templateInstance.sub.set(newSub);
     }
     else {
@@ -613,7 +652,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       tableInfo = {
         recordsFiltered: data.length,
         recordsTotal: data.length,
-        _ids: data.slice(queryOptions.skip || 0, (queryOptions.skip || 0) + (queryOptions.limit || 10000000)).map (i => i. _id)
+        _ids: data.slice(queryOptions.skip || 0, (queryOptions.skip || 0) + (queryOptions.limit || 10000000)).map(i => i._id)
       };
     }
     if ((!currentData.table.publication || (templateInstance.sub.get() && templateInstance.sub.get().ready())) && tableInfo) {
@@ -657,13 +696,14 @@ Template.DynamicTable.onRendered(function onRendered() {
               const row = templateInstance.dataTable.api().row(rowIndex);
               row.context[0].aoData[row[0]]._aData = rowData;
               $(templateInstance.dataTable.api().row(rowIndex).node()).find("td,th").each((cellIndex) => {
-                if (columns[cellIndex].tmpl || columns[cellIndex].editTmpl) {
+                const column = columns[cellIndex];
+                if (column.tmpl || column.editTmpl) {
                   let changed = false;
                   const templateName = (columns[cellIndex].tmpl && columns[cellIndex].tmpl.viewName) || "Template.dynamicTableRawRender";
                   if (
-                    templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl &&
-                    templateInstance.blaze[`${rowIndex}-${cellIndex}`].name === templateName &&
-                    templateInstance.blaze[`${rowIndex}-${cellIndex}`].idOrData === (columns[cellIndex].id || columns[cellIndex].data)
+                    templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl
+                    && templateInstance.blaze[`${rowIndex}-${cellIndex}`].name === templateName
+                    && templateInstance.blaze[`${rowIndex}-${cellIndex}`].idOrData === (columns[cellIndex].id || columns[cellIndex].data)
                   ) {
                     const oldData = templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl.dataVar.get();
                     if (columns[cellIndex].tmpl) {
@@ -734,8 +774,24 @@ Template.DynamicTable.onRendered(function onRendered() {
     }
   });
 });
+
+let wrappedColReorder = false;
 Template.DynamicTable.onCreated(function onCreated() {
   const self = this;
+
+  if (!wrappedColReorder && $.fn.dataTableExt.oApi.fnColReorder) {
+    wrappedColReorder = true;
+    const oldFnColReorder = $.fn.dataTableExt.oApi.fnColReorder;
+    $.fn.dataTableExt.oApi.fnColReorder = function fnColReorder(...args) {
+      while (args.length < 5) {
+        args.push(undefined);
+      }
+      if (args[args.length - 1] === undefined) {
+        args[args.length - 1] = false;
+      }
+      oldFnColReorder.apply(this, args);
+    };
+  }
   this.loaded = new ReactiveVar(true);
   this.sub = new ReactiveVar(null);
   this.selector = new ReactiveVar({});
@@ -775,10 +831,12 @@ Template.DynamicTable.onCreated(function onCreated() {
     }
     if (columns.length < oldColumns.length) {
       const context = this.dataTable.api().context[0];
-      const missingColumn = context.aoColumns.find(nc => !_.find(columns, oc => oc._id ? oc._id === nc._id : oc.data === nc.data));
+      const missingColumn = context.aoColumns.find(nc => !_.find(columns, oc => (oc._id ? oc._id === nc._id : oc.data === nc.data)));
       let index = missingColumn.idx;
       const tdorh = this.$("thead").find(`td[data-column-index=${index}],th[data-column-index=${index}]`)[0];
-      index = _.toArray(this.$("thead>tr")[0].children).indexOf(tdorh);
+      if (tdorh) { // NOTE: data-column-index is only added when colReorder is used
+        index = _.toArray(this.$("thead>tr")[0].children).indexOf(tdorh);
+      }
       this.$("thead").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.$("tbody>tr").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.dataTable.api().context[0].aoColumns.splice(index, 1);
@@ -848,7 +906,7 @@ Template.DynamicTable.onDestroyed(function onDestroyed() {
     if (dt) {
       dt.destroy();
     }
-    //this.$tableElement.html("");
+    // this.$tableElement.html("");
   }
 });
 

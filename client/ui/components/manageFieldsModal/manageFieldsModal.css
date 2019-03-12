@@ -101,9 +101,6 @@ div.dynamic-table-manage-fields hr {
   margin-top: 5px;
   margin-bottom: -5px;
 }
-#dynamic-table-filter-modal {
-  z-index: 2;
-}
 div.dynamic-table-manage-fields {
   width:220px;
   max-height:330px;
