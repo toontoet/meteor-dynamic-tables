@@ -13,7 +13,6 @@ import "./components/singleValueTextEditor/singleValueTextEditor.js";
 import "./components/select2ValueEditor/select2ValueEditor.js";
 import { getTableRecordsCollection } from "../db.js";
 
-
 /**
   @this Template.instance()
 */
@@ -697,7 +696,8 @@ Template.DynamicTable.onRendered(function onRendered() {
               const row = templateInstance.dataTable.api().row(rowIndex);
               row.context[0].aoData[row[0]]._aData = rowData;
               $(templateInstance.dataTable.api().row(rowIndex).node()).find("td,th").each((cellIndex) => {
-                if (columns[cellIndex].tmpl || columns[cellIndex].editTmpl) {
+                const column = columns[cellIndex];
+                if (column.tmpl || column.editTmpl) {
                   let changed = false;
                   const templateName = (columns[cellIndex].tmpl && columns[cellIndex].tmpl.viewName) || "Template.dynamicTableRawRender";
                   if (
@@ -774,8 +774,24 @@ Template.DynamicTable.onRendered(function onRendered() {
     }
   });
 });
+
+let wrappedColReorder = false;
 Template.DynamicTable.onCreated(function onCreated() {
   const self = this;
+
+  if (!wrappedColReorder && $.fn.dataTableExt.oApi.fnColReorder) {
+    wrappedColReorder = true;
+    const oldFnColReorder = $.fn.dataTableExt.oApi.fnColReorder;
+    $.fn.dataTableExt.oApi.fnColReorder = function fnColReorder(...args) {
+      while (args.length < 5) {
+        args.push(undefined);
+      }
+      if (args[args.length - 1] === undefined) {
+        args[args.length - 1] = false;
+      }
+      oldFnColReorder.apply(this, args);
+    };
+  }
   this.loaded = new ReactiveVar(true);
   this.sub = new ReactiveVar(null);
   this.selector = new ReactiveVar({});
