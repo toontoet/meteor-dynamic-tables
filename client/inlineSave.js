@@ -20,7 +20,8 @@ export function nextField(templInstance) {
     const nextColumn = editableColumns[useNextRow ? 0 : currentColumnIndex + 1];
     const actualColumn = actualColumns.find(c => (c.id && c.id === nextColumn.id) || c.data === nextColumn.data);
     const nextColumnTh = tableTmplInstance.$(`th[data-column-index=${actualColumn.idx}],td[data-column-index=${actualColumn.idx}]`)[0];
-    const nextColumnThIndex = _.toArray(nextColumnTh.parentElement.children).indexOf(nextColumnTh);
+    // NOTE: data-column-index is only added when colReorder is used
+    const nextColumnThIndex = nextColumnTh ? _.toArray(nextColumnTh.parentElement.children).indexOf(nextColumnTh) : actualColumn.idx;
     const $currentTr = templInstance.$("input,select").closest("tr");
     let $nextTr = $currentTr;
     if (useNextRow) {
