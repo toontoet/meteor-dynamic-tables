@@ -3,16 +3,7 @@ import "./GroupedTable.html";
 import "./components/manageGroupFieldsModal/manageGroupFieldsModal.js";
 import { getColumns, getPosition, changed, getCustom } from "../inlineSave.js";
 
-Template.GroupedTable.onCreated(function onCreated() {
-  this.customTableSpec = this.data;
-  this.search = new ReactiveVar();
-  this.customColumns = new ReactiveVar([]);
-  this.groupChain = new ReactiveVar(_.compact((this.data.groupChain || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
-
-  this.searchFn = _.debounce(() => {
-    this.search.set(this.$(".dynamic-table-global-search").val());
-  }, 1000);
-
+Template.GroupedTable.onRendered(function onRendered() {
   if (this.data.customGroupButtonSelector) {
     this.autorun(() => {
       const chain = this.groupChain.get();
@@ -24,6 +15,17 @@ Template.GroupedTable.onCreated(function onCreated() {
       }
     });
   }
+});
+
+Template.GroupedTable.onCreated(function onCreated() {
+  this.customTableSpec = this.data;
+  this.search = new ReactiveVar();
+  this.customColumns = new ReactiveVar([]);
+  this.groupChain = new ReactiveVar(_.compact((this.data.groupChain || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
+
+  this.searchFn = _.debounce(() => {
+    this.search.set(this.$(".dynamic-table-global-search").val());
+  }, 1000);
 
   getCustom(this.data.custom, this.data.id, (custom) => {
     this.customColumns.set(_.compact((custom.columns || []).map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
