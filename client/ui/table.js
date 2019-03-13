@@ -169,21 +169,35 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       newAdvancedSearchField = operator === "$regex" ? { $regex: `${startsWith ? "^" : ""}${optionsOrQuery}` } : { $not: new RegExp(`${startsWith ? "^" : ""}${optionsOrQuery}`) };
     }
     if (columns[columnIndex].search) {
-      newAdvancedSearchField = columns[columnIndex].search(_.extend({}, newAdvancedSearchField, { $options: columns[columnIndex].searchOptions }), true);
+      newAdvancedSearchField = columns[columnIndex].search(_.extend({}, newAdvancedSearchField, { $options: columns[columnIndex].searchOptions }), false);
       let arrayToReplaceIn = advancedSearch.$and || [];
       let found = false;
       arrayToReplaceIn = arrayToReplaceIn.map((obj) => {
         const arr = obj.$or || obj.$and;
-        const matches = newAdvancedSearchField.some(searchObj => arr.find(oldObj => _.isEqual(_.sortBy(_.keys(searchObj)), _.sortBy(_.keys(oldObj)))));
-        if (matches) {
-          found = true;
-          return { [obj.$or ? "$or" : "$and"]: newAdvancedSearchField };
+        if (_.isArray(newAdvancedSearchField)) {
+          const matches = newAdvancedSearchField.some(searchObj => arr.find(oldObj => _.isEqual(_.sortBy(_.keys(searchObj)), _.sortBy(_.keys(oldObj)))));
+          if (matches) {
+            found = true;
+            return { [obj.$or ? "$or" : "$and"]: newAdvancedSearchField };
+          }
+        }
+        else {
+          const matches = _.isEqual(_.sortBy(_.keys(newAdvancedSearchField)), _.sortBy(_.keys(obj)));
+          if (matches) {
+            found = true;
+            return newAdvancedSearchField;
+          }
         }
         return obj;
       });
       if (!found) {
-        const someOperator = operator === "$regex" ? "$or" : "$and";
-        arrayToReplaceIn.push({ [someOperator]: newAdvancedSearchField });
+        if (_.isArray(newAdvancedSearchField)) {
+          const someOperator = ["$regex", "$in"].includes(operator) ? "$or" : "$and";
+          arrayToReplaceIn.push({ [someOperator]: newAdvancedSearchField });
+        }
+        else {
+          arrayToReplaceIn.push(newAdvancedSearchField);
+        }
       }
       if (!EJSON.equals(EJSON.toJSONValue(arrayToReplaceIn), EJSON.toJSONValue(advancedSearch.$and))) {
         advancedSearch.$and = arrayToReplaceIn;

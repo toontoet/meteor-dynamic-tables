@@ -24,7 +24,7 @@ Template.dynamicTableHeaderCell.helpers({
       const advanceSearchAnd = templInstance.data.advancedSearch.$and || [];
       if (advanceSearchAnd) {
         return advanceSearchAnd.some((query) => {
-          const queryElements = query.$or || query.$and;
+          const queryElements = query.$or || query.$and || query;
           return _.isEqual(_.sortBy(_.keys(queryElements)), _.sortBy(_.keys(searchResult)));
         });
       }
@@ -82,8 +82,8 @@ Template.dynamicTableHeaderCell.events({
       const searchFunction = templInstance.data.column.search;
       if (searchFunction) {
         const searchResult = searchFunction("custom_String--Match_ME-JUSTPLAYSS");
-        const advanceSearchColQuery = orColumnPreviousSearch.find(query => _.isEqual(_.sortBy(_.keys(query.$or || query.$and)), _.sortBy(_.keys(searchResult))));
-        const previousSearchObj = advanceSearchColQuery ? _.deepToFlat(advanceSearchColQuery.$or || advanceSearchColQuery.$and) : {};
+        const advanceSearchColQuery = orColumnPreviousSearch.find(query => _.isEqual(_.sortBy(_.keys(query.$or || query.$and || query)), _.sortBy(_.keys(searchResult))));
+        const previousSearchObj = advanceSearchColQuery ? _.deepToFlat(advanceSearchColQuery.$or || advanceSearchColQuery.$and || advanceSearchColQuery) : {};
         const newSearchObject = _.deepToFlat(searchResult);
         const madeUpField = _.find(_.keys(newSearchObject), k => newSearchObject[k] === "custom_String--Match_ME-JUSTPLAYSS");
         if (previousSearchObj[`${madeUpField}.$not`]) {
@@ -93,6 +93,10 @@ Template.dynamicTableHeaderCell.events({
         else if (previousSearchObj[`${madeUpField}.$regex`]) {
           operator = "$regex";
           searchValue = previousSearchObj[`${madeUpField}.$regex`].slice(1);
+        }
+        else if (previousSearchObj[`${madeUpField}.$in`]) {
+          operator = "$in";
+          selectedOptions = previousSearchObj[`${madeUpField}.$in`];
         }
       }
     }
