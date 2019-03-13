@@ -142,7 +142,9 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
   // NOTE: we only want to run this code when triggered, not by an advanced search change.
   const advancedSearch = Tracker.nonreactive(() => this.advancedSearch.get());
   const startsWith = !columns[columnIndex].fullSearch;
-  if (optionsOrQuery) {
+
+  // NOTE: added .length to ensure correctness when disabling all options (e.g., add diagrams modal)
+  if (optionsOrQuery && optionsOrQuery.length) {
     let newAdvancedSearchField;
     if (operator === "$between") {
       newAdvancedSearchField = {
@@ -816,7 +818,9 @@ Template.DynamicTable.onCreated(function onCreated() {
       const missingColumn = context.aoColumns.find(nc => !_.find(columns, oc => (oc._id ? oc._id === nc._id : oc.data === nc.data)));
       let index = missingColumn.idx;
       const tdorh = this.$("thead").find(`td[data-column-index=${index}],th[data-column-index=${index}]`)[0];
-      index = _.toArray(this.$("thead>tr")[0].children).indexOf(tdorh);
+      if (tdorh) { // NOTE: data-column-index is only added when colReorder is used
+        index = _.toArray(this.$("thead>tr")[0].children).indexOf(tdorh);
+      }
       this.$("thead").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.$("tbody>tr").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.dataTable.api().context[0].aoColumns.splice(index, 1);

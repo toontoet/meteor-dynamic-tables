@@ -20,7 +20,8 @@ export function nextField(templInstance) {
     const nextColumn = editableColumns[useNextRow ? 0 : currentColumnIndex + 1];
     const actualColumn = actualColumns.find(c => (c.id && c.id === nextColumn.id) || c.data === nextColumn.data);
     const nextColumnTh = tableTmplInstance.$(`th[data-column-index=${actualColumn.idx}],td[data-column-index=${actualColumn.idx}]`)[0];
-    const nextColumnThIndex = _.toArray(nextColumnTh.parentElement.children).indexOf(nextColumnTh);
+    // NOTE: data-column-index is only added when colReorder is used
+    const nextColumnThIndex = nextColumnTh ? _.toArray(nextColumnTh.parentElement.children).indexOf(nextColumnTh) : actualColumn.idx;
     const $currentTr = templInstance.$("input,select").closest("tr");
     let $nextTr = $currentTr;
     if (useNextRow) {
@@ -51,9 +52,16 @@ export function getColumns(columns, reactive = false) {
   return columns;
 }
 
+function offset(el) {
+  const rect = el.getBoundingClientRect();
+  const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  return { top: rect.top + scrollTop, left: rect.left + scrollLeft };
+}
 export function getPosition(el) {
   let xPos = 0;
   let yPos = 0;
+  const off = offset(el);
   const width = $(el).width();
   while (el) {
     if (el.tagName === "BODY") {
@@ -73,8 +81,8 @@ export function getPosition(el) {
     el = el.offsetParent;
   }
   return {
-    left: xPos,
-    top: yPos,
+    left: Math.max(off.left, xPos),
+    top: Math.max(off.top, yPos),
     width
   };
 }

@@ -1,3 +1,7 @@
+
+#dynamic-table-filter-modal {
+  z-index: 1050;
+}
 div.dynamic-table-filter {
   width: 250px;
   background-color: #fff;
