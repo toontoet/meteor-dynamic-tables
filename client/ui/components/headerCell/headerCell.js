@@ -171,7 +171,7 @@ Template.dynamicTableHeaderCell.events({
       sort,
       groupNames: templInstance.data.column.filterModal.groupNames ? templInstance.data.column.filterModal.groupNames() : [],
       filter: {
-        enabled: true,
+        enabled: (templInstance.data.column.filter && typeof templInstance.data.column.filter.enabled === "boolean") ? templInstance.data.column.filter.enabled : true,
         search: {
           enabled: true,
           value: searchValue

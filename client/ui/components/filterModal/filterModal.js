@@ -1,5 +1,6 @@
 import { ReactiveDict } from "meteor/reactive-dict";
 import _ from "underscore";
+import "../manageColumnsForm/manageColumnsForm.js";
 import "./filterModal.html";
 import "./filterModal.css";
 
@@ -11,32 +12,14 @@ function closeModal() {
   }
 }
 Template.dynamicTableFilterModal.helpers({
-  select2() {
-    return $.fn.select2;
+  manageFieldsEditContext() {
+    return Template.instance().data.field.edit;
   },
   showOperators() {
     return Template.instance().showOperators.get();
   },
   hasFooter() {
     return this.filter && (this.filter.enabled || !this.filter.required);
-  },
-  types() {
-    const types = this.field.edit.types || [];
-    return types.map((t) => {
-      if (_.isObject(t)) {
-        return t;
-      }
-      return {
-        value: t,
-        label: t
-      };
-    });
-  },
-  selectedIfEquals(val1, val2) {
-    return val1 == val2 ? { selected: "selected" } : {};
-  },
-  checkedIfTrue(val) {
-    return val || val === 0 ? { checked: "checked" } : {};
   },
   checkedIfWithValue() {
     return ["$between", "$in", "$regex"].includes(this.filter.operator.selected) ? { selected: "selected" } : {};
@@ -223,7 +206,9 @@ Template.dynamicTableFilterModal.events({
     templInstance.data.field.edit.callback(e, templInstance)
     .then((newFieldSpec) => {
       templInstance.$(".btn-dynamic-table-save").removeAttr("disabled");
-      templInstance.editableField.set(newFieldSpec);
+      Tracker.nonreactive(() => {
+        templInstance.editableField.set(newFieldSpec);
+      });
       let fieldType = newFieldSpec.type;
       if (fieldType === "string") {
         fieldType = String;

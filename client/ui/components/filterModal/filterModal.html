@@ -18,55 +18,7 @@
       </div>
     {{/if}}
     {{#if editing}}
-      <section class="dynamic-table-filter-edit">
-        <div class="dynamic-table-filter-edit-row">
-          <label>
-            Label
-            <input type="text" class="dynamic-table-filter-edit-label" value="{{editableField.label}}" />
-          </label>
-        </div>
-          <div class="dynamic-table-filter-edit-row">
-            <label>
-              Group
-              {{#if select2}}
-                <select type="text" class="dynamic-table-filter-edit-group"></select>
-              {{else}}
-                <input type="text" class="dynamic-table-filter-edit-group" value="{{editableField.groupName}}" />
-              {{/if}}
-            </label>
-          </div>
-        <div class="dynamic-table-filter-edit-row">
-          <label>
-            Type
-            <select type="text" class="dynamic-table-filter-edit-type">
-              {{#each type in types}}
-                <option value="{{type.value}}" {{selectedIfEquals type.value editableField.type}}>{{type.label}}</option>
-              {{/each}}
-            </select>
-          </label>
-
-          <p class="warning" style="display: {{#if isChanged "type"}}block{{else}}none{{/if}};">
-            Changing this field will require migrating data. You should ensure no-one is editing your {{editableField.label}} while this is happening. It may also result in truncation or incorrect data.
-          </p>
-        </div>
-        <div class="dynamic-table-filter-edit-row">
-          <label>Allow multiple values? <input type="checkbox" class="dynamic-table-filter-edit-isArray" {{checkedIfTrue editableField.isArray}} /></label>
-
-          <p class="warning" style="display: {{#if isChanged "isArray"}}block{{else}}none{{/if}};">
-            Changing this field could delete some of the values you have.
-          </p>
-        </div>
-        <div class="dynamic-table-filter-edit-row">
-          <label>Track values? <input type="checkbox" class="dynamic-table-filter-edit-trackOptions" {{checkedIfTrue editableField.trackOptions}} /></label>
-        </div>
-        <div class="dynamic-table-filter-edit-row">
-          <label>Searchable? <input type="checkbox" class="dynamic-table-filter-edit-searchable" {{checkedIfTrue editableField.indexedNumber}} /></label>
-
-          <p class="warning" style="display: {{#if isChanged "indexedNumber"}}block{{else}}none{{/if}};">
-            Changing this field will require migrating data. You should ensure no-one is editing your {{this.label}} while this is happening.
-          </p>
-        </div>
-      </section>
+      {{> manageColumnsForm editableField=editableField manageFieldsEditContext=manageFieldsEditContext}}
     {{else}}
       {{#if sort.enabled}}
         <section class="dynamic-table-filter-sort">

@@ -1,9 +1,11 @@
 import "./manageFieldsModal.css";
 import "./manageFieldsModal.html";
+import "../manageColumnsForm/manageColumnsForm.js";
 
 Template.dynamicTableManageFieldsModal.onCreated(function onCreated() {
   this.search = new ReactiveVar();
   this.editing = new ReactiveVar(false);
+  this.editableField = new ReactiveVar(null);
   this.availableColumns = new ReactiveVar(this.data.availableColumns);
 });
 Template.dynamicTableManageFieldsModal.onRendered(function onRendered() {
@@ -51,7 +53,10 @@ Template.dynamicTableManageFieldsModal.events({
       }
       return colData === col.data;
     });
-    templInstance.editing.set(column.filterModal.field.edit.spec);
+    templInstance.editing.set(true);
+    const spec = (column.manageFieldsModal && column.manageFieldsModal.field.edit.spec) ||
+                (column.filterModal && column.filterModal.field.edit.spec);
+    templInstance.editableField.set(spec);
   },
   "click li"(e, templInstance) {
     const colId = $(e.currentTarget).attr("data-id");
@@ -76,23 +81,27 @@ Template.dynamicTableManageFieldsModal.events({
   },
   "click .btn-dynamic-table-save"(e, templInstance) {
     templInstance.$(".btn-dynamic-table-save").attr("disabled", "disabled");
-    const isEdit = templInstance.editing.get() === true ? false : templInstance.editing.get();
+    const isEdit = templInstance.editableField.get();
+    if (isEdit) {
+      templInstance.editableField.set(null);
+    }
     templInstance.data.edit.callback(e, templInstance, isEdit)
     .then((newColumnSpec) => {
       templInstance.$(".btn-dynamic-table-save").removeAttr("disabled");
       templInstance.editing.set(false);
+      let prevColumnSpec;
       if (isEdit) {
         const columns = templInstance.availableColumns.get();
         const realColumn = columns.find(c => c.data === newColumnSpec.data);
         const index = columns.indexOf(realColumn);
-        columns.splice(index, 1, newColumnSpec);
+        prevColumnSpec = columns.splice(index, 1, newColumnSpec);
       }
       else {
         templInstance.availableColumns.get().push(newColumnSpec);
       }
       templInstance.availableColumns.dep.changed();
       if (isEdit) {
-        templInstance.data.edit.editedCallback(newColumnSpec);
+        templInstance.data.edit.editedCallback(newColumnSpec, prevColumnSpec[0]);
       }
       else {
         templInstance.data.edit.addedCallback(newColumnSpec);
@@ -104,11 +113,8 @@ Template.dynamicTableManageFieldsModal.events({
   }
 });
 Template.dynamicTableManageFieldsModal.helpers({
-  selectedIfEquals(val1, val2) {
-    return val1 == val2 ? { selected: "selected" } : {};
-  },
-  checkedIfTrue(val) {
-    return val || val === 0 ? { checked: "checked" } : {};
+  editableField() {
+    return Template.instance().editableField.get();
   },
   fieldType() {
     const editing = Template.instance().editing.get();
@@ -132,23 +138,11 @@ Template.dynamicTableManageFieldsModal.helpers({
     }
     return false;
   },
-  select2() {
-    return $.fn.select2;
-  },
-  types() {
-    const types = this.edit.types || [];
-    return types.map((t) => {
-      if (_.isObject(t)) {
-        return t;
-      }
-      return {
-        value: t,
-        label: t
-      };
-    });
-  },
   editing() {
     return Template.instance().editing.get();
+  },
+  manageFieldsEditContext() {
+    return Template.instance().data.edit;
   },
   search() {
     if (Template.instance().data.search !== undefined) {
@@ -206,7 +200,9 @@ Template.dynamicTableManageFieldsModal.helpers({
     return _.sortBy(groups.undefined || [], field => field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title);
   },
   editable(column) {
-    return column && column.filterModal && column.filterModal.field && column.filterModal.field.edit;
+    const editable = (column && column.manageFieldsModal && column.manageFieldsModal.field && column.manageFieldsModal.field.edit) ||
+                  (column && column.filterModal && column.filterModal.field && column.filterModal.field.edit);
+    return editable;
   },
   availableColumns() {
     const availableColumns = Template.instance().availableColumns.get();
