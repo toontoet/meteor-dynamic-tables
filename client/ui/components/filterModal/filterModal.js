@@ -338,6 +338,12 @@ Template.dynamicTableFilterModal.onRendered(function onRendered() {
       });
     }
   });
+  /**
+   * When filter modal is open over any existing bootstrap modal,
+   * input element i.e search field of filter modal is not clickable,
+   * To fix it, we get rid of focus on bootstrap modal
+   */
+  $(document).off("focusin.modal");
 });
 
 Template.dynamicTableFilterModal.onCreated(function onCreated() {

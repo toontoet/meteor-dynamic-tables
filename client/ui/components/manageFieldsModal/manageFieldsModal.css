@@ -147,3 +147,6 @@ div.dynamic-table-manage-fields ul {
   margin-left: 5px;
   cursor: pointer;
 }
+#dynamic-table-manage-fields-modal {
+  z-index: 1050;
+}

@@ -172,7 +172,6 @@ Template.CustomizableTable.events({
     .css("position", "absolute")
     .css("top", bounds.top + $(e.currentTarget).height())
     .css("left", bounds.left)
-    .css("z-index", 1);
     if (div[0].__blazeTemplate) {
       Blaze.remove(div[0].__blazeTemplate);
     }
