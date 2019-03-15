@@ -222,9 +222,17 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     let arrayToReplaceIn = advancedSearch.$and || [];
     arrayToReplaceIn = arrayToReplaceIn.map((obj) => {
       const arr = obj.$or || obj.$and;
-      const matches = searchResult.some(searchObj => arr.find(oldObj => _.isEqual(_.sortBy(_.keys(searchObj)), _.sortBy(_.keys(oldObj)))));
-      if (matches) {
-        return null;
+      if (_.isArray(searchResult)) {
+        const matches = searchResult.some(searchObj => arr.find(oldObj => _.isEqual(_.sortBy(_.keys(searchObj)), _.sortBy(_.keys(oldObj)))));
+        if (matches) {
+          return null;
+        }
+      }
+      else {
+        const matches = _.isEqual(_.sortBy(_.keys(searchResult)), _.sortBy(_.keys(obj)));
+        if (matches) {
+          return null;
+        }
       }
       return obj;
     });
