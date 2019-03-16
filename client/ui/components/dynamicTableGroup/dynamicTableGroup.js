@@ -16,7 +16,15 @@ function selectorToId(selector, tableIdSuffix) {
 /** @this = root data context */
 function getTableIdSuffix(value) {
   const current = this.groupChain[this.index];
-  const nextSuffix = value && selectorToId({ [current.field]: value.query }, value.tableIdSuffix);
+
+  const selector = {};
+  if (value && value.query.$nor) {
+    selector.$and = [value.query];
+  }
+  else if (value) {
+    selector[current.field] = value.query;
+  }
+  const nextSuffix = value && selectorToId(selector, value.tableIdSuffix);
 
   const nextParts = (this.tableIdSuffixChain || []).slice(0);
   if (nextSuffix) {
@@ -74,10 +82,18 @@ Template.dynamicTableGroup.onRendered(function onRendered() {
 });
 
 function addUndefined(current, values) {
+  const queries = values.map(v => v.query);
+  let negation;
+  if (queries.length && _.isObject(queries[0])) {
+    negation = { $nor: queries.map(q => ({ [current.field]: q })) };
+  }
+  else {
+    negation = { $not: { $in: queries } };
+  }
   if (_.isObject(current.undefined)) {
     values.push({
       label: current.undefined.label || "Uncategorized",
-      query: current.undefined.query || { $not: { $in: values.map(v => v.query) } },
+      query: current.undefined.query || negation,
       count: current.undefined.count === undefined ? current.count : current.undefined.count,
       alwaysShow: current.undefined.alwaysShow || current.alwaysShow
     });
@@ -85,7 +101,7 @@ function addUndefined(current, values) {
   else if (current.undefined) {
     values.push({
       label: current.undefined === true ? "Uncategorized" : current.undefined,
-      query: { $not: { $in: values.map(v => v.query) } },
+      query: negation,
       count: current.count,
       alwaysShow: current.alwaysShow
     });
@@ -188,7 +204,17 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     }
     else {
       valuesToCount.forEach((value) => {
-        const selector = _.extend({ [current.field]: value.query }, data.selector);
+        let selector;
+        if (value.query.$nor) {
+          selector = _.extend({ }, data.selector);
+          if (!selector.$and) {
+            selector.$and = [];
+          }
+          selector.$and.push(value.query);
+        }
+        else {
+          selector = _.extend({ [current.field]: value.query }, data.selector);
+        }
         const count = data.customTableSpec.table.collection.find(selector).count();
         this.counts.set(this.data.customTableSpec.id + getTableIdSuffix.call(data, value), count);
       });
@@ -273,7 +299,19 @@ Template.dynamicTableGroup.helpers({
   },
   newSelector(value, currentSelector) {
     const current = this.groupChain[this.index];
-    return _.extend({ [current.field]: value.query }, currentSelector);
+
+    let selector;
+    if (value.query.$nor) {
+      selector = _.extend({}, currentSelector);
+      if (!selector.$and) {
+        selector.$and = [];
+      }
+      selector.$and.push(value.query);
+    }
+    else {
+      selector[current.field] = value.query;
+    }
+    return selector;
   },
   table(value, newSelector) {
     const tableIdSuffix = getTableIdSuffix.call(this, value);
@@ -299,7 +337,14 @@ Template.dynamicTableGroup.helpers({
     const current = this.groupChain[this.index];
     const tableIdSuffixChain = [];
     tableIdSuffixChain.push(...(this.tableIdSuffixChain || []));
-    tableIdSuffixChain.push(selectorToId({ [current.field]: value.query }, value.tableIdSuffix));
+    const selector = {};
+    if (value.query.$nor) {
+      selector.$and = [value.query];
+    }
+    else {
+      selector[current.field] = value.query;
+    }
+    tableIdSuffixChain.push(selectorToId(selector, value.tableIdSuffix));
     return tableIdSuffixChain;
   }
 });
