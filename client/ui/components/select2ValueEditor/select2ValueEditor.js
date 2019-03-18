@@ -33,9 +33,15 @@ function handler(e) {
   let $select = $(e.currentTarget).closest("td").find(".dynamicTableSelect2ValueEditor");
   if (!$select.length) {
     const possibles = _.toArray($(".select2-container"));
-    $select = $(possibles
-    .find(elem => $(elem).data("element").data("select2").$dropdown.find(e.currentTarget).length))
-    .closest("td").find(".dynamicTableSelect2ValueEditor");
+    $select = $(
+      possibles
+      .find(elem => $(elem).data("element").data("select2").$dropdown.find(e.currentTarget).length)
+    )
+    .closest("td")
+    .find(".dynamicTableSelect2ValueEditor");
+  }
+  if (!$select.length) {
+    return;
   }
   const tmplInstance = Blaze.getView($select[0]).templateInstance();
   if (e.keyCode === 9) {
