@@ -74,7 +74,8 @@ function getEditableRowData(collection, documentIds, editableCols) {
         column: field,
         collection
       };
-      const value = getValue(doc, field.data);
+      const value = field.data ? getValue(doc, field.data) : "";
+
       const editTmplContext = field.editTmplContext ? field.editTmplContext(editRowData) : editRowData;
       return {
         value,
