@@ -8,13 +8,16 @@ Template.dynamicTableManageGroupFieldsModal.onCreated(function onCreated() {
   const selectedColumns = this.data.selectedColumns || [];
   this.selectedColumns = new ReactiveVar(selectedColumns.length ? selectedColumns : [{ _id: Random.id() }]);
 });
+
 Template.dynamicTableManageGroupFieldsModal.onRendered(function onRendered() {
   this.maybeCallback = () => {
     const newFields = _.compact(_.toArray(this.$("select")).map(elem => $(elem).val()));
-    const oldFields = (this.data.selectedColumns || []).map(c => c.field);
+    const oldFields = (Tracker.nonreactive(() => this.selectedColumns.get()) || []).map(c => c.field);// NOTE: intentionally non-reactive
     if (!_.isEqual(newFields, oldFields)) {
       const cols = _.object(this.data.availableColumns.map(c => c.field), this.data.availableColumns);
-      this.data.changeCallback(newFields.map(f => cols[f]));
+      const newCols = newFields.map(f => cols[f]);
+      this.selectedColumns.curValue = newCols; // NOTE: intentionally non-reactive
+      this.data.changeCallback(newCols);
     }
   };
 });

@@ -300,9 +300,8 @@ Template.dynamicTableGroup.helpers({
   newSelector(value, currentSelector) {
     const current = this.groupChain[this.index];
 
-    let selector = {};
+    const selector = _.extend({}, currentSelector);
     if (value.query.$nor) {
-      selector = _.extend({}, currentSelector);
       if (!selector.$and) {
         selector.$and = [];
       }
