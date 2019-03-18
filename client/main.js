@@ -3,4 +3,7 @@ import "./ui/CustomizableTable.js";
 import "./ui/GroupedTable.js";
 import "./ui/table.js";
 
+
+export { inlineSave, getValue, nextField } from "./inlineSave.js";
+
 dataTableInit(window, $);
