@@ -106,8 +106,8 @@ Template.dynamicTableBulkEditForm.fields = [];
 Template.dynamicTableBulkEditForm.onCreated(function onCreated() {
   const documentIds = this.data.documentIds;
   const tableData = this.data.tableData;
-  const allColumns = this.data.allColumns;
   const columns = tableData.table.columns ? tableData.table.columns : [];
+  const allColumns = tableData.allColumns || columns;
   const allEditableCols = allColumns.filter(col => !!col.editTmpl);
 
   this.showAddEditableColumns = new ReactiveVar(false);

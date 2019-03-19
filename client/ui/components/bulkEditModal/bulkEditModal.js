@@ -11,7 +11,6 @@ Template.bulkEditModal.events({
   },
   "click .updateBtn"(e) {
     e.preventDefault();
-    let fields = Template.currentData().allColumns.filter(col => !!col.editTmpl);
     const tableData = Template.currentData().tableData;
     const documentIds = Template.currentData().documentIds;
     const columns = tableData.table.columns ? tableData.table.columns : [];
@@ -19,7 +18,9 @@ Template.bulkEditModal.events({
     const collection = tableData.table.collection;
     const bulkEditOptions = tableData.table.bulkEditOptions;
     const additionalCols = Template.dynamicTableBulkEditForm.additionalCols;
+    const allColumns = tableData.allColumns || columns;
 
+    let fields = allColumns.filter(col => !!col.editTmpl);
     fields = fields.filter(field => editableCols.indexOf(field.data) > -1 || additionalCols.indexOf(field.data) > -1);
 
     const updatedEntries = [];
