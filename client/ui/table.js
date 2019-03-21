@@ -143,7 +143,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
   const startsWith = !columns[columnIndex].fullSearch;
 
   // NOTE: added .length to ensure correctness when disabling all options (e.g., add diagrams modal)
-  if (optionsOrQuery && optionsOrQuery.length) {
+  if ((_.isArray(optionsOrQuery) && optionsOrQuery.length) || (optionsOrQuery !== undefined && !_.isArray(optionsOrQuery))) {
     let newAdvancedSearchField;
     if (operator === "$between") {
       newAdvancedSearchField = {
@@ -151,7 +151,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
         $gte: optionsOrQuery[0]
       };
     }
-    else if (operator === "$gte" || operator === "$lte") {
+    else if (operator === "$gte" || operator === "$lte" || "$eq") {
       newAdvancedSearchField = {
         [operator]: optionsOrQuery
       };
