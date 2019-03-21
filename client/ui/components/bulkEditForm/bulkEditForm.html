@@ -3,14 +3,20 @@
     {{#dismissable class="alert alert-blocks"}}
       Warning: Editing fields in bulk will overwrite all existing values in the selected {{ set }}.
     {{/dismissable}}
-    {{#each field in displayFields}}
-    <label class="col-md-2 control-label">{{ field.title }}:</label>
-    <div class="col-md-10 no-padding" style="padding-bottom: 1px;">
-      {{#with field}}
-      {{> Template.dynamic template=templateViewName data=editTemplateContext }}
-      {{/with}}
-    </div>
-    {{/each}}
+    {{#if displayFields}}
+      {{#each field in displayFields}}
+      <label class="col-md-2 control-label">{{ field.title }}:</label>
+      <div class="col-md-10 no-padding" style="padding-bottom: 1px;">
+        {{#with field}}
+        {{> Template.dynamic template=templateViewName data=editTemplateContext }}
+        {{/with}}
+      </div>
+      {{/each}}
+    {{else}}
+      <div class="col-md-10 no-padding" style="padding-bottom: 1px;">
+        <p>No editable columns</p>
+      </div>
+    {{/if}}
   </div>
   {{#if hasUnselectedEditableColumns}}
     <div class="form-group" style="clear: both;">

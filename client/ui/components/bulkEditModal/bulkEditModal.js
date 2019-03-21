@@ -26,7 +26,7 @@ Template.bulkEditModal.events({
     const updatedEntries = [];
     const skippedEntries = [];
     const failedEntries = [];
-    const documentsToUpdate = collection.find({ _id: { $in: documentIds } }, { fields: { _id: true } });
+    const documentsToUpdate = collection ? collection.find({ _id: { $in: documentIds } }, { fields: { _id: true } }) : [];
     Promise.all(documentsToUpdate.map(doc => new Promise(((resolve, reject) => {
       try {
         fields.forEach((field) => {

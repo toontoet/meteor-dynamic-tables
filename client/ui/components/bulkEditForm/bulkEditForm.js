@@ -143,7 +143,7 @@ Template.dynamicTableBulkEditForm.helpers({
     additionalCols.forEach((addCol) => {
       displayColumns.push(editableColumns.find(col => col.data === addCol));
     });
-    return displayColumns;
+    return displayColumns.length ? displayColumns : false;
   },
   templateViewName() {
     return this.editTmpl.viewName.split(".")[1];
