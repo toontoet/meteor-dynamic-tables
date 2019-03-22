@@ -162,7 +162,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       else {
         const sub = this.subscribe(
           "__dynaicTableDistinctValuesForField",
-          data.customTableSpec.id,
+          data.customTableSpec.id + getTableIdSuffix.call(this.data),
           data.customTableSpec.table.publication,
           current.valuesField || current.field,
           data.selector,
@@ -173,7 +173,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           const loading = Tracker.nonreactive(() => this.loading.get());
           delete loading.distinctValues;
           this.loading.set(loading);
-          const distinctValues = (this.distinctValues.findOne({ _id: data.customTableSpec.id }) || { groups: [] }).groups.map(v => v.value);
+          const distinctValues = (this.distinctValues.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this.data) }) || { groups: [] }).groups.map(v => v.value);
           processDistinctValues.call(this, current, distinctValues);
         }
       }
