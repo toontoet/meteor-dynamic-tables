@@ -92,27 +92,33 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     }
   });
   this.$("select").val(val);
-  this.$("select").trigger("change");
-  this.$("select").select2("open");
-  if (this.handler) {
-    document.removeEventListener("mousedown", this.handler, false);
+  this.$("select").trigger("change", { initial: true });
+  if (this.data.openSelect2Immediately !== false) {
+    this.$("select").select2("open");
   }
-  this.handler = (e) => {
-    try {
-      const container = this.$("select").data("select2").$container;
-      if (!container.has($(e.target)).length) {
-        inlineSave(this, this.$("select").val(), this.$("select").data("select2").data());
-      }
-    }
-    catch (e1) {
+  if (this.data.saveOnBlur !== false) {
+    if (this.handler) {
       document.removeEventListener("mousedown", this.handler, false);
     }
-  };
-  document.addEventListener("mousedown", this.handler, false);
+    this.handler = (e) => {
+      try {
+        const container = this.$("select").data("select2").$container;
+        if (!container.has($(e.target)).length) {
+          inlineSave(this, this.$("select").val(), this.$("select").data("select2").data());
+        }
+      }
+      catch (e1) {
+        document.removeEventListener("mousedown", this.handler, false);
+      }
+    };
+    document.addEventListener("mousedown", this.handler, false);
+  }
 });
 Template.dynamicTableSelect2ValueEditor.onDestroyed(function onDestroyed() {
   this.$("select").select2("destroy");
-  document.removeEventListener("mousedown", this.handler, false);
+  if (this.data.saveOnBlur !== false) {
+    document.removeEventListener("mousedown", this.handler, false);
+  }
 });
 
 Template.dynamicTableSelect2ValueEditor.events({
@@ -121,11 +127,13 @@ Template.dynamicTableSelect2ValueEditor.events({
     if (templInstance.waiting) {
       clearTimeout(templInstance.waiting);
     }
-    const data = templInstance.$("select").data("select2").data();
-    templInstance.waiting = setTimeout(() => {
-      if (!templInstance.data.multiple) {
-        inlineSave(templInstance, $(target).val(), data);
-      }
-    }, 100);
+    if (templInstance.data.saveOnBlur !== false) {
+      const data = templInstance.$("select").data("select2").data();
+      templInstance.waiting = setTimeout(() => {
+        if (!templInstance.data.multiple) {
+          inlineSave(templInstance, $(target).val(), data);
+        }
+      }, 100);
+    }
   }
 });

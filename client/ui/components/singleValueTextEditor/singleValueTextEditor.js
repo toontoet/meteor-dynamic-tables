@@ -8,16 +8,18 @@ Template.dynamicTableSingleValueTextEditor.helpers({
 });
 Template.dynamicTableSingleValueTextEditor.events({
   "keydown input"(e, templInstance) {
-    if (e.keyCode === 13) {
+    if (templInstance.data.saveOnEnter !== false && e.keyCode === 13) {
       inlineSave(templInstance, $(e.currentTarget).val());
     }
-    else if (e.keyCode === 9) {
+    else if (templInstance.data.saveOnTab !== false && e.keyCode === 9) {
       e.preventDefault();
       inlineSave(templInstance, $(e.currentTarget).val());
       nextField(templInstance);
     }
   },
   "blur input"(e, templInstance) {
-    inlineSave(templInstance, $(e.currentTarget).val());
+    if (templInstance.data.saveOnBlur !== false) {
+      inlineSave(templInstance, $(e.currentTarget).val());
+    }
   }
 });
