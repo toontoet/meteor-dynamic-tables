@@ -82,6 +82,10 @@ Template.CustomizableTable.helpers({
       fnReorderCallback: Template.instance().fnReorderCallback
     };
     return table;
+  },
+  allColumns() {
+    const columns = Template.instance().data.columns;
+    return columns && _.isFunction(columns) ? columns() : columns;
   }
 });
 

@@ -11,6 +11,7 @@ import "./components/rawRender/rawRender.js";
 import "./components/tableCell/tableCell.js";
 import "./components/singleValueTextEditor/singleValueTextEditor.js";
 import "./components/select2ValueEditor/select2ValueEditor.js";
+import "./components/bulkEditModal/bulkEditModal.js";
 import { getTableRecordsCollection } from "../db.js";
 
 /**
@@ -94,6 +95,18 @@ function doExport(extraOptions) {
     sort: queryOptions.sort,
     columns: this.columns
   }, _.isObject(extraOptions) ? extraOptions : {}));
+}
+
+/**
+  @this Template.instance()
+*/
+function doBulkEdit(extraOptions) {
+  Modal.show("bulkEditModal", {
+    class: "modal-medium-height",
+    title: `Edit ${extraOptions.selectedIds.length} ${extraOptions.set}`,
+    documentIds: extraOptions.selectedIds,
+    tableData: this.data
+  });
 }
 
 function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirection, multiSort = false, redraw = true, forceChange = false) {
@@ -281,7 +294,7 @@ function setup() {
 
       column.createdCell = function createdCell(td, value, rowData, row, col) {
         const rawRowData = rowData;
-        const rawContent = td.innerHTML !== undefined ? td.innerHTML : value;
+        const rawContent = td.innerHTML ? td.innerHTML : value;
         td.innerHTML = "";
         if (column.tmplContext && rowData) {
           rowData = column.tmplContext(rowData, self.data);
@@ -431,6 +444,13 @@ Template.DynamicTable.onRendered(function onRendered() {
       doExport.apply(templateInstance, args);
     });
   }
+
+  if (this.data.table.bulkEditOptions) {
+    this.$tableElement.data("do-bulkEdit", (...args) => {
+      doBulkEdit.apply(templateInstance, args);
+    });
+  }
+
 
   if (this.data.table.advancedSearch) {
     this.$tableElement.data("do-advancedSearch", (...args) => {

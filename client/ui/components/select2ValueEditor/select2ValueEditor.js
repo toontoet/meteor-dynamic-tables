@@ -12,7 +12,7 @@ function getAjaxConfig(origOptions, optionsResult) {
       const val = self.data.value || getValue(self.data.doc, self.data.column.data) || [];
       origOptions(self.data.doc, self.data.column, val, params.data.q, (results) => {
         if (results.length && !hadResults) {
-          const select = self.$("select");
+          const select = self.$(document.getElementsByClassName(`${self.selectId}`));
           select.empty();
           results.forEach((result) => {
             select.append($("<option selected=\"selected\" aria-selected=\"true\">").text(result.text).val(result.id));
@@ -56,6 +56,13 @@ jQuery(document).ready(($) => {
   $(document).on('keyup', '.select2-selection--multiple input.select2-search__field', handler);
 });
 
+Template.dynamicTableSelect2ValueEditor.onCreated(function onCreated() {
+  const selectId = this.data.id || "selectId";
+  const placeholder = this.data.placeholder || "Add tags";
+  this.selectId = selectId;
+  this.placeholder = placeholder;
+});
+
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   let options = this.data.options;
   const val = this.data.value || getValue(this.data.doc, this.data.column.data) || [];
@@ -88,7 +95,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     }].concat(options || []),
     placeholder: {
       id: [],
-      text: "Add tags"
+      text: this.placeholder
     }
   });
   this.$("select").val(val);
@@ -114,10 +121,17 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     document.addEventListener("mousedown", this.handler, false);
   }
 });
+
 Template.dynamicTableSelect2ValueEditor.onDestroyed(function onDestroyed() {
   this.$("select").select2("destroy");
   if (this.data.saveOnBlur !== false) {
     document.removeEventListener("mousedown", this.handler, false);
+  }
+});
+
+Template.dynamicTableSelect2ValueEditor.helpers({
+  inputClass() {
+    return Template.instance().selectId;
   }
 });
 

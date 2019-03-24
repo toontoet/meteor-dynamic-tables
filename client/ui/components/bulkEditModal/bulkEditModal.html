@@ -1,0 +1,28 @@
+<template name="bulkEditModal">
+  <div class="bulkEditModal">
+    <div
+      class="modal fade in {{ class }} bulk-edit-modal"
+      tabindex="-1"
+      role="dialog"
+      aria-hidden="false"
+      style="display: none;"
+    >
+      <div class="modal-dialog-new {{ class }}">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">{{ title }}</h4>
+          </div>
+          <div class="modal-body">
+            <div class="container-fluid">
+              {{> dynamicTableBulkEditForm this}}
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-inverse updateBtn">Submit</button>
+            <button type="button" class="btn btn-default cancelBtn">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
