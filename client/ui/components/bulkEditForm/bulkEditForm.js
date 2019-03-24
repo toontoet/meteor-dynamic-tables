@@ -156,7 +156,10 @@ Template.dynamicTableBulkEditForm.helpers({
       id: `${this.data}-input`,
       value: value || [],
       placeholder,
-      bulkEdit: true
+      openSelect2Immediately: false,
+      saveOnEnter: false,
+      saveOnBlur: false,
+      saveOnTab: false
     });
   },
   hasUnselectedEditableColumns() {

@@ -1,8 +1,5 @@
 <template name="dynamicTableBulkEditForm">
-  <div class="form-group" style="clear: both;">
-    {{#dismissable class="alert alert-blocks"}}
-      Warning: Editing fields in bulk will overwrite all existing values in the selected {{ set }}.
-    {{/dismissable}}
+  <div class="dynamicTableBulkEditForm form-group" style="clear: both;">
     {{#if displayFields}}
       {{#each field in displayFields}}
       <label class="col-md-2 control-label">{{ field.title }}:</label>
