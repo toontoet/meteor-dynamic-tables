@@ -17,7 +17,7 @@ Template.CustomizableTable.helpers({
     const templInstance = Template.instance();
     return (column) => {
       const columns = templInstance.selectedColumns.get();
-      const columnIndex = _.findIndex(columns, col => col.id === column.id || col.data === column.data);
+      const columnIndex = _.findIndex(columns, col => (col.id && col.id === column.id) || col.data === column.data);
       columns.splice(columnIndex, 1);
       templInstance.selectedColumns.set(columns);
       changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns });
