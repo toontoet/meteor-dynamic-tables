@@ -3,13 +3,18 @@ import { inlineSave } from "../../../inlineSave.js";
 
 
 Template.dynamicTableBooleanValueEditor.helpers({
-  selected(val) {
-    return this.value == val ? { selected: "selected" } : "" ;
+  checked() {
+    return this.value ? { checked: "checked" } : {};
   }
 });
 
 Template.dynamicTableBooleanValueEditor.events({
-  "change select"(e, templInstance) {
-    inlineSave(templInstance, $(e.currentTarget).val());
+  "change input"(e, templInstance) {
+    inlineSave(templInstance, $(e.currentTarget).is(":checked"));
+  },
+  "blur input"(e, templInstance) {
+    if (templInstance.data.saveOnBlur !== false) {
+      inlineSave(templInstance, $(e.currentTarget).is(":checked"));
+    }
   }
 });
