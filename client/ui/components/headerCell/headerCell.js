@@ -94,6 +94,10 @@ Template.dynamicTableHeaderCell.events({
           operator = "$regex";
           searchValue = previousSearchObj[`${madeUpField}.$regex`].slice(1);
         }
+        else if (previousSearchObj[`${madeUpField}.$eq`] !== undefined) {
+          operator = "$eq";
+          searchValue = previousSearchObj[`${madeUpField}.$eq`];
+        }
         else if (previousSearchObj[`${madeUpField}.$in`]) {
           operator = "$in";
           selectedOptions = previousSearchObj[`${madeUpField}.$in`];

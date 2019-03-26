@@ -9,6 +9,7 @@ import "./advancedSearchModal.js";
 import "./components/headerCell/headerCell.js";
 import "./components/rawRender/rawRender.js";
 import "./components/tableCell/tableCell.js";
+import "./components/booleanValueEditor/booleanValueEditor.js";
 import "./components/singleValueTextEditor/singleValueTextEditor.js";
 import "./components/select2ValueEditor/select2ValueEditor.js";
 import "./components/bulkEditModal/bulkEditModal.js";
@@ -156,7 +157,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
   const startsWith = !columns[columnIndex].fullSearch;
 
   // NOTE: added .length to ensure correctness when disabling all options (e.g., add diagrams modal)
-  if (optionsOrQuery && optionsOrQuery.length) {
+  if ((_.isArray(optionsOrQuery) && optionsOrQuery.length) || (optionsOrQuery !== undefined && !_.isArray(optionsOrQuery))) {
     let newAdvancedSearchField;
     if (operator === "$between") {
       newAdvancedSearchField = {
@@ -164,7 +165,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
         $gte: optionsOrQuery[0]
       };
     }
-    else if (operator === "$gte" || operator === "$lte") {
+    else if (operator === "$gte" || operator === "$lte" || "$eq") {
       newAdvancedSearchField = {
         [operator]: optionsOrQuery
       };
