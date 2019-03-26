@@ -108,6 +108,7 @@ Template.dynamicTableManageFieldsModal.events({
       }
     })
     .catch((err) => {
+      templInstance.$(".btn-dynamic-table-save").removeAttr("disabled");
       console.error(err);
     });
   }
