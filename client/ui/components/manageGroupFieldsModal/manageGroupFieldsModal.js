@@ -17,6 +17,7 @@ Template.dynamicTableManageGroupFieldsModal.onRendered(function onRendered() {
       const cols = _.object(this.data.availableColumns.map(c => c.field), this.data.availableColumns);
       const newCols = newFields.map(f => cols[f]);
       this.selectedColumns.curValue = newCols; // NOTE: intentionally non-reactive
+      this.newColumns.set([]);
       this.data.changeCallback(newCols);
     }
   };
