@@ -411,7 +411,7 @@ function ajaxSelector(data, selector, columns, caseInsensitive) {
 
     columns.forEach((column) => {
       if (_.isFunction(column.search)) {
-        querySelector.$or = _.union(querySelector.$or, column.search(search, Meteor.userId()));
+        querySelector.$or = _.union(querySelector.$or, column.search(search));
       }
       else if (column.data && column.searchable !== false) {
         querySelector.$or.push({ [column.data]: search });
