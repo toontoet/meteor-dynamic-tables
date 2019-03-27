@@ -156,7 +156,9 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       loading.distinctValues = true;
       this.loading.set(loading);
       if (Tracker.nonreactive(() => Meteor.status().status === "offline")) {
-        const distinctValues = _.unique(data.customTableSpec.table.collection.find(data.selector, { fields: { [current.valuesField || current.field]: 1 } }).map(i => getValue(i, current.valuesField || current.field)));
+        const distinctValues = _.unique(_.compact(
+          data.customTableSpec.table.collection.find(data.selector, { fields: { [current.valuesField || current.field]: 1 } }).map(i => getValue(i, current.valuesField || current.field))
+        ));
         processDistinctValues.call(this, current, distinctValues);
       }
       else {
