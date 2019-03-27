@@ -33,7 +33,8 @@ function getVal(doc, field) {
 }
 
 function getRows(doc, fieldNames, data) {
-  const filterableFields = data.fields.filter(field => field.filters && fieldNames.includes(field.field));
+  const fields = _.isFunction(data.export.fields) ? data.fields(data.columns) : data.export.fields;
+  const filterableFields = fields.filter(field => field.filters && fieldNames.includes(field.field));
 
   const filters = filterableFields.map(field => ({
     field: field.field,
@@ -48,7 +49,7 @@ function getRows(doc, fieldNames, data) {
   }));
 
   let docs = [doc];
-  data.fields
+  fields
   .filter(field => fieldNames.includes(field.field) && field.rows)
   .forEach((field) => {
     docs = _.flatten(docs.map(aDoc => field.rows(aDoc[field.field], aDoc, (_.findWhere(filters, { field: field.field }) || {}).filters)));
@@ -58,7 +59,8 @@ function getRows(doc, fieldNames, data) {
 
 // NOTE: generate a single line of valid CSV text for a document and list of fields
 function CSVLineFromDocument(doc, exportOptions, columns, fieldNames, selector) {
-  return _.flatten(_.filter(exportOptions.fields, field => fieldNames.indexOf(field.field) !== -1).map((field) => {
+  const fields = _.isFunction(exportOptions.fields) ? exportOptions.fields(exportOptions.columns) : exportOptions.fields;
+  return _.flatten(_.filter(fields, field => fieldNames.indexOf(field.field) !== -1).map((field) => {
     const val = getVal(doc, field.field);
     const column = _.findWhere(columns, { data: field.field });
     if (field.columns) {
@@ -110,7 +112,8 @@ Template.dynamicTableExportModal.helpers({
   fields() {
     const collection = Template.instance().data.collection;
     const schema = collection.simpleSchema && collection.simpleSchema();
-    return Template.instance().data.export.fields.map((field) => {
+    const fields = _.isFunction(Template.instance().data.export.fields) ? Template.instance().data.export.fields(Template.instance().data.columns) : Template.instance().data.export.fields;
+    return fields.map((field) => {
       if (typeof field === "string") {
         return { field, label: (schema && schema.label(field)) || field };
       }
@@ -122,15 +125,20 @@ Template.dynamicTableExportModal.helpers({
 Template.dynamicTableExportModal.onRendered(function onRendered() {
   const collection = this.data.collection;
   const schema = collection.simpleSchema && collection.simpleSchema();
-  const fields = this.data.export.fields.map((field) => {
-    if (typeof field === "string") {
-      return { field, label: (schema && schema.label(field)) || field };
-    }
-    return { field: field.field, label: field.label || (schema && schema.label(field.field)) || field.field };
-  });
+
   this.$("#dynamicTableExportModalselected-fields").select2({
     multiple: true
-  }).val(_.pluck(fields, "field")).trigger("change");
+  });
+  this.autorun(() => {
+    let fields = _.isFunction(this.data.export.fields) ? this.data.export.fields(this.data.columns) : this.data.export.fields;
+    fields = fields.filter(f => f.default !== false).map((field) => {
+      if (typeof field === "string") {
+        return { field, label: (schema && schema.label(field)) || field };
+      }
+      return { field: field.field, label: field.label || (schema && schema.label(field.field)) || field.field };
+    });
+    this.$("#dynamicTableExportModalselected-fields").val(_.pluck(fields, "field")).trigger("change");
+  });
 });
 Template.dynamicTableExportModal.onCreated(function onCreated() {
   if (this.data.export.beforeRender) {
@@ -146,16 +154,13 @@ Template.dynamicTableExportModal.events({
     const templateInstance = Template.instance();
     const data = templateInstance.data;
     const selector = { $and: [data.selector, data.advancedSearch || {}] };
-    /*const fieldNames = _.toArray(templateInstance.$("input:checked").map(function perCheckbox() {
-      return $(this).data("target");
-    }));*/
+
     const fieldNames = $("#dynamicTableExportModalselected-fields").val();
+    let fetchFieldNames = _.union(fieldNames, data.extraFields);
+    fetchFieldNames = fetchFieldNames.filter(field => !field.includes(".") || !fetchFieldNames.includes(field.split(".")[0]));
     const options = {
-      fields: _.object(fieldNames, _.times(fieldNames.length, () => true))
+      fields: _.object(fetchFieldNames, _.times(fetchFieldNames.length, () => true))
     };
-    data.extraFields.forEach((field) => {
-      options.fields[field] = true;
-    });
     let limit = templateInstance.$(".limit").val();
     if (limit) {
       if (limit === "current") {
@@ -183,7 +188,6 @@ Template.dynamicTableExportModal.events({
       }
       options.sort = sort;
     }
-
     const sub = templateInstance.subscribe(
       "__dynamicTableResults",
       `${data.tableId}-export`,
@@ -212,7 +216,8 @@ Template.dynamicTableExportModal.events({
           const tableInfo = getTableRecordsCollection(data.collection._connection).findOne({ _id: `${data.tableId}-export` });
           const records = data.collection.find({ _id: { $in: tableInfo._ids } }, _.omit(options, "skip")).fetch();
           const fileName = `${data.export.fileName || "export"}.csv`;
-          const csvHeaders = _.flatten(_.filter(data.export.fields, field => fieldNames.indexOf(field.field) !== -1).map((field) => {
+          const fields = _.isFunction(data.export.fields) ? data.export.fields(data.columns) : data.export.fields;
+          const csvHeaders = _.flatten(_.filter(fields, field => fieldNames.indexOf(field.field) !== -1).map((field) => {
             if (field.columns) {
               if (_.isArray(field.columns)) {
                 return _.pluck(field.columns, "label");
@@ -221,7 +226,7 @@ Template.dynamicTableExportModal.events({
             }
             return field.label;
           }));
-          const allRecords = _.flatten(records.map(record => getRows(record, fieldNames, data.export)));
+          const allRecords = _.flatten(records.map(record => getRows(record, fieldNames, data)));
           const csvText = `${csvHeaders}\n${allRecords.map(doc => CSVLineFromDocument(doc, data.export, data.columns, fieldNames, { _id: { $in: tableInfo._ids } })).join("\n")}`;
           const blob = new Blob([csvText], { type: "text/csv;charset=utf-8" });
           FileSaver.saveAs(blob, fileName);

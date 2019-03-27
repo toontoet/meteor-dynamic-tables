@@ -48,7 +48,6 @@ function doAdvancedSearch(extraOptions) {
 */
 function doExport(extraOptions) {
   const query = this.query.get();
-  const templateInstance = this;
   const advancedSearch = this.advancedSearch.get();
   if (!query) {
     return;
@@ -63,6 +62,12 @@ function doExport(extraOptions) {
     }));
   }
   const schema = table.collection.simpleSchema && table.collection.simpleSchema();
+  if (!table.export._fields) {
+    table.export._fields = table.export.fields;
+  }
+  if (_.isFunction(table.export._fields)) {
+    table.export.fields = table.export._fields(table.columns);
+  }
   table.export.fields = table.export.fields.map((field) => {
     if (!_.isObject(field)) {
       field = { field };
