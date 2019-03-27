@@ -10,7 +10,9 @@ Template.dynamicTableBooleanValueEditor.helpers({
 
 Template.dynamicTableBooleanValueEditor.events({
   "change input"(e, templInstance) {
-    inlineSave(templInstance, $(e.currentTarget).is(":checked"));
+    if (templInstance.data.saveOnEnter !== false) {
+      inlineSave(templInstance, $(e.currentTarget).is(":checked"));
+    }
   },
   "blur input"(e, templInstance) {
     if (templInstance.data.saveOnBlur !== false) {
