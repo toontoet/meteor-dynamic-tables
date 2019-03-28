@@ -226,7 +226,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
       this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
       const oldOrder = Tracker.nonreactive(() => this.order.get());
       if (EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
-        this.order.set(custom.order || []);
+        this.order.set(custom.order);
       }
       if (Tracker.nonreactive(() => this.limit.get()) !== (custom.limit || this.data.table.pageLength || 25)) {
         this.limit.set(custom.limit || this.data.table.pageLength || 25);
