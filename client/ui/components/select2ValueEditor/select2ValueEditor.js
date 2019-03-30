@@ -67,42 +67,52 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   let options = this.data.options;
   const val = this.data.value || getValue(this.data.doc, this.data.column.data) || [];
   const origOptions = options;
+  let promise = Promise.resolve(options);
   if (_.isFunction(options)) {
-    options = options(this.data.doc, this.data.column, val);
-  }
-  this.$("select").select2({
-    multiple: !!this.data.multiple,
-    allowClear: true,
-    tags: this.data.tags || !options,
-    createTag: _.isFunction(this.data.createTag) ? this.data.createTag : ((params) => {
-      const term = $.trim(params.term);
-
-      if (term === "" || this.data.createTag === false) {
-        return null;
+    promise = new Promise((resolve) => {
+      options = options(this.data.doc, this.data.column, val, undefined, (_options) => {
+        resolve(_options);
+      });
+      if (options) {
+        resolve(options);
       }
+    });
+  }
+  promise.then((asyncOptions) => {
+    this.$("select").select2({
+      multiple: !!this.data.multiple,
+      allowClear: true,
+      tags: this.data.tags || !asyncOptions,
+      createTag: _.isFunction(this.data.createTag) ? this.data.createTag : ((params) => {
+        const term = $.trim(params.term);
 
-      return {
-        id: term,
-        text: term
-      };
-    }),
-    ajax: getAjaxConfig.call(this, origOptions, options),
-    data: [{
-      id: [],
-      text: "",
-      search: "",
-      hidden: false
-    }].concat(options || []),
-    placeholder: {
-      id: [],
-      text: this.placeholder
+        if (term === "" || this.data.createTag === false) {
+          return null;
+        }
+
+        return {
+          id: term,
+          text: term
+        };
+      }),
+      ajax: getAjaxConfig.call(this, origOptions, options),
+      data: [{
+        id: [],
+        text: "",
+        search: "",
+        hidden: false
+      }].concat(asyncOptions || []),
+      placeholder: {
+        id: [],
+        text: this.placeholder
+      }
+    });
+    this.$("select").val(val);
+    this.$("select").trigger("change", { initial: true });
+    if (this.data.openSelect2Immediately !== false) {
+      this.$("select").select2("open");
     }
   });
-  this.$("select").val(val);
-  this.$("select").trigger("change", { initial: true });
-  if (this.data.openSelect2Immediately !== false) {
-    this.$("select").select2("open");
-  }
   if (this.data.saveOnBlur !== false) {
     if (this.handler) {
       document.removeEventListener("mousedown", this.handler, false);

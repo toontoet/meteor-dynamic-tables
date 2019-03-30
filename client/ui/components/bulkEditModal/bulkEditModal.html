@@ -14,6 +14,9 @@
           </div>
           <div class="modal-body">
             <div class="container-fluid">
+              <div class="alert alert-blocks">
+                Warning: Editing fields in bulk will overwrite all existing values in the selected {{ set }}.
+              </div>
               {{> dynamicTableBulkEditForm this}}
             </div>
           </div>
