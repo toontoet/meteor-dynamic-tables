@@ -11,7 +11,7 @@ Template.dynamicTableTableCell.helpers({
       afterEditCallback() {
         template.editing.set(false);
       }
-    }, this.editTemplateData);
+    }, _.isFunction(this.editTemplateData) ? this.editTemplateData() : this.editTemplateData);
   }
 });
 
