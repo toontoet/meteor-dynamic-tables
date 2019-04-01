@@ -47,8 +47,22 @@ export class ManageColumnsForm extends BlazeComponent {
     });
   }
 
-  constructor(templInstance) {
-    super(templInstance);
+  rendered() {
+    const data = this.nonReactiveData();
+    if ($.fn.select2) {
+      this.$(".dynamic-table-manage-fields-edit-group").select2({
+        tags: true,
+        placeholder: "Select a Group",
+        allowClear: true,
+        data: _.union(
+          [{ id: "", value: "" }],
+          data.groupNames.map(g => ({ id: g, text: g }))
+        )
+      });
+      if (data.editableField) {
+        this.$(".dynamic-table-manage-fields-edit-group").val(data.editableField.groupName).trigger("change");
+      }
+    }
   }
 }
 

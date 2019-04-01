@@ -3,7 +3,7 @@
 Package.describe({
   name: "znewsham:dynamic-table",
   summary: "Flexible datatables for large collections in Meteor",
-  version: "1.6.6",
+  version: "1.6.7",
   git: "https://bitbucket.org/znewsham/meteor-dynamic-tables"
 });
 

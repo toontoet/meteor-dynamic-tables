@@ -163,9 +163,16 @@ Template.CustomizableTable.events({
         const actualColumn = columns.find(c => (c.id && c.id === columnSpec.id) || c.data === columnSpec.data);
         if (actualColumn) {
           if (actualColumn.nTh) {
-            actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.replace(actualColumn.title, columnSpec.title);
+            actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.split(actualColumn.title).join(columnSpec.title);
           }
-          actualColumn.title = columnSpec.label;
+          actualColumn.title = columnSpec.label || columnSpec.title;
+          if (actualColumn.filterModal && actualColumn.filterModal.field) {
+            actualColumn.filterModal.field.label = actualColumn.title;
+
+            if (actualColumn.filterModal.field.edit && actualColumn.filterModal.field.edit.spec) {
+              actualColumn.filterModal.field.edit.spec.label = actualColumn.title;
+            }
+          }
         }
       };
     }

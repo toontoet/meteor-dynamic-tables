@@ -18,7 +18,7 @@
       </div>
     {{/if}}
     {{#if editing}}
-      {{> manageColumnsForm editableField=editableField manageFieldsEditContext=manageFieldsEditContext}}
+      {{> manageColumnsForm groupNames=groupNames editableField=editableField manageFieldsEditContext=manageFieldsEditContext}}
     {{else}}
       {{#if sort.enabled}}
         <section class="dynamic-table-filter-sort">

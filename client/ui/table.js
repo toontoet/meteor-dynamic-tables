@@ -319,7 +319,7 @@ function setup() {
               templateName: templateName.split(".")[1],
               templateData: column.tmpl ? rowData : rawContent,
               editTemplateName: column.editTmpl && column.editTmpl.viewName.split(".")[1],
-              editTemplateData: column.editTmplContext ? column.editTmplContext(editRowData) : editRowData
+              editTemplateData: () => (column.editTmplContext ? column.editTmplContext(editRowData) : editRowData)
             });
             return self.blaze[`${row}-${col}`].tmpl;
           }
@@ -330,7 +330,7 @@ function setup() {
           templateName: templateName.split(".")[1],
           templateData: column.tmpl ? rowData : rawContent,
           editTemplateName: column.editTmpl && column.editTmpl.viewName.split(".")[1],
-          editTemplateData: column.editTmplContext ? column.editTmplContext(editRowData) : editRowData
+          editTemplateData: () => (column.editTmplContext ? column.editTmplContext(editRowData) : editRowData)
         }, td, self.view);
         self.blaze[`${row}-${col}`] = {
           idOrData: column.id || column.data,
