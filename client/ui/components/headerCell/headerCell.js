@@ -85,7 +85,10 @@ Template.dynamicTableHeaderCell.events({
         const advanceSearchColQuery = orColumnPreviousSearch.find(query => _.isEqual(_.sortBy(_.keys(query.$or || query.$and || query)), _.sortBy(_.keys(searchResult))));
         const previousSearchObj = advanceSearchColQuery ? _.deepToFlat(advanceSearchColQuery.$or || advanceSearchColQuery.$and || advanceSearchColQuery) : {};
         const newSearchObject = _.deepToFlat(searchResult);
-        const madeUpField = _.find(_.keys(newSearchObject), k => newSearchObject[k] === "custom_String--Match_ME-JUSTPLAYSS");
+        let madeUpField = _.find(_.keys(newSearchObject), k => newSearchObject[k] === "custom_String--Match_ME-JUSTPLAYSS");
+        if (!madeUpField) {
+          madeUpField = _.keys(searchResult)[0];
+        }
         if (previousSearchObj[`${madeUpField}.$not`]) {
           operator = "$not";
           searchValue = previousSearchObj[`${madeUpField}.$not`].toString().split("/").join("").slice(1);
