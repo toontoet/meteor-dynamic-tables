@@ -58,7 +58,7 @@ jQuery(document).ready(($) => {
 
 Template.dynamicTableSelect2ValueEditor.onCreated(function onCreated() {
   const selectId = this.data.id || "selectId";
-  const placeholder = this.data.placeholder || "Add tags";
+  const placeholder = this.data.placeholder || "";
   this.selectId = selectId;
   this.placeholder = placeholder;
 });
