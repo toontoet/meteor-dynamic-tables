@@ -94,6 +94,7 @@ function addUndefined(current, values) {
     values.push({
       label: current.undefined.label || "Uncategorized",
       query: current.undefined.query || negation,
+      selector: current.undefined.selector,
       count: current.undefined.count === undefined ? current.count : current.undefined.count,
       alwaysShow: current.undefined.alwaysShow || current.alwaysShow
     });
@@ -207,7 +208,14 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     else {
       valuesToCount.forEach((value) => {
         let selector;
-        if (value.query.$nor) {
+        if (value.selector) {
+          selector = _.extend({ }, data.selector);
+          if (!selector.$and) {
+            selector.$and = [];
+          }
+          selector.$and.push(value.selector);
+        }
+        else if (value.query.$nor) {
           selector = _.extend({ }, data.selector);
           if (!selector.$and) {
             selector.$and = [];
@@ -303,7 +311,13 @@ Template.dynamicTableGroup.helpers({
     const current = this.groupChain[this.index];
 
     const selector = _.extend({}, currentSelector);
-    if (value.query.$nor) {
+    if (value.selector) {
+      if (!selector.$and) {
+        selector.$and = [];
+      }
+      selector.$and.push(value.selector);
+    }
+    else if (value.query.$nor) {
       if (!selector.$and) {
         selector.$and = [];
       }
