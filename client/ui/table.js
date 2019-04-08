@@ -406,7 +406,7 @@ function ajaxOptions(data, options, columns) {
 function ajaxSelector(data, selector, columns, caseInsensitive) {
   const querySelector = _.extend({}, selector);
   if (data.search && data.search.value !== "") {
-    querySelector.$or = [];
+    querySelector.$or = querySelector.$or || [];
     const search = (data.search.regex || caseInsensitive) ? {
       $regex: data.search.value.split("\\").join("\\\\")
     } : data.search.value;
