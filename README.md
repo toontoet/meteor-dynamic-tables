@@ -250,7 +250,7 @@ To trigger an export call `$("#myTableId").data("do-export")();`
 
 same as advance search and export functions, you can also trigger bulk edit and use `onSuccess` and `onError` callbacks.
 
-### Advanced Search Usage
+### Bulk Edit Usage
 
 ```js
   tableOptions(){
@@ -269,7 +269,7 @@ same as advance search and export functions, you can also trigger bulk edit and 
   }
 ```
 
-To trigger the edit search call `$("#myTableId").data("do-bulkEdit")({ selectedIds: columnIds, set: "arbitaryEntityValue" });`
+To trigger the bulk-edit call `$("#myTableId").data("do-bulkEdit")({ selectedIds: columnIds, set: "arbitaryEntityValue" });`
 
 ## API
 
@@ -281,6 +281,7 @@ The following is a list of all options that can be passed to DynamicTable.
 | id | String | The id of the table | Required |
 | class | String | The classes to apply to the table | Optional |
 | style | String | The style to apply directly to the table | Optional |
+| selector | Object | The mongo selector to filter the server provided data | Optional |
 
 
 ### TableSpec
@@ -301,6 +302,7 @@ In addition to these fields, any option defined by DataTables can be used (e.g.,
 | advancedSearch | [AdvancedSearchSpec](#markdown-header-advancedsearchspec) | Which fields should be available in the advanced search modal | Optional |
 | subscriptionOptions | Object | Additional options to pass to the subscriotion | Optional |
 | sortable | Object | Optionally add a jQuery sortable. This works best on local collections | Optional |
+| manageFieldsTitle | String | Title of column in the manage fields modal | Optional |
 
 ### ColumnSpec
 
@@ -323,6 +325,38 @@ In addition to these options, any option available to a DataTable column is avai
 | searchable | Boolean | Whether this column should be searched | true |
 | sortField | String | The field to sort on if different from data  | Optional |
 | filterModal | [FilterModalSpec](#markdown-header-filtermodalspec)/Boolean | Should this column be filterable/sortable via a per-column modal | false |
+
+###### `editTmpl` can also be customized with any define template and `inlineSave, getValue, nextField` methods can be used as required to update the in the inline column value.
+
+#### Import Example
+
+```
+import {
+  inlineSave,
+  getValue,
+  nextField
+} from "meteor/znewsham:dynamic-table";
+```
+
+##### Method Signature
+
+`function nextField(templInstance)` Focus to next editable field <br/>
+`function getValue(doc, fieldName)` Return the column value <br/>
+`function inlineSave(templInstance, updatedValue, extraData)` Update the current column value
+
+###### You can also defined your own way to update inline value using `editTmplContext` return in `editTmplContext`
+
+```
+editTmplContext(rowData) {
+  return _.extend(rowData,
+    {
+      editCallback: (docId, val, doc, afterEditCallback, extra) => {
+        doSomethingAndUpdate();
+        afterEditCallback(); // mandatory to render the updated value after update;
+      }
+    });
+}
+```
 
 ### ExportSpec
 

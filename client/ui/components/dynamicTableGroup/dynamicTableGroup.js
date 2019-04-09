@@ -5,6 +5,13 @@ import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../
 import { changed, getCustom, getValue } from "../../../inlineSave.js";
 
 
+/**
+ * selectorToId - description
+ *
+ * @param  {object} selector      mongo selector
+ * @param  {string} tableIdSuffix table suffix
+ * @return {string}               table suffix
+ */
 function selectorToId(selector, tableIdSuffix) {
   if (tableIdSuffix) {
     return tableIdSuffix;
