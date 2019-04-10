@@ -3,14 +3,14 @@
 Package.describe({
   name: "znewsham:dynamic-table",
   summary: "Flexible datatables for large collections in Meteor",
-  version: "1.6.12",
+  version: "1.6.13",
   git: "https://bitbucket.org/znewsham/meteor-dynamic-tables"
 });
 
 
 Npm.depends({
   "file-saver": "1.3.8",
-  "datatables.net": "2.1.1",
+  "datatables.net": "1.10.19",
   underscore: "1.9.1"
 });
 Package.onUse((api) => {
