@@ -11,7 +11,8 @@ Package.describe({
 Npm.depends({
   "file-saver": "1.3.8",
   "datatables.net": "1.10.19",
-  underscore: "1.9.1"
+  underscore: "1.9.1",
+  "mongo-object": "0.1.3"
 });
 Package.onUse((api) => {
   api.versionsFrom(["METEOR@1.4"]);
@@ -33,13 +34,13 @@ Package.onUse((api) => {
   // pull it in another way, but regardless you need to make sure it is loaded
   // before any tabular tables are rendered
   api.use(["jquery"], "client", { weak: true });
-
+  api.use(["aldeed:simple-schema", "aldeed:autoform"], "client", { weak: true });
   api.mainModule("server/main.js", "server");
   api.mainModule("client/main.js", "client", { lazy: true });
 });
 
 Package.onTest((api) => {
-  //api.use("znewsham:blaze-explorer@0.0.1");
+  api.use("znewsham:blaze-explorer@0.0.1");
   api.use([
     "fortawesome:fontawesome",
     "peppelg:bootstrap-3-modal@1.0.4",

@@ -1,9 +1,63 @@
 import { Random } from "meteor/random";
 import "./manageGroupFieldsModal.css";
 import "./manageGroupFieldsModal.html";
+import { partialColumnSchema } from "../../../columnSchema.js";
 
+let ManageFieldsGroupModalDataSchema;
 
+if (Package["aldeed:simple-schema"]) {
+  const FakeColumnSchema = new Package["aldeed:simple-schema"].SimpleSchema({
+    field: {
+      type: String
+    },
+    label: {
+      type: String,
+      optional: true
+    },
+    manageGroupFieldsTitle: {
+      type: String,
+      optional: true
+    },
+    manageFieldsTitle: {
+      type: String,
+      optional: true
+    },
+    title: {
+      type: String,
+      optional: true
+    },
+    group: {
+      type: String,
+      optional: true
+    }
+  });
+  ManageFieldsGroupModalDataSchema = new Package["aldeed:simple-schema"].SimpleSchema({
+    selectedColumns: {
+      optional: true,
+      type: [Object]
+    },
+    "selectedColumns.$.field": {
+      type: String
+    },
+    availableColumns: {
+      type: [FakeColumnSchema]
+    }
+  });
+}
+
+Template.dynamicTableManageGroupFieldsModal._schema = ManageFieldsGroupModalDataSchema;
 Template.dynamicTableManageGroupFieldsModal.onCreated(function onCreated() {
+  if (ManageFieldsGroupModalDataSchema) {
+    try {
+      ManageFieldsGroupModalDataSchema.validate(ManageFieldsGroupModalDataSchema.clean(this.data));
+    }
+    catch (e) {
+      if (process.env.NODE_ENV === "developmen") {
+        throw e;
+      }
+      console.error(e);
+    }
+  }
   this.newColumns = new ReactiveVar([]);
   const selectedColumns = this.data.selectedColumns || [];
   this.selectedColumns = new ReactiveVar(selectedColumns.length ? selectedColumns : [{ _id: Random.id() }]);
