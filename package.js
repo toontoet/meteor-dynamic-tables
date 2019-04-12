@@ -10,7 +10,7 @@ Package.describe({
 
 Npm.depends({
   "file-saver": "1.3.8",
-  "datatables.net": "2.1.1",
+  "datatables.net": "1.10.19",
   underscore: "1.9.1"
 });
 Package.onUse((api) => {
@@ -33,7 +33,7 @@ Package.onUse((api) => {
   // pull it in another way, but regardless you need to make sure it is loaded
   // before any tabular tables are rendered
   api.use(["jquery"], "client", { weak: true });
-
+  api.use(["aldeed:simple-schema"], "client", { weak: true });
   api.mainModule("server/main.js", "server");
   api.mainModule("client/main.js", "client", { lazy: true });
 });

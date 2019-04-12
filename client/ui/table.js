@@ -15,6 +15,10 @@ import "./components/select2ValueEditor/select2ValueEditor.js";
 import "./components/bulkEditModal/bulkEditModal.js";
 import { getTableRecordsCollection } from "../db.js";
 
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
 /**
   @this Template.instance()
 */
@@ -184,7 +188,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       }
     }
     else if (!_.isArray(optionsOrQuery) && optionsOrQuery !== "") {
-      newAdvancedSearchField = operator === "$regex" ? { $regex: `${startsWith ? "^" : ""}${optionsOrQuery}` } : { $not: new RegExp(`${startsWith ? "^" : ""}${optionsOrQuery}`) };
+      newAdvancedSearchField = operator === "$regex" ? { $regex: `${startsWith ? "^" : ""}${escapeRegExp(optionsOrQuery)}` } : { $not: new RegExp(`${startsWith ? "^" : ""}${escapeRegExp(optionsOrQuery)}`) };
     }
     if (columns[columnIndex].search) {
       newAdvancedSearchField = columns[columnIndex].search(_.extend({}, newAdvancedSearchField, { $options: columns[columnIndex].searchOptions }), false);
@@ -211,7 +215,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       if (!found) {
         if (_.isArray(newAdvancedSearchField)) {
           const someOperator = ["$regex", "$in"].includes(operator) ? "$or" : "$and";
-          arrayToReplaceIn.push({ [someOperator]: newAdvancedSearchField });
+          arrayToReplaceIn.push({ [someOperator]: escapeRegExp(newAdvancedSearchField) });
         }
         else {
           arrayToReplaceIn.push(newAdvancedSearchField);
@@ -408,7 +412,7 @@ function ajaxSelector(data, selector, columns, caseInsensitive) {
   if (data.search && data.search.value !== "") {
     querySelector.$or = [];
     const search = (data.search.regex || caseInsensitive) ? {
-      $regex: data.search.value.split("\\").join("\\\\")
+      $regex: escapeRegExp(data.search.value)
     } : data.search.value;
 
     if (caseInsensitive) {
