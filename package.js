@@ -33,7 +33,7 @@ Package.onUse((api) => {
   // pull it in another way, but regardless you need to make sure it is loaded
   // before any tabular tables are rendered
   api.use(["jquery"], "client", { weak: true });
-  api.use(["aldeed:simple-schema"], "client", { weak: true });
+  //api.use(["aldeed:simple-schema"], "client", { weak: true });
   api.mainModule("server/main.js", "server");
   api.mainModule("client/main.js", "client", { lazy: true });
 });
