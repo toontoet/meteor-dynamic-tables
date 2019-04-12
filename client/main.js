@@ -6,4 +6,6 @@ import "./ui/table.js";
 
 export { inlineSave, getValue, nextField } from "./inlineSave.js";
 
-dataTableInit(window, $);
+if (!$.fn.DataTable) {
+  dataTableInit(window, $);
+}

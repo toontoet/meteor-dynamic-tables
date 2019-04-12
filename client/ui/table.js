@@ -410,7 +410,7 @@ function ajaxOptions(data, options, columns) {
 function ajaxSelector(data, selector, columns, caseInsensitive) {
   const querySelector = _.extend({}, selector);
   if (data.search && data.search.value !== "") {
-    querySelector.$or = [];
+    querySelector.$or = querySelector.$or || [];
     const search = (data.search.regex || caseInsensitive) ? {
       $regex: escapeRegExp(data.search.value)
     } : data.search.value;
