@@ -156,7 +156,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       const loading = Tracker.nonreactive(() => this.loading.get());
       loading.distinctValues = true;
       this.loading.set(loading);
-      if (Tracker.nonreactive(() => Meteor.status().status === "offline")) {
+      if (Tracker.nonreactive(() => Meteor.status().status === "offline" || !data.customTableSpec.table.publication)) {
         const distinctValues = _.unique(_.compact(
           data.customTableSpec.table.collection.find(data.selector, { fields: { [current.valuesField || current.field]: 1 } }).map(i => getValue(i, current.valuesField || current.field))
         ));
@@ -193,7 +193,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       });
     }
     const valuesToCount = values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues));
-    if (Tracker.nonreactive(() => Meteor.status().status !== "offline")) {
+    if (Tracker.nonreactive(() => Meteor.status().status !== "offline") && data.customTableSpec.table.publication) {
       const ids = valuesToCount.map(value => ({ tableId: this.data.customTableSpec.id + getTableIdSuffix.call(data, value), resultId: JSON.stringify(value.query).replace(/[\{\}.:]/g, "") }));
       const count = this.groupInfo.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this.data) });
       ids.forEach(({ tableId, resultId }) => {
@@ -236,7 +236,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const values = this.values.get();
     const currentSelector = data.selector;
     const countWithDistinct = false;//current.count && !current.values;
-    if (!countWithDistinct) {
+    if (!countWithDistinct && Tracker.nonreactive(() => Meteor.status().status !== "offline" && data.customTableSpec.table.publication)) {
       let loading = Tracker.nonreactive(() => this.loading.get());
       loading.countValues = true;
       this.loading.set(loading);
