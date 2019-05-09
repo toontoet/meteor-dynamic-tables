@@ -16,6 +16,9 @@ import "./components/bulkEditModal/bulkEditModal.js";
 import { getTableRecordsCollection } from "../db.js";
 
 function escapeRegExp(string) {
+  if (!_.isString(string)) {
+    return string;
+  }
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
