@@ -314,7 +314,7 @@ Template.dynamicTableFilterModal.events({
   "click .label-dynamic-table-selected"(e, templInstance) {
     const selectedOptions = templInstance.selectedOptions.get();
     const newOption = $(e.currentTarget).data("value");
-    templInstance.selectedOptions.set(selectedOptions.filter(f => (f instanceof Date ? f.toString() !== newOption : f !== newOption)));
+    templInstance.selectedOptions.set(selectedOptions.filter(f => (f instanceof Date ? f.toString() !== newOption : `${f}` !== `${newOption}`)));
   },
   "click .input-dynamic-table-option"(e, templInstance) {
     const selectedOptions = templInstance.selectedOptions.get();

@@ -25,6 +25,12 @@ Template.dynamicTableHeaderCell.helpers({
       if (advanceSearchAnd) {
         return advanceSearchAnd.some((query) => {
           const queryElements = query.$or || query.$and || query;
+          if (_.isArray(queryElements) && _.isArray(searchResult)) {
+            return !queryElements.some((qe, index) => {
+              const sr = searchResult[index];
+              return !_.isEqual(_.sortBy(_.keys(qe)), _.sortBy(_.keys(sr)));
+            });
+          }
           return _.isEqual(_.sortBy(_.keys(queryElements)), _.sortBy(_.keys(searchResult)));
         });
       }
@@ -62,7 +68,7 @@ Template.dynamicTableHeaderCell.events({
         }
       }
       else if (operator === "$regex") {
-        searchValue = columnSearch.$regex.slice(1);
+        searchValue = columnSearch.$regex.replace("^", "");
       }
       else if (operator === "$lte") {
         searchValue = columnSearch.$lte;
@@ -104,6 +110,10 @@ Template.dynamicTableHeaderCell.events({
         else if (previousSearchObj[`${madeUpField}.$in`]) {
           operator = "$in";
           selectedOptions = previousSearchObj[`${madeUpField}.$in`];
+        }
+        else if (previousSearchObj[`${madeUpField}.$nin`]) {
+          operator = "$nin";
+          selectedOptions = previousSearchObj[`${madeUpField}.$nin`];
         }
       }
     }

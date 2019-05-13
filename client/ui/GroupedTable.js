@@ -26,12 +26,21 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());
   }, 1000);
-
-  getCustom(this.data.custom, this.data.id, (custom) => {
-    this.customColumns.set(_.compact((custom.columns || []).map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
-    if (custom.groupChainFields) {
-      this.groupChain.set(_.compact(custom.groupChainFields.map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
+  const id = new ReactiveVar(this.data.id);
+  this.autorun(() => {
+    const data = Template.currentData();
+    if (data.id !== Tracker.nonreactive(() => id.get())) {
+      id.set(data.id);
     }
+  });
+  this.autorun(() => {
+    id.get();
+    getCustom(this.data.custom, this.data.id, (custom) => {
+      this.customColumns.set(_.compact((custom.columns || []).map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
+      if (custom.groupChainFields) {
+        this.groupChain.set(_.compact(custom.groupChainFields.map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
+      }
+    });
   });
   this.documentMouseDown = (e) => {
     const manageGroupFieldsWrapper = $("#dynamic-table-manage-group-fields-modal")[0];
