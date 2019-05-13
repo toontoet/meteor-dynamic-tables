@@ -173,6 +173,12 @@ Template.dynamicTableFilterModal.helpers({
   }
 });
 
+/**
+ * doSearch - search based on field type within filter
+ *
+ * @param  {object} event
+ * @param  {object} templInstance
+ */
 function doSearch(e, templInstance) {
   const elem = $(e.currentTarget);
   const fieldType = templInstance.fieldType.get();
