@@ -886,7 +886,7 @@ Template.DynamicTable.onCreated(function onCreated() {
     }
     if (columns.length < oldColumns.length) {
       const context = this.dataTable.api().context[0];
-      const missingColumn = context.aoColumns.find(nc => !_.find(columns, oc => (oc._id ? oc._id === nc._id : oc.data === nc.data)));
+      const missingColumn = context.aoColumns.find(nc => !_.find(columns, oc => (oc.id ? oc.id === nc.id : oc.data === nc.data)));
       let index = missingColumn.idx;
       const tdorh = this.$("thead").find(`td[data-column-index=${index}],th[data-column-index=${index}]`)[0];
       if (tdorh) { // NOTE: data-column-index is only added when colReorder is used
