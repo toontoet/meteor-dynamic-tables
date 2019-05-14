@@ -7,7 +7,7 @@ import { EJSON } from "meteor/ejson";
 
 function filterColumns(columns, selectedColumnDataOrIds) {
   return _.compact(selectedColumnDataOrIds.map((c) => {
-    return columns.find(col => col.id === c || col.data === c);
+    return columns.find(col => (col.id ? col.id === c : col.data === c));
   }));
 }
 
@@ -17,7 +17,7 @@ Template.CustomizableTable.helpers({
     const templInstance = Template.instance();
     return (column) => {
       const columns = templInstance.selectedColumns.get();
-      const columnIndex = _.findIndex(columns, col => (col.id && col.id === column.id) || col.data === column.data);
+      const columnIndex = _.findIndex(columns, col => (column.id ? col.id === column.id : col.data === column.data));
       columns.splice(columnIndex, 1);
       templInstance.selectedColumns.set(columns);
       changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns });
@@ -54,7 +54,7 @@ Template.CustomizableTable.helpers({
     table.pageNumber = tmplInstance.skip.get() / table.pageLength;
     if (customOrder) {
       table.order = customOrder.map((o) => {
-        const column = _.find(table.columns, c => (c.id && c.id === o.id) || c.data === o.data);
+        const column = _.find(table.columns, c => (o.id ? c.id === o.id : c.data === o.data));
         return [
           table.columns.indexOf(column),
           o.order
@@ -156,11 +156,11 @@ Template.CustomizableTable.events({
       };
       manageFieldsOptions.edit.editedCallback = (columnSpec, prevColumnSpec) => {
         if (!_.isFunction(templInstance.data.columns)) {
-          const realColumn = templInstance.data.columns.find(c => (c.id && c.id === columnSpec.id) || c.data === columnSpec.data);
+          const realColumn = templInstance.data.columns.find(c => (columnSpec.id ? c.id === columnSpec.id : c.data === columnSpec.data));
           templInstance.data.columns.splice(templInstance.data.columns.indexOf(realColumn), 1, columnSpec);
         }
         const columns = templInstance.$("table").dataTable().api().context[0].aoColumns;
-        const actualColumn = columns.find(c => (c.id && c.id === columnSpec.id) || c.data === columnSpec.data);
+        const actualColumn = columns.find(c => (columnSpec.id ? c.id === columnSpec.id : c.data === columnSpec.data));
         if (actualColumn) {
           if (actualColumn.nTh) {
             actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.split(actualColumn.title).join(columnSpec.title);
@@ -221,7 +221,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
   this.skip = new ReactiveVar(0);
   this.fnReorderCallback = () => {
     const columns = this.$("table").dataTable().api().context[0].aoColumns;
-    const newColumns = _.sortBy(this.selectedColumns.get(), c1 => columns.indexOf(_.find(columns, c2 => (c2.id && c2.id === c1.id) || c2.data === c1.data)));
+    const newColumns = _.sortBy(this.selectedColumns.get(), c1 => columns.indexOf(_.find(columns, c2 => (c2.id ? c2.id === c1.id : c2.data === c1.data))));
     this.selectedColumns.set(newColumns);
     changed(this.data.custom, this.data.id, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
   };

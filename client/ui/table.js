@@ -133,7 +133,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
   if (columns[columnIndex].filterModal && columns[columnIndex].filterModal.field && columns[columnIndex].filterModal.field.name) {
     fieldName = columns[columnIndex].filterModal.field.name;
   }
-  const existing = _.find(order, col => (col.id && col.id === columns[columnIndex].id) || col.data === columns[columnIndex].data);
+  const existing = _.find(order, col => (col.id ? col.id === columns[columnIndex].id : col.data === columns[columnIndex].data));
   let changed = false;
   if (sortDirection !== undefined) {
     if (existing) {
@@ -156,7 +156,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       });
     }
     this.dataTable.api().order(order.map((o) => {
-      const column = _.find(columns, c => (c.id && c.id === o.id) || c.data === o.data);
+      const column = _.find(columns, c => (o.id ? c.id === o.id : c.data === o.data));
       return [
         columns.indexOf(column),
         o.order
