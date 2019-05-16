@@ -19,7 +19,25 @@ function escapeRegExp(string) {
   if (!_.isString(string)) {
     return string;
   }
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+}
+
+/**
+  @this Template.instance()
+*/
+function getSelector() {
+  let selector = {};
+  if (this.advancedSearch) {
+    const advancedSearch = this.advancedSearch.get();
+    selector = _.extend(selector, advancedSearch);
+  }
+  if (this.query) {
+    const query = this.query.get();
+    if (query && query.selector) {
+      selector = _.extend(selector, query.selector);
+    }
+  }
+  return selector;
 }
 
 /**
@@ -452,6 +470,9 @@ Template.DynamicTable.onRendered(function onRendered() {
   const templateInstance = this;
   this.$tableElement = $(this.$("table")[0]);
   let lastId;
+
+  this.$tableElement.data("get-selector", () => getSelector.apply(templateInstance));
+
   if (this.data.table.export) {
     this.$tableElement.data("do-export", (...args) => {
       doExport.apply(templateInstance, args);
