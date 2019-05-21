@@ -133,7 +133,11 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
 });
 
 Template.dynamicTableSelect2ValueEditor.onDestroyed(function onDestroyed() {
-  this.$("select").select2("destroy");
+  // this.$("select").data("select2") Specifically for the fix where client throw error =>
+  // "The select2('destroy') method was called on an element that is not using Select2"
+  if (this.$("select").data("select2")) {
+    this.$("select").select2("destroy");
+  }
   if (this.data.saveOnBlur !== false) {
     document.removeEventListener("mousedown", this.handler, false);
   }
