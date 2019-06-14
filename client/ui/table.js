@@ -609,12 +609,22 @@ Template.DynamicTable.onRendered(function onRendered() {
     tableSpec.drawCallback = () => {
       templateInstance.dataTable.loading.set(false);
     };
-    templateInstance.dataTable = templateInstance.$(`#${currentData.id}`).dataTable(tableSpec);
-
-    templateInstance.$(`#${currentData.id}`).on("init.dt", () => {
+    /**
+     * Setting page number in 'init.dt' doesn't work, Its a bug (or may be never ment to handle page number on initialization)
+     * Workaround as discussed by author: to set displayStart of settings properties in preInit
+     * https://datatables.net/forums/discussion/39396/api-page-n-does-not-work-in-preinit-or-init
+     */
+    templateInstance.$(`#${currentData.id}`).on("preInit.dt", (e, settings) => {
       if (currentData.table.pageNumber) {
-        templateInstance.dataTable.api().page(currentData.table.pageNumber).draw(false);
+        settings.iInitDisplayStart = (currentData.table.pageNumber) * settings._iDisplayLength;
+        settings._iDisplayStart = (currentData.table.pageNumber) * settings._iDisplayLength;
       }
+    });
+    templateInstance.dataTable = templateInstance.$(`#${currentData.id}`).dataTable(tableSpec);
+    templateInstance.$(`#${currentData.id}`).on("init.dt", () => {
+      // if (currentData.table.pageNumber) {
+      //   templateInstance.dataTable.api().page(currentData.table.pageNumber).draw("page");
+      // }
       templateInstance.dataTable.isReady = true;
     });
     if (tableSpec.lengthChangeCallback) {
