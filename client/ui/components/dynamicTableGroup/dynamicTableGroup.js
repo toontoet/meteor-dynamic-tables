@@ -66,6 +66,14 @@ Template.dynamicTableGroup.events({
 
     const values = templInstance.values.get();
     const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(this, values[index]);
+    const custom = templInstance.custom.get();
+    const indexInList = custom.openGroups.indexOf(tableId);
+    if (!open && indexInList !== -1) {
+      custom.openGroups.splice(indexInList, 1);
+    }
+    else if (open) {
+      custom.openGroups.push(tableId);
+    }
     changed(templInstance.data.customTableSpec.custom, tableId, { changeOpenGroups: { [tableId]: open } });
   }
 });
