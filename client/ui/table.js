@@ -195,7 +195,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
         $gte: optionsOrQuery[0]
       };
     }
-    else if (operator === "$gte" || operator === "$lte" || "$eq") {
+    else if (operator === "$gte" || operator === "$lte" || operator === "$eq") {
       newAdvancedSearchField = {
         [operator]: optionsOrQuery
       };
