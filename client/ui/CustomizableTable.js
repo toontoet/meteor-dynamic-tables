@@ -1,7 +1,7 @@
 import "./CustomizableTable.html";
 import "./table.js";
 import "./components/manageFieldsModal/manageFieldsModal.js";
-import { getColumns, getPosition, changed, getCustom } from "../inlineSave.js";
+import { getColumns, getPosition, changed, getCustom, mergeRequiredColumns } from "../inlineSave.js";
 import _ from "underscore";
 import { EJSON } from "meteor/ejson";
 
@@ -228,6 +228,10 @@ Template.CustomizableTable.onCreated(function onCreated() {
   let stop = false;
   if (this.data.custom) {
     stop = getCustom(this.data.custom, this.data.id, (custom) => {
+      if (custom.columns && custom.columns.length) {
+        const availableColumns = getColumns(this.data.columns);
+        custom.columns = mergeRequiredColumns(custom.columns, availableColumns);
+      }
       const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
       this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columnsToUse.map(c => c.id || c.data)));
       this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
