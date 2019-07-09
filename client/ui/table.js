@@ -187,7 +187,8 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
   const startsWith = !columns[columnIndex].fullSearch;
 
   // NOTE: added .length to ensure correctness when disabling all options (e.g., add diagrams modal)
-  if ((_.isArray(optionsOrQuery) && optionsOrQuery.length) || (optionsOrQuery !== undefined && !_.isArray(optionsOrQuery))) {
+  // NOTE: added optionsOrQuery !== "" so you can clear the search by deleting text, not just clearing.
+  if ((_.isArray(optionsOrQuery) && optionsOrQuery.length) || (optionsOrQuery !== undefined && optionsOrQuery !== "" && !_.isArray(optionsOrQuery))) {
     let newAdvancedSearchField;
     if (operator === "$between") {
       newAdvancedSearchField = {
@@ -210,6 +211,9 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     }
     else if (!_.isArray(optionsOrQuery) && optionsOrQuery !== "") {
       newAdvancedSearchField = operator === "$regex" ? { $regex: `${startsWith ? "^" : ""}${escapeRegExp(optionsOrQuery)}` } : { $not: new RegExp(`${startsWith ? "^" : ""}${escapeRegExp(optionsOrQuery)}`) };
+    }
+    else if (optionsOrQuery === "") {
+
     }
     if (columns[columnIndex].search) {
       const toExtend = {};
