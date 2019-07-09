@@ -212,7 +212,11 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       newAdvancedSearchField = operator === "$regex" ? { $regex: `${startsWith ? "^" : ""}${escapeRegExp(optionsOrQuery)}` } : { $not: new RegExp(`${startsWith ? "^" : ""}${escapeRegExp(optionsOrQuery)}`) };
     }
     if (columns[columnIndex].search) {
-      newAdvancedSearchField = columns[columnIndex].search(_.extend({}, newAdvancedSearchField, { $options: columns[columnIndex].searchOptions }), false);
+      const toExtend = {};
+      if (columns[columnIndex].searchOptions) {
+        toExtend.$options = columns[columnIndex].searchOptions;
+      }
+      newAdvancedSearchField = columns[columnIndex].search(_.extend({}, newAdvancedSearchField, toExtend), false);
       let arrayToReplaceIn = advancedSearch.$and || [];
       let found = false;
       arrayToReplaceIn = arrayToReplaceIn.map((obj) => {
@@ -249,8 +253,12 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       }
     }
     else if (!EJSON.equals(EJSON.toJSONValue(advancedSearch[fieldName]), EJSON.toJSONValue(newAdvancedSearchField))) {
+      const toExtend = {};
+      if (columns[columnIndex].searchOptions) {
+        toExtend.$options = columns[columnIndex].searchOptions;
+      }
       if (newAdvancedSearchField) {
-        advancedSearch[fieldName] = _.extend({}, newAdvancedSearchField, { $options: columns[columnIndex].searchOptions });
+        advancedSearch[fieldName] = _.extend({}, newAdvancedSearchField, toExtend);
       }
       this.advancedSearch.set(advancedSearch);
       changed = true;
