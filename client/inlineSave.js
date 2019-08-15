@@ -240,3 +240,49 @@ export function changed(
     );
   }
 }
+
+export function mergeRequiredColumns(currentColumns, availableColumns) {
+  if (!Array.isArray(currentColumns) || !Array.isArray(availableColumns)) {
+    return currentColumns;
+  }
+  const mappedRequiredColumnsFromAvailableColumns = {};
+  const clonedAndMergedColumns = currentColumns.slice();
+  const getKey = col => [col.data, col.id].join(",");
+  // Maps the required columns from the total availableColumns
+  availableColumns.forEach((column, index) => {
+    if (!column.required) {
+      return;
+    }
+    const key = getKey(column);
+    mappedRequiredColumnsFromAvailableColumns[key] = {
+      index,
+      column: _.pick(column, ["data", "id"])
+    };
+  });
+  // These are the mapped required columns currently in the tableSpec columns
+  const mappedRequiredColumnsFromCurrentColumns = {};
+  currentColumns.forEach((column) => {
+    const key = getKey(column);
+    if (mappedRequiredColumnsFromAvailableColumns[key]) {
+      mappedRequiredColumnsFromCurrentColumns[key] = true;
+    }
+  });
+  const requiredColumnsAreSame = Object.keys(mappedRequiredColumnsFromAvailableColumns).length
+      === Object.keys(mappedRequiredColumnsFromCurrentColumns).length;
+  if (requiredColumnsAreSame) {
+    return currentColumns;
+  }
+  Object.keys(mappedRequiredColumnsFromAvailableColumns).forEach((requiredAvailableColumnKey) => {
+    const requiredColumnInTableSpec = mappedRequiredColumnsFromCurrentColumns[requiredAvailableColumnKey];
+    if (requiredColumnInTableSpec) {
+      return;
+    }
+    const requiredColumn = mappedRequiredColumnsFromAvailableColumns[requiredAvailableColumnKey];
+    let indexToSplice = requiredColumn.index;
+    if (indexToSplice > clonedAndMergedColumns.length) {
+      indexToSplice = clonedAndMergedColumns.length;
+    }
+    clonedAndMergedColumns.splice(indexToSplice, 0, requiredColumn.column);
+  });
+  return clonedAndMergedColumns;
+}
