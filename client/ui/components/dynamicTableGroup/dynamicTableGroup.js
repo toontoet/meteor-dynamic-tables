@@ -67,6 +67,9 @@ Template.dynamicTableGroup.events({
     const values = templInstance.values.get();
     const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(this, values[index]);
     const custom = templInstance.custom.get();
+    if (!custom.openGroups) {
+      custom.openGroups = [];
+    }
     const indexInList = custom.openGroups.indexOf(tableId);
     if (!open && indexInList !== -1) {
       custom.openGroups.splice(indexInList, 1);
