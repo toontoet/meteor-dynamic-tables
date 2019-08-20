@@ -4,6 +4,20 @@ import "./bulkEditModal.html";
 import "./bulkEditModal.css";
 import "../bulkEditForm/bulkEditForm.js";
 
+
+function getFieldValue(templateInstance, field) {
+  const fieldSelector = templateInstance.$(document.getElementsByClassName(`${field.data}-input`));
+  let fieldValue = fieldSelector.val();
+  const extra = fieldSelector.data("select2") ? fieldSelector.data("select2").data() : undefined;
+
+  if (fieldValue && _.isArray(fieldValue) && fieldValue.length) {
+    fieldValue = fieldValue.filter(v => !!v);
+  }
+  const placeholder = fieldSelector.data("select2") ? fieldSelector.data("select2").results.placeholder.text : fieldSelector.attr("placeholder");
+
+  return { fieldValue, extra, placeholder };
+}
+
 Template.bulkEditModal.events({
   "click .cancelBtn"(e) {
     e.preventDefault();
@@ -11,6 +25,7 @@ Template.bulkEditModal.events({
   },
   "click .updateBtn"(e) {
     e.preventDefault();
+    const templateInstance = Template.instance();
     const tableData = Template.currentData().tableData;
     const documentIds = Template.currentData().documentIds;
     const columns = tableData.table.columns ? tableData.table.columns : [];
@@ -27,46 +42,41 @@ Template.bulkEditModal.events({
     const skippedEntries = [];
     const failedEntries = [];
     const documentsToUpdate = collection ? collection.find({ _id: { $in: documentIds } }, { fields: { _id: true } }) : [];
-    Promise.all(documentsToUpdate.map(doc => new Promise(((resolve, reject) => {
-      try {
-        fields.forEach((field) => {
-          const editRowData = {
-            doc,
-            column: field,
-            collection
-          };
-          const editTemplateData = field.editTmplContext ? field.editTmplContext(editRowData) : editRowData;
-          const fieldSelector = $(document.getElementsByClassName(`${field.data}-input`));
-          let fieldValue = fieldSelector.val();
-          const extra = fieldSelector.data("select2") ? fieldSelector.data("select2").data() : undefined;
+    const modifier = fields.reduce((memo, field) => {
+      const editRowData = {
+        doc: {},
+        column: field,
+        collection
+      };
+      const editTemplateData = field.editTmplContext ? field.editTmplContext(editRowData) : editRowData;
+      const { fieldValue, extra, placeholder } = getFieldValue(templateInstance, field);
+      if (!fieldValue || (!fieldValue.length && placeholder === "Multiple Values")) {
+        return memo;
+      }
+      memo.fields[field.data] = field;
+      memo.$set[field.data] = fieldValue;
+      memo.extra[field.data] = extra;
+      memo.callbacks[field.data] = editTemplateData.editCallback;
+      return memo;
+    }, { $set: {}, extra: {}, callbacks: {}, fields: {} });
 
-          if (fieldValue && _.isArray(fieldValue) && fieldValue.length) {
-            fieldValue = fieldValue.filter(v => !!v);
-          }
-
-          if (editTemplateData.editCallback) {
-            const placeholder = fieldSelector.data("select2") ? fieldSelector.data("select2").results.placeholder.text : fieldSelector.attr("placeholder");
-            if (!fieldValue || (!fieldValue.length && placeholder === "Multiple Values")) {
-              // Skip (Field has multiple initial values and no new entries added by user)
-              skippedEntries.push({ _id: doc._id, field: field.title });
-            }
-            else {
-              editTemplateData.editCallback(doc._id, fieldValue, doc, () => {
+    let promise;
+    const bulkUpdateMethod = tableData.table.bulkEditOptions.updateMethod === true ? "__dynamicTablesBulkEdit" : tableData.table.bulkEditOptions.updateMethod;
+    if (Meteor.status().status === "offline" || !bulkUpdateMethod) {
+      promise = Promise.all(documentsToUpdate.map(doc => new Promise(((resolve, reject) => {
+        try {
+          _.each(modifier.$set, (fieldValue, fieldData) => {
+            const extra = modifier.extra[fieldData];
+            const editCallback = modifier.callbacks[fieldData];
+            const field = modifier.fields[fieldData];
+            if (editCallback) {
+              editCallback(doc._id, fieldValue, doc, () => {
                 // Handle success
                 updatedEntries.push({ _id: doc._id, field: field.title });
               }, extra, true);
             }
-          }
-          else {
-            const placeholder = fieldSelector.attr("placeholder");
-            if (!fieldValue && placeholder === "Multiple Values") {
-              // Skip (Field has multiple initial values and no new entries added by user)
-              skippedEntries.push({ _id: doc._id, field: field.title });
-            }
             else {
-              const $set = {};
-              $set[field.data] = fieldValue;
-              collection.update({ _id: doc._id }, { $set }, (err) => {
+              collection.update({ _id: doc._id }, { $set: { [fieldData]: fieldValue } }, (err) => {
                 if (err) {
                   // Handle error
                   failedEntries.push({ _id: doc._id, field: field.title, err });
@@ -77,24 +87,47 @@ Template.bulkEditModal.events({
                 }
               });
             }
+          });
+          resolve();
+        }
+        catch (error) {
+          reject(error);
+        }
+      }))));
+    }
+    else {
+      promise = new Promise((resolve, reject) => {
+        Meteor.call(
+          bulkUpdateMethod,
+          tableData.table.collection._name,
+          documentsToUpdate.map(d => d._id),
+          modifier.$set,
+          (err, res) => {
+            if (err) {
+              reject(err);
+            }
+            else {
+              updatedEntries.push(...documentsToUpdate.map(d => ({ _id: d._id, fields: modifier.fields })));
+              if (_.isArray(res)) {
+                failedEntries.push(...res);
+              }
+              resolve();
+            }
           }
-        });
-        resolve();
-      }
-      catch (error) {
-        reject(error);
-      }
-    }))))
-    .then(() => {
+        );
+      });
+    }
+
+    promise.then(() => {
       if (bulkEditOptions && typeof bulkEditOptions.onSuccess === "function") {
         bulkEditOptions.onSuccess(updatedEntries, skippedEntries, failedEntries);
       }
+      $(".bulk-edit-modal").modal("hide");
     })
     .catch((err) => {
       if (bulkEditOptions && typeof bulkEditOptions.onError === "function") {
         bulkEditOptions.onError(err);
       }
     });
-    $(".bulk-edit-modal").modal("hide");
   }
 });
