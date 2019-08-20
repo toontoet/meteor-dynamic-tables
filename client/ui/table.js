@@ -785,17 +785,19 @@ Template.DynamicTable.onRendered(function onRendered() {
               row.context[0].aoData[row[0]]._aData = rowData;
               $(templateInstance.dataTable.api().row(rowIndex).node()).find("td,th").each((cellIndex) => {
                 const column = columns[cellIndex];
+                const blazeColumnIndex = column._ColReorder_iOrigCol || column.idx;
                 if (column.tmpl || column.editTmpl) {
                   let changed = false;
-                  const templateName = (columns[cellIndex].tmpl && columns[cellIndex].tmpl.viewName) || "Template.dynamicTableRawRender";
+                  const templateName = (column.tmpl && column.tmpl.viewName) || "Template.dynamicTableRawRender";
                   if (
-                    templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl
-                    && templateInstance.blaze[`${rowIndex}-${cellIndex}`].name === templateName
-                    && templateInstance.blaze[`${rowIndex}-${cellIndex}`].idOrData === (columns[cellIndex].id || columns[cellIndex].data)
+                    templateInstance.blaze[`${rowIndex}-${blazeColumnIndex}`]
+                    && templateInstance.blaze[`${rowIndex}-${blazeColumnIndex}`].tmpl
+                    && templateInstance.blaze[`${rowIndex}-${blazeColumnIndex}`].name === templateName
+                    && templateInstance.blaze[`${rowIndex}-${blazeColumnIndex}`].idOrData === (column.id || column.data)
                   ) {
-                    const oldData = templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl.dataVar.get();
-                    if (columns[cellIndex].tmpl) {
-                      const newData = columns[cellIndex].tmplContext ? columns[cellIndex].tmplContext(rowData, templateInstance.data) : rowData;
+                    const oldData = templateInstance.blaze[`${rowIndex}-${blazeColumnIndex}`].tmpl.dataVar.get();
+                    if (column.tmpl) {
+                      const newData = column.tmplContext ? column.tmplContext(rowData, templateInstance.data) : rowData;
                       try {
                         if (JSON.stringify(oldData.templateData) !== JSON.stringify(newData)) {
                           oldData.templateData = newData;
@@ -828,8 +830,11 @@ Template.DynamicTable.onRendered(function onRendered() {
                     const newData = templateInstance.columns[cellIndex].editTmplContext ? templateInstance.columns[cellIndex].editTmplContext(editRowData) : editRowData;
                     oldData.editTemplateData = newData;
                     if (changed) {
-                      templateInstance.blaze[`${rowIndex}-${cellIndex}`].tmpl.dataVar.set(oldData);
+                      templateInstance.blaze[`${rowIndex}-${blazeColumnIndex}`].tmpl.dataVar.set(oldData);
                     }
+                  }
+                  else {
+                    templateInstance.dataTable.api().cell(rowIndex, cellIndex).invalidate();
                   }
                 }
                 else {
@@ -838,7 +843,7 @@ Template.DynamicTable.onRendered(function onRendered() {
               });
             }
             catch (e) {
-              console.log(e);
+              // console.log(e);
             }
           }
         }
@@ -912,7 +917,6 @@ Template.DynamicTable.onCreated(function onCreated() {
   document.addEventListener("mousedown", this.documentMouseDown);
   let oldColumns;
   this.autorun((comp) => {
-    // NOTE: this block triggers on reorder, not just on add/remove. So we check that the length has changed before we do anything
     const columns = this._columns.get();
     if (comp.firstRun) {
       oldColumns = this.data.table.columns;
@@ -932,7 +936,7 @@ Template.DynamicTable.onCreated(function onCreated() {
       this.dataTable.api().context[0].aoData[0].anCells.splice(index, 1);
       this.blaze = {};
     }
-    else if (columns.length > oldColumns.length) {
+    else if (columns.length > oldColumns.length){
       Tracker.afterFlush(() => {
         this.tableId.dep.changed();
         if (self.dataTable) {
