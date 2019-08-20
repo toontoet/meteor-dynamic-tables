@@ -912,6 +912,7 @@ Template.DynamicTable.onCreated(function onCreated() {
   document.addEventListener("mousedown", this.documentMouseDown);
   let oldColumns;
   this.autorun((comp) => {
+    // NOTE: this block triggers on reorder, not just on add/remove. So we check that the length has changed before we do anything
     const columns = this._columns.get();
     if (comp.firstRun) {
       oldColumns = this.data.table.columns;
@@ -931,7 +932,7 @@ Template.DynamicTable.onCreated(function onCreated() {
       this.dataTable.api().context[0].aoData[0].anCells.splice(index, 1);
       this.blaze = {};
     }
-    else {
+    else if (columns.length > oldColumns.length) {
       Tracker.afterFlush(() => {
         this.tableId.dep.changed();
         if (self.dataTable) {
