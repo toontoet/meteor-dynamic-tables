@@ -348,9 +348,11 @@ function setup() {
           collection: currentData.table.collection
         };
         const enableEdit = column.enableEdit ? column.enableEdit(rawRowData) : true;
-        if (self.blaze[`${row}-${col}`]) {
-          if (self.blaze[`${row}-${col}`].name === templateName && self.blaze[`${row}-${col}`].idOrData === (column.id || column.data)) {
-            td.parentElement.replaceChild(self.blaze[`${row}-${col}`].cell, td);
+        const actualColumn = self.dataTable.api().context[0].aoColumns[col];
+        const blazeColumnIndex = actualColumn._ColReorder_iOrigCol || col;
+        if (self.blaze[`${row}-${blazeColumnIndex}`]) {
+          if (self.blaze[`${row}-${blazeColumnIndex}`].name === templateName && self.blaze[`${row}-${blazeColumnIndex}`].idOrData === (column.id || column.data)) {
+            td.parentElement.replaceChild(self.blaze[`${row}-${blazeColumnIndex}`].cell, td);
             self.blaze[`${row}-${col}`].tmpl.dataVar.set({
               editable: !!column.editTmpl && enableEdit,
               templateName: templateName.split(".")[1],
@@ -358,9 +360,9 @@ function setup() {
               editTemplateName: column.editTmpl && column.editTmpl.viewName.split(".")[1],
               editTemplateData: () => (column.editTmplContext ? column.editTmplContext(editRowData) : editRowData)
             });
-            return self.blaze[`${row}-${col}`].tmpl;
+            return self.blaze[`${row}-${blazeColumnIndex}`].tmpl;
           }
-          delete self.blaze[`${row}-${col}`];
+          delete self.blaze[`${row}-${blazeColumnIndex}`];
         }
         const ret = Blaze.renderWithData(Template.dynamicTableTableCell, {
           editable: !!column.editTmpl && enableEdit,
@@ -369,7 +371,7 @@ function setup() {
           editTemplateName: column.editTmpl && column.editTmpl.viewName.split(".")[1],
           editTemplateData: () => (column.editTmplContext ? column.editTmplContext(editRowData) : editRowData)
         }, td, self.view);
-        self.blaze[`${row}-${col}`] = {
+        self.blaze[`${row}-${blazeColumnIndex}`] = {
           idOrData: column.id || column.data,
           name: templateName,
           cell: td,
