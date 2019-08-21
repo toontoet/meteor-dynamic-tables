@@ -353,7 +353,7 @@ function setup() {
         if (self.blaze[`${row}-${blazeColumnIndex}`]) {
           if (self.blaze[`${row}-${blazeColumnIndex}`].name === templateName && self.blaze[`${row}-${blazeColumnIndex}`].idOrData === (column.id || column.data)) {
             td.parentElement.replaceChild(self.blaze[`${row}-${blazeColumnIndex}`].cell, td);
-            self.blaze[`${row}-${col}`].tmpl.dataVar.set({
+            self.blaze[`${row}-${blazeColumnIndex}`].tmpl.dataVar.set({
               editable: !!column.editTmpl && enableEdit,
               templateName: templateName.split(".")[1],
               templateData: column.tmpl ? rowData : rawContent,
