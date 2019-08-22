@@ -258,6 +258,7 @@ same as advance search and export functions, you can also trigger bulk edit and 
       ...
 
       bulkEditOptions: {
+        updateMethod: "aMethodName",
         onSuccess(updatedEntries, skippedEntries, failedEntries) {
           Notifications.success("Fields updated successful.", "", { timeout: 2000 });
         },
@@ -269,7 +270,15 @@ same as advance search and export functions, you can also trigger bulk edit and 
   }
 ```
 
-To trigger the bulk-edit call `$("#myTableId").data("do-bulkEdit")({ selectedIds: columnIds, set: "arbitaryEntityValue" });`
+To trigger the bulk-edit call `$("#myTableId").data("do-bulkEdit")({ selectedIds: columnIds, set: "arbitaryEntityValue" });`.
+
+If supplied `updateMethod` will be called as follows:
+
+```
+Meteor.call(updateMethod, collectionName, docIds, $set);
+```
+
+Where updateMethod is the one supplied, collectionName is the name of the collection (if supplied), docIds is the array of document IDs to be updated and $set is a mongo $set modifier with all the changes
 
 ## API
 
