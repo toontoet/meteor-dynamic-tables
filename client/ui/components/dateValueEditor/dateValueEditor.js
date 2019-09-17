@@ -1,5 +1,7 @@
 // dynamicTableDateValueEditor.js
 import "./dateValueEditor.html";
+import "./dateValueEditor.css";
+
 import { BlazeComponent } from "meteor/znewsham:blaze-component";
 import { inlineSave } from "../../../inlineSave.js";
 
@@ -10,14 +12,12 @@ export class dynamicTableDateValueEditor extends BlazeComponent {
   }
 
   rendered() {
-    $("input.form-control").datepicker({
+    const input = this.$("input.form-control")
+    input.datepicker({
       onClose: function(date, datepicker) {
-          if (! date) {
-            console.log("nothing")
-            $("input.form-control").val("").trigger("change")
-          }
+        input.trigger("needToUpdate")
       }
-    });
+    })
     $(":focus").focus(); // to trigger datepicker appear
   }
 
@@ -28,21 +28,31 @@ export class dynamicTableDateValueEditor extends BlazeComponent {
 
   static HelperMap() {
     return {
-      date: () => this.date ? {value: this.date} : {}
+      date: "date"
     }
   }
 
   static EventMap() {
     return {
-      "change input.form-control": "onChange",
+      "needToUpdate input.form-control": "onNeedToUpdate"
     }
   }
 
-  onChange(e, templInstance, ...args) {
-    console.log("Date value was changed to: %s", e.target.value);
-    if (templInstance.data.saveOnEnter !== false) {
-      inlineSave(templInstance, $(e.target).val());
+  onNeedToUpdate(e, templInstance, ...args) {
+    const input = $(e.target)
+    // moment validation and regex 2 digit/2 digit/4 digit
+    if (moment(input.val(), "MM/DD/YY").isValid() && /^\d{2}\/\d{2}\/\d{4}$/.test(input.val())) {
+      input.removeClass("date-invalid");
+      if (templInstance.data.saveOnEnter !== false) {
+        inlineSave(templInstance, input.val());
+      }
+    } else {
+      input.addClass("date-invalid")
     }
+  }
+
+  date() {
+    return this.nonReactiveData().value
   }
 }
 
