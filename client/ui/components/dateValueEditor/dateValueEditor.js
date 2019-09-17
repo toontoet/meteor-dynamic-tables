@@ -40,8 +40,8 @@ export class dynamicTableDateValueEditor extends BlazeComponent {
 
   onNeedToUpdate(e, templInstance, ...args) {
     const input = $(e.target)
-    // moment validation and regex 2 digit/2 digit/4 digit
-    if (moment(input.val(), "MM/DD/YY").isValid() && /^\d{2}\/\d{2}\/\d{4}$/.test(input.val())) {
+    // moment validation AND regex 2 digit/2 digit/4 digit OR empty input so date can be erased 
+    if (moment(input.val(), "MM/DD/YY").isValid() && /^\d{2}\/\d{2}\/\d{4}$/.test(input.val()) || input.val() === "") {
       input.removeClass("date-invalid");
       if (templInstance.data.saveOnEnter !== false) {
         inlineSave(templInstance, input.val());
