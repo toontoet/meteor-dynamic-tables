@@ -309,6 +309,7 @@ Template.dynamicTableFilterModal.events({
         operator = "$not";
       }
     }
+    console.log("changed", operator)
     templInstance.operator.set(operator);
   },
   "click .label-dynamic-table-selected"(e, templInstance) {
@@ -542,7 +543,9 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
       if (fieldType === Boolean) {
         operator = "$eq";
       }
-      Tracker.nonreactive(() => callback(selectedOptions, operator, direction, false));
+      if (fieldType != Date) {
+        Tracker.nonreactive(() => callback(selectedOptions, operator, direction, false));
+      }
     });
   }
 });

@@ -4,7 +4,6 @@ import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../db.js";
 import { changed, getCustom, getValue } from "../../../inlineSave.js";
 
-
 /**
  * selectorToId - description
  *
@@ -102,6 +101,7 @@ Template.dynamicTableGroup.onRendered(function onRendered() {
   });
 });
 
+// adds uncategorized field
 function addUndefined(current, values) {
   const queries = values.map(v => v.query);
   let negation;
@@ -132,7 +132,7 @@ function addUndefined(current, values) {
 
 function processDistinctValues(current, distinctValues) {
   const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(distinctValues) : distinctValues.map(v => ({ label: v, query: v }));
-  addUndefined(current, asyncValues);
+  addUndefined(current, asyncValues); // modifies values
   this.values.set(asyncValues.map(v => _.extend(v, { _id: JSON.stringify(v.selector || v.query) })));
 }
 Template.dynamicTableGroup.onCreated(function onCreated() {
@@ -159,18 +159,18 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   });
   this.autorun(() => {
     const data = Template.currentData();
-    const current = data.groupChain[data.index];
+    const current = data.groupChain[data.index]; // current grouping
     const countWithDistinct = false;//current.count && !current.values; NOTE: can't figure out how to handle the ability to mutate the list in transform.
     let values = [];
     if (_.isArray(current.values)) {
       values = current.values.slice(0, current.values.length);
-      addUndefined(current, values);
+      addUndefined(current, values); // modifies values
       this.values.set(values);
     }
     else if (current.values) {
       values = current.values(data.selector);
       values = values.slice(0, values.length);
-      addUndefined(current, values);
+      addUndefined(current, values); // modifies values
       this.values.set(values);
     }
     else {
@@ -203,6 +203,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       }
     }
   });
+	// counting number of elements in each group
   this.autorun(() => {
     const data = Template.currentData();
     const current = data.groupChain[data.index];
@@ -213,7 +214,9 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         this.stickyEnabled.set(index, true);
       });
     }
+    // counts number of records in a group
     const valuesToCount = values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues));
+    // if online and there's a publication
     if (Tracker.nonreactive(() => Meteor.status().status !== "offline") && data.customTableSpec.table.publication) {
       const ids = valuesToCount.map(value => ({ tableId: this.data.customTableSpec.id + getTableIdSuffix.call(data, value), resultId: JSON.stringify(value.query).replace(/[\{\}.:]/g, "") }));
       const count = this.groupInfo.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this.data) });
@@ -382,5 +385,9 @@ Template.dynamicTableGroup.helpers({
     }
     tableIdSuffixChain.push(selectorToId(selector, value.tableIdSuffix));
     return tableIdSuffixChain;
+  },
+  tableId(value){
+    const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
+    return tableId;
   }
 });
