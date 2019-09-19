@@ -17,6 +17,8 @@ function selectorToId(selector, tableIdSuffix) {
     return tableIdSuffix;
   }
   return JSON.stringify(selector)
+  .replace(/\\t/g, "tab")
+  .replace(/ /g, "space")
   .replace(/[^\d\w]/g, "");
 }
 
