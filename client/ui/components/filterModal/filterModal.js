@@ -133,7 +133,8 @@ Template.dynamicTableFilterModal.helpers({
     return Template.instance().isArrayField.get();
   },
   dateValue() {
-    const date = Template.instance().data.filter.search.value;
+    const search = Template.instance().data.filter.search.value;
+    const date = (search instanceof Date) ? search : new Date(search);
     if (date) {
       return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
     }
@@ -309,8 +310,8 @@ Template.dynamicTableFilterModal.events({
         operator = "$not";
       }
     }
-    console.log("changed", operator)
     templInstance.operator.set(operator);
+    $(".input-dynamic-table-search").trigger("change");
   },
   "click .label-dynamic-table-selected"(e, templInstance) {
     const selectedOptions = templInstance.selectedOptions.get();
@@ -379,6 +380,7 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
   this.isArrayField = new ReactiveVar(false);
   this.fieldLabel = new ReactiveVar(this.data.field && this.data.field.label);
   this.fieldType = new ReactiveVar(this.data.field && this.data.field.type);
+  this.fieldTrackOptions = new ReactiveVar(this.data.field && this.data.field.edit.spec.trackOptions);
   if (this.data.field && this.data.field.type && _.isArray(this.data.field && this.data.field.type)) {
     this.fieldType.set(this.data.field.type[0]);
     this.isArrayField.set(true);
@@ -457,7 +459,7 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
       }
       lastSearch = search;
       if (_.isFunction(data.filter.options)) {
-        const options = data.filter.options(data, search, (asyncOptions) => {
+        const options = data.filter.options(data, search, this.operator.get(), (asyncOptions) => {
           this.options.set(asyncOptions.map(o => ((typeof o) === "object" ? o : { label: o, value: o })));
           this.searching.set(false);
         });
@@ -490,7 +492,8 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
       let operator = this.operator.get();
       const options = this.allOptions.get();
       const fieldType = this.fieldType.get();
-      if (selectedOptions.length === 0 && (fieldType === Date || fieldType === "time" || fieldType === Number)) {
+      const trackOptions = this.fieldTrackOptions.get();
+      if (selectedOptions.length === 0 && ((!trackOptions && fieldType === Date) || fieldType === "time" || fieldType === Number)) {
         selectedOptions = this.search.get();
         const numericSearches = [
           "$gt",
@@ -539,13 +542,15 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
         if (_.isArray(selectedOptions)) {
           selectedOptions = selectedOptions.map(v => new Date(v));
         }
+        if (trackOptions) {
+          operator = "$in";
+        }
       }
       if (fieldType === Boolean) {
         operator = "$eq";
       }
-      if (fieldType != Date) {
-        Tracker.nonreactive(() => callback(selectedOptions, operator, direction, false));
-      }
+
+      Tracker.nonreactive(() => callback(selectedOptions, operator, direction, false));
     });
   }
 });
