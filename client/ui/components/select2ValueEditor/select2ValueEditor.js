@@ -80,6 +80,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   }
   promise.then((asyncOptions) => {
     this.$("select").select2({
+      language: {noResults : (param) => "Enter Item Name..."},
       multiple: !!this.data.multiple,
       allowClear: true,
       tags: this.data.tags || !asyncOptions,
