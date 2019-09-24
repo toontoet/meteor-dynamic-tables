@@ -100,7 +100,6 @@ function getDataHandleAndInterval(tableId, publicationCursor, options, canOverri
   }
   else {
     dataHandle = publicationCursor.observeChanges({
-      _suppress_initial: true,
       addedBefore: (_id, doc, beforeId) => {
         recordIds.splice(recordIds.indexOf(beforeId), 0, _id);
         if (canOverride) {
@@ -304,6 +303,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   let dataHandle;
   if (publicationCursor) {
     dataHandle = publicationCursor.observeChanges({
+      _suppress_initial: true,
       added() {
         if (!init) {
           throttledUpdateRecords();
@@ -390,6 +390,7 @@ function simpleTablePublicationDistinctValuesForField(tableId, publicationName, 
   const throttledUpdateRecords = options.throttleRefresh ? _.throttle(updateRecords, options.throttleRefresh, { leading: true, trailing: true }) : updateRecords;
 
   const dataHandle = publicationCursor.observeChanges({
+    _suppress_initial: true,
     added() {
       if (!init) {
         throttledUpdateRecords();

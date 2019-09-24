@@ -10,6 +10,9 @@ Template.dynamicTableSingleValueTextEditor.helpers({
   },
   placeholder() {
     return this.placeholder !== undefined ? this.placeholder : "";
+  },
+  type() {
+    return (this.column && this.column.type) ? this.column.type : "text";
   }
 });
 Template.dynamicTableSingleValueTextEditor.events({

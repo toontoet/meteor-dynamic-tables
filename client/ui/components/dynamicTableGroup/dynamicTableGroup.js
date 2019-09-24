@@ -16,6 +16,8 @@ function selectorToId(selector, tableIdSuffix) {
     return tableIdSuffix;
   }
   return JSON.stringify(selector)
+  .replace(/\\t/g, "_t_t_t_t")
+  .replace(/ /g, "____")
   .replace(/[^\d\w]/g, "");
 }
 

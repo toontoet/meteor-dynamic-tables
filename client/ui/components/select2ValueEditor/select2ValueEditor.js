@@ -58,9 +58,7 @@ jQuery(document).ready(($) => {
 
 Template.dynamicTableSelect2ValueEditor.onCreated(function onCreated() {
   const selectId = this.data.id || "selectId";
-  const placeholder = this.data.placeholder || "";
   this.selectId = selectId;
-  this.placeholder = placeholder;
 });
 
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
@@ -81,6 +79,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   promise.then((asyncOptions) => {
     this.$("select").select2({
       multiple: !!this.data.multiple,
+      triggerEditOnChange: !!this.data.triggerEditOnChange || true,
       allowClear: true,
       tags: this.data.tags || !asyncOptions,
       createTag: _.isFunction(this.data.createTag) ? this.data.createTag : ((params) => {
@@ -104,7 +103,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
       }].concat(asyncOptions || []),
       placeholder: {
         id: [],
-        text: this.placeholder
+        text: this.data.placeholder || "Add Tags"
       }
     });
     this.$("select").val(val);
@@ -162,6 +161,17 @@ Template.dynamicTableSelect2ValueEditor.events({
           inlineSave(templInstance, $(target).val(), data);
         }
       }, 100);
+    }
+  },
+  "change"(e, templInstance) {
+    const target = e.currentTarget;
+    if (typeof templInstance.data.triggerEditOnChange !== "undefined"
+      && !templInstance.data.triggerEditOnChange
+      && typeof templInstance.data.trackOptions !== "undefined"
+      && templInstance.data.trackOptions
+    ) {
+      templInstance.data.docId = templInstance.data.doc.id;
+      inlineSave(templInstance, $(target).val(), templInstance.$("select").data("select2").data());
     }
   }
 });
