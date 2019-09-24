@@ -227,6 +227,9 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
   return _.isArray(publicationResult) ? publicationResult.slice(1) : [];
 }
 
+function canUseAggregate(queries, field) {
+  return !queries.find(q => _.isObject(q.query) || q.options.limit);
+}
 export function simpleTablePublicationCounts(tableId, publicationName, field, baseSelector, queries, options = {}) {
   check(tableId, String);
   check(publicationName, String);
@@ -255,7 +258,58 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
 
   const result = {};
 
-  const updateRecords = () => {
+  const updateRecordsAggregate = () => {
+    const changed = {};
+    let hasChanges = false;
+    let promise = Promise.resolve();
+    if (queries.length) {
+      const pipeline = [
+        {
+          $match: publicationCursor._cursorDescription.selector
+        },
+        {
+          $unwind: `$${field}`
+        },
+        {
+          $group: {
+            _id: `$${field}`,
+            count: { $sum: 1 }
+          }
+        }
+      ];
+      promise = publicationCursor._mongo.db
+      .collection(publicationCursor._getCollectionName())
+      .aggregate(pipeline)
+      .toArray()
+      .then((res) => {
+        res.forEach((group) => {
+          const query = queries.find(q => q.query === group._id);
+          if (query) {
+            const id = JSON.stringify(query.query).replace(/[{}.:]/g, "");
+            if (id) {
+              if (result[id] !== group.count && (result[id] !== undefined || group.count !== 0)) {
+                changed[id] = group.count;
+                result[id] = group.count;
+                hasChanges = true;
+              }
+            }
+          }
+        });
+      });
+    }
+    promise.then(() => {
+      if (init) {
+        init = false;
+        this.added("__dynamicTableGroupInfo", tableId, changed);
+        this.ready();
+      }
+      else if (hasChanges) {
+        this.changed("__dynamicTableGroupInfo", tableId, changed);
+      }
+    });
+  };
+
+  const updateRecordsMap = () => {
     const changed = {};
     let hasChanges = false;
     return Promise.all(queries.map((value) => {
@@ -276,7 +330,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
           cursor = cursor.limit(value.options.limit);
         }
         return cursor.count(true).then((count) => {
-          if (result[id] !== count) {
+          if (result[id] !== count && (result[id] !== undefined || count !== 0)) {
             changed[id] = count;
             result[id] = count;
             hasChanges = true;
@@ -298,6 +352,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   };
 
 
+  const updateRecords = canUseAggregate(queries) ? updateRecordsAggregate : updateRecordsMap;
   const throttledUpdateRecords = options.throttleRefresh ? _.throttle(updateRecords, options.throttleRefresh, { leading: true, trailing: true }) : updateRecords;
 
   let dataHandle;
