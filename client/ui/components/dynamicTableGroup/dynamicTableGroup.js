@@ -203,7 +203,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const sub = distinctValuesSub.get();
     const data = Template.currentData();
     const current = data.groupChain[data.index];
-    if (sub.ready()) {
+    if (sub && sub.ready()) {
       const loading = Tracker.nonreactive(() => this.loading.get());
       delete loading.distinctValues;
       this.loading.set(loading);
@@ -285,7 +285,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   });
   this.autorun(() => {
     const sub = groupCountsSub.get();
-    if (sub.ready()) {
+    if (sub && sub.ready()) {
       const loading = Tracker.nonreactive(() => this.loading.get());
       delete loading.countValues;
       this.loading.set(loading);
