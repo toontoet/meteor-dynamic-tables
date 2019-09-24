@@ -186,7 +186,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         processDistinctValues.call(this, current, distinctValues);
       }
       else {
-        const sub = this.subscribe(
+        const sub = Tracker.nonreactive(() => this.subscribe(
           "__dynaicTableDistinctValuesForField",
           data.customTableSpec.id + getTableIdSuffix.call(this.data),
           data.customTableSpec.table.publication,
@@ -194,7 +194,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           data.selector,
           {},
           countWithDistinct
-        );
+        ));
         if (sub.ready()) {
           const loading = Tracker.nonreactive(() => this.loading.get());
           delete loading.distinctValues;
@@ -219,6 +219,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     if (Tracker.nonreactive(() => Meteor.status().status !== "offline") && data.customTableSpec.table.publication) {
       const ids = valuesToCount.map(value => ({ tableId: this.data.customTableSpec.id + getTableIdSuffix.call(data, value), resultId: JSON.stringify(value.query).replace(/[\{\}.:]/g, "") }));
       const count = this.groupInfo.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this.data) });
+      window.groupInfo = this.groupInfo;
       ids.forEach(({ tableId, resultId }) => {
         if (count && count[resultId]) {
           this.counts.set(tableId, count[resultId]);
@@ -263,7 +264,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       let loading = Tracker.nonreactive(() => this.loading.get());
       loading.countValues = true;
       this.loading.set(loading);
-      const sub = this.subscribe(
+      const sub = Tracker.nonreactive(() => this.subscribe(
         "__dynamicTableGroupCounts",
         data.customTableSpec.id + getTableIdSuffix.call(this.data),
         data.customTableSpec.table.publication,
@@ -272,7 +273,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
         .map(v => ({ options: { limit: v.ensureValues || (v.ensureValues === undefined && current.ensureValues) }, query: v.query })),
         current.options || {}
-      );
+      ));
       if (sub.ready()) {
         loading = Tracker.nonreactive(() => this.loading.get());
         delete loading.countValues;
