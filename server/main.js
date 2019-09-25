@@ -263,20 +263,43 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
     let hasChanges = false;
     let promise = Promise.resolve();
     if (queries.length) {
-      const pipeline = [
-        {
-          $match: publicationCursor._cursorDescription.selector
-        },
-        {
-          $unwind: `$${field}`
-        },
-        {
-          $group: {
-            _id: `$${field}`,
-            count: { $sum: 1 }
+      let pipeline;
+      const match = field.match(/\.(\d+)$/);
+      if (match) {
+        const trimmedField = field.replace(match[0], "");
+        pipeline = [
+          {
+            $match: publicationCursor._cursorDescription.selector
+          },
+          {
+            $project: {
+              [trimmedField]: { $arrayElemAt: [`$${trimmedField}`, parseInt(match[1], 10)] }
+            }
+          },
+          {
+            $group: {
+              _id: `$${trimmedField}`,
+              count: { $sum: 1 }
+            }
           }
-        }
-      ];
+        ];
+      }
+      else {
+        pipeline = [
+          {
+            $match: publicationCursor._cursorDescription.selector
+          },
+          {
+            $unwind: `$${field}`
+          },
+          {
+            $group: {
+              _id: `$${field}`,
+              count: { $sum: 1 }
+            }
+          }
+        ];
+      }
       promise = publicationCursor._mongo.db
       .collection(publicationCursor._getCollectionName())
       .aggregate(pipeline)
