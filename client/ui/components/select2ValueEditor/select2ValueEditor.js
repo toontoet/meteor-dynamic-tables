@@ -81,7 +81,10 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   promise.then((asyncOptions) => {
     const select = this.$("select")
     select.select2({
-      language: {noResults : (param) => select.data("select2").results.lastParams.term ? "No Results Found" : "Enter Item Name..."},
+      minimumInputLength: 1,
+      language: {
+        inputTooShort: () => 'Enter Item Name...'
+      },
       multiple: !!this.data.multiple,
       allowClear: true,
       tags: this.data.tags || !asyncOptions,
