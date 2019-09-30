@@ -187,7 +187,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         processDistinctValues.call(this, current, distinctValues);
       }
       else {
-        distinctValuesSub.set(Tracker.nonreactive(() => this.subscribe(
+        distinctValuesSub.set(this.subscribe(
           "__dynaicTableDistinctValuesForField",
           data.customTableSpec.id + getTableIdSuffix.call(this.data),
           data.customTableSpec.table.publication,
@@ -195,7 +195,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           data.selector,
           {},
           countWithDistinct
-        )));
+        ));
       }
     }
   });
@@ -271,7 +271,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       const loading = Tracker.nonreactive(() => this.loading.get());
       loading.countValues = true;
       this.loading.set(loading);
-      groupCountsSub.set(Tracker.nonreactive(() => this.subscribe(
+      groupCountsSub.set(this.subscribe(
         "__dynamicTableGroupCounts",
         data.customTableSpec.id + getTableIdSuffix.call(this.data),
         data.customTableSpec.table.publication,
@@ -280,7 +280,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
         .map(v => ({ options: { limit: v.ensureValues || (v.ensureValues === undefined && current.ensureValues) }, query: v.query })),
         current.options || {}
-      )));
+      ));
     }
   });
   this.autorun(() => {
