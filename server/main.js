@@ -489,7 +489,6 @@ function simpleTablePublicationDistinctValuesForField(tableId, publicationName, 
   updateRecords();
 
   this.onStop(() => {
-    console.log("stopping");
     this.removed("__dynamicTableDistinctValues", tableId);
     dataHandle.stop();
   });
