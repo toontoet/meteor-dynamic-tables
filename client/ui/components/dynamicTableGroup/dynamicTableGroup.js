@@ -193,7 +193,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           data.customTableSpec.table.publication,
           current.valuesField || current.field,
           data.selector,
-          {},
+          current.distinctOptions || {},
           countWithDistinct
         ));
       }
@@ -279,7 +279,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         currentSelector,
         values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
         .map(v => ({ options: { limit: v.ensureValues || (v.ensureValues === undefined && current.ensureValues) }, query: v.query })),
-        current.options || {}
+        current.countOptions || current.options || {}
       ));
     }
   });
