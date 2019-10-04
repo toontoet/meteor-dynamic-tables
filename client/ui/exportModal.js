@@ -21,7 +21,7 @@ function valueFunction(value, exportOptions) {
 // NOTE: extracts a value from a document with a potentially.dotted.notation.field
 function getVal(doc, field) {
   if (field.endsWith("()")) {
-    return doc[field.slice(0, -"()".length)]()
+    return doc[field.slice(0, -"()".length)]();
   }
   if (field.indexOf(".") === -1) {
     return doc[field];
