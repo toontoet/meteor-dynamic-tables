@@ -136,6 +136,7 @@ Template.dynamicTableFilterModal.helpers({
     const search = Template.instance().data.filter.search.value;
     const date = (search instanceof Date) ? search : new Date(search);
     if (date) {
+      return date.toISOString().split("T")[0];
       return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
     }
   },

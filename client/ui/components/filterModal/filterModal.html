@@ -68,6 +68,7 @@
             {{/if}}
             {{#if isDate}}
               <!-- <label>Date</label> -->
+              {{log dateValue}}
               <input type="date" class="input-dynamic-table-search" placeholder="Date..." value="{{dateValue}}" />
               {{#if filter.operator.enabled}}
                 <i class="fa fa-cog"></i>

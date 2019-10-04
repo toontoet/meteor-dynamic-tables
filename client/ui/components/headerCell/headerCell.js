@@ -115,6 +115,18 @@ Template.dynamicTableHeaderCell.events({
           operator = "$nin";
           selectedOptions = previousSearchObj[`${madeUpField}.$nin`];
         }
+        else if (previousSearchObj[`${madeUpField}.$gte`] && previousSearchObj[`${madeUpField}.$lte`]) {
+          operator = "$eq";
+          searchValue = previousSearchObj[`${madeUpField}.$gte`];
+        }
+        else if (previousSearchObj[`${madeUpField}.$gte`]) {
+          operator = "$gte";
+          searchValue = previousSearchObj[`${madeUpField}.$gte`];
+        }
+        else if (previousSearchObj[`${madeUpField}.$gte`]) {
+          operator = "lgte";
+          searchValue = previousSearchObj[`${madeUpField}.$lte`];
+        }
       }
     }
     let sort = templInstance.data.column.filterModal.sort;
