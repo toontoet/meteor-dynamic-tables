@@ -159,6 +159,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     }
     lastGroupChain = data.groupChain;
   });
+  const distinctValuesSub = new ReactiveVar();
   this.autorun(() => {
     const data = Template.currentData();
     const current = data.groupChain[data.index]; // current grouping
@@ -186,26 +187,31 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         processDistinctValues.call(this, current, distinctValues);
       }
       else {
-        const sub = this.subscribe(
+        distinctValuesSub.set(this.subscribe(
           "__dynaicTableDistinctValuesForField",
           data.customTableSpec.id + getTableIdSuffix.call(this.data),
           data.customTableSpec.table.publication,
           current.valuesField || current.field,
           data.selector,
-          {},
+          current.distinctOptions || {},
           countWithDistinct
-        );
-        if (sub.ready()) {
-          const loading = Tracker.nonreactive(() => this.loading.get());
-          delete loading.distinctValues;
-          this.loading.set(loading);
-          const distinctValues = (this.distinctValues.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this.data) }) || { groups: [] }).groups.map(v => v.value);
-          processDistinctValues.call(this, current, distinctValues);
-        }
+        ));
       }
     }
   });
 	// counting number of elements in each group
+  this.autorun(() => {
+    const sub = distinctValuesSub.get();
+    const data = Template.currentData();
+    const current = data.groupChain[data.index];
+    if (sub && sub.ready()) {
+      const loading = Tracker.nonreactive(() => this.loading.get());
+      delete loading.distinctValues;
+      this.loading.set(loading);
+      const distinctValues = (this.distinctValues.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this.data) }) || { groups: [] }).groups.map(v => v.value);
+      processDistinctValues.call(this, current, distinctValues);
+    }
+  });
   this.autorun(() => {
     const data = Template.currentData();
     const current = data.groupChain[data.index];
@@ -256,6 +262,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       });
     }
   });
+  const groupCountsSub = new ReactiveVar();
+
   this.autorun(() => {
     const data = Template.currentData();
     const current = data.groupChain[data.index];
@@ -263,10 +271,10 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const currentSelector = data.selector;
     const countWithDistinct = false;//current.count && !current.values;
     if (!countWithDistinct && Tracker.nonreactive(() => Meteor.status().status !== "offline" && data.customTableSpec.table.publication)) {
-      let loading = Tracker.nonreactive(() => this.loading.get());
+      const loading = Tracker.nonreactive(() => this.loading.get());
       loading.countValues = true;
       this.loading.set(loading);
-      const sub = this.subscribe(
+      groupCountsSub.set(this.subscribe(
         "__dynamicTableGroupCounts",
         data.customTableSpec.id + getTableIdSuffix.call(this.data),
         data.customTableSpec.table.publication,
@@ -274,13 +282,16 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         currentSelector,
         values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
         .map(v => ({ options: { limit: v.ensureValues || (v.ensureValues === undefined && current.ensureValues) }, query: v.query })),
-        current.options || {}
-      );
-      if (sub.ready()) {
-        loading = Tracker.nonreactive(() => this.loading.get());
-        delete loading.countValues;
-        this.loading.set(loading);
-      }
+        current.countOptions || current.options || {}
+      ));
+    }
+  });
+  this.autorun(() => {
+    const sub = groupCountsSub.get();
+    if (sub && sub.ready()) {
+      const loading = Tracker.nonreactive(() => this.loading.get());
+      delete loading.countValues;
+      this.loading.set(loading);
     }
   });
 });
