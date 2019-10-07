@@ -59,8 +59,10 @@ jQuery(document).ready(($) => {
 Template.dynamicTableSelect2ValueEditor.onCreated(function onCreated() {
   const selectId = this.data.id || "selectId";
   const placeholder = this.data.placeholder || "";
+  const emptyInputMessage = this.data.emptyInputMessage || "Start Typing...";
   this.selectId = selectId;
   this.placeholder = placeholder;
+  this.emptyInputMessage = emptyInputMessage;
 });
 
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
@@ -83,7 +85,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     select.select2({
       minimumInputLength: 1,
       language: {
-        inputTooShort: () => 'Enter Item Name...'
+        inputTooShort: () => this.emptyInputMessage
       },
       multiple: !!this.data.multiple,
       allowClear: true,
