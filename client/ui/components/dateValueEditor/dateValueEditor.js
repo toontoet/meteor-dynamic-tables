@@ -19,15 +19,14 @@ Template.dynamicTableDateValueEditor.onRendered(function() {
       if ($.fn.datepicker) {
         datePickerFn = $.fn.datepicker.bind(input);
       }
-      // $.fn.datepicker = oldDatePicker;
     }
     catch (e) { 
       console.warn("Bootstrap datepicker is not found. The program will use the builtin/available datepicker insted. Some functionality limmitaion are expected");
     }
   }
 
-  const defaultDateFormat = "dd/mm/yyyy"
-  const dateFormat = this.data.options.dateFormat || defaultDateFormat
+  const defaultDateFormat = "mm/dd/yyyy";
+  const dateFormat = this.data.options.dateFormat || defaultDateFormat;
   // if bootstrap datepicker is not imported into the project 
   // it will use jquery datepicker syntax
   const datePickerRet = datePickerFn({
@@ -59,7 +58,7 @@ Template.dynamicTableDateValueEditor.helpers({
 Template.dynamicTableDateValueEditor.events({
   "needToUpdate input.form-control"(e, templInstance, ...args){
     const input = $(e.target);
-    const defaultMomentDateFormat = "DD/MM/YY";
+    const defaultMomentDateFormat = "MM/DD/YY";
     const momentDateFormat = Template.instance().data.options.dateFormat ? Template.instance().options.data.dateFormat.toUpperCase().replace("YYYY", "YY") : defaultMomentDateFormat;
     // moment validation AND regex 2 digit/2 digit/4 digit OR empty input so date can be erased 
     if (moment(input.val(), momentDateFormat).isValid() && /^(\d{2}\/\d{2}\/\d{4},?)+$/.test(input.val()) || input.val() === "") {
