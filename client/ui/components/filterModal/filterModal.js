@@ -95,7 +95,7 @@ Template.dynamicTableFilterModal.helpers({
     return opA === opB ? { checked: "checked" } : {};
   },
   checkedIfSelected(o) {
-    const found = _.find(Template.instance().selectedOptions.get(), value => (value instanceof Date ? value.toString() === o.toString() : value === o));
+    const found = _.find(Template.instance().selectedOptions.get(), value => (value instanceof Date ? (new Date(value)).getTime() === (new Date(o)).getTime() : value === o));
     return found ? { checked: "checked" } : {};
   },
   hasOptions() {
@@ -323,7 +323,7 @@ Template.dynamicTableFilterModal.events({
   },
   "click .input-dynamic-table-option"(e, templInstance) {
     const selectedOptions = templInstance.selectedOptions.get();
-    const newOption = $(e.currentTarget).val();
+    const newOption = templInstance.fieldType.get() === Date ? new Date($(e.currentTarget).val()) : $(e.currentTarget).val();
     if ($(e.currentTarget).is(":checked")) {
       templInstance.selectedOptions.set(_.union(selectedOptions, [newOption]));
     }
