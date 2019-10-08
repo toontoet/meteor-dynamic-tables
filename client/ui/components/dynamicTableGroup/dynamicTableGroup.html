@@ -21,9 +21,23 @@
         <div class="dynamic-table-content" style="{{#if shouldDisplayContent @index}}display: block;{{/if}}">
           {{#if shouldDisplayTable @index}}
             {{#if lastLevel}}
-              {{> CustomizableTable (table value (newSelector value selector))}}
+              {{> CustomizableTable
+                (table value (newSelector value selector))
+              }}
             {{else}}
-              {{> dynamicTableGroup forceRefresh=forceRefresh showPrefix=showPrefix noGroups=noGroups loading=loading customTableSpec=customTableSpec expandAll=expandAll lazy=lazy groupChain=groupChain index=nextIndex tableIdSuffixChain=(tableIdSuffixChain value) selector=(newSelector value selector)}}
+              {{> dynamicTableGroup
+                forceRefresh=forceRefresh
+                showPrefix=showPrefix
+                noGroups=noGroups
+                loading=loading
+                customTableSpec=customTableSpec
+                expandAll=expandAll
+                lazy=lazy
+                groupChain=groupChain
+                index=nextIndex
+                tableIdSuffixChain=(tableIdSuffixChain value)
+                selector=(newSelector value selector)
+              }}
             {{/if}}
           {{/if}}
         </div>
