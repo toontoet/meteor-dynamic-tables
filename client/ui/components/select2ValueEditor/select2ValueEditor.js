@@ -57,12 +57,9 @@ jQuery(document).ready(($) => {
 });
 
 Template.dynamicTableSelect2ValueEditor.onCreated(function onCreated() {
-  const selectId = this.data.id || "selectId";
-  const placeholder = this.data.placeholder || "";
-  const emptyInputMessage = this.data.emptyInputMessage || "Start Typing...";
-  this.selectId = selectId;
-  this.placeholder = placeholder;
-  this.emptyInputMessage = emptyInputMessage;
+  this.selectId = this.data.id || "selectId";
+  this.placeholder = this.data.placeholder || "";
+  this.emptyInputMessage = this.data.emptyInputMessage || "Start Typing...";
 });
 
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
