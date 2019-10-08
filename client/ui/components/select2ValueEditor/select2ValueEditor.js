@@ -58,7 +58,11 @@ jQuery(document).ready(($) => {
 
 Template.dynamicTableSelect2ValueEditor.onCreated(function onCreated() {
   const selectId = this.data.id || "selectId";
+  const placeholder = this.data.placeholder || "";
+  const emptyInputMessage = this.data.emptyInputMessage || "Start Typing...";
   this.selectId = selectId;
+  this.placeholder = placeholder;
+  this.emptyInputMessage = emptyInputMessage;
 });
 
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
@@ -77,7 +81,12 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     });
   }
   promise.then((asyncOptions) => {
-    this.$("select").select2({
+    const select = this.$("select")
+    select.select2({
+      minimumInputLength: 1,
+      language: {
+        inputTooShort: () => this.emptyInputMessage
+      },
       multiple: !!this.data.multiple,
       triggerEditOnChange: !!this.data.triggerEditOnChange || true,
       allowClear: true,
@@ -106,10 +115,10 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
         text: this.data.placeholder || "Add Tags"
       }
     });
-    this.$("select").val(val);
-    this.$("select").trigger("change", { initial: true });
+    select.val(val);
+    select.trigger("change", { initial: true });
     if (this.data.openSelect2Immediately !== false) {
-      this.$("select").select2("open");
+      select.select2("open");
     }
   });
   if (this.data.saveOnBlur !== false) {
