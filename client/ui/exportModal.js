@@ -20,8 +20,8 @@ function valueFunction(value, exportOptions) {
 
 // NOTE: extracts a value from a document with a potentially.dotted.notation.field
 function getVal(doc, field) {
-  if (field.indexOf(".") === -1) {
-    return doc[field];
+  if (field.endsWith("()")) {
+    field = field.slice(0, -"()".length);
   }
   const parts = field.split(".");
   let current = doc;
@@ -29,7 +29,7 @@ function getVal(doc, field) {
   while (current && i < parts.length) {
     current = current[parts[i++]];
   }
-  return current;
+  return _.isFunction(current) ? current.call(doc) : current
 }
 
 function getRows(doc, fieldNames, data) {
