@@ -35,7 +35,16 @@ function handler(e) {
     const possibles = _.toArray($(".select2-container"));
     $select = $(
       possibles
-      .find(elem => $(elem).data("element").data("select2").$dropdown.find(e.currentTarget).length)
+      .find((elem) => {
+        const element = $(elem).data("element");
+        if (element) {
+          const select2Data = element.data("select2");
+          if (select2Data) {
+            return select2Data.$dropdown.find(e.currentTarget).length;
+          }
+        }
+        return false;
+      })
     )
     .closest("td")
     .find(".dynamicTableSelect2ValueEditor");
