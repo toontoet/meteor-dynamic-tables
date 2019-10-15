@@ -383,7 +383,6 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
   this.isArrayField = new ReactiveVar(false);
   this.fieldLabel = new ReactiveVar(this.data.field && this.data.field.label);
   this.fieldType = new ReactiveVar(this.data.field && this.data.field.type);
-  this.fieldTrackOptions = this.data.field && this.data.field.edit && this.data.field.edit.spec && this.data.field.edit.spec.trackOptions;
   if (this.data.field && this.data.field.type && _.isArray(this.data.field && this.data.field.type)) {
     this.fieldType.set(this.data.field.type[0]);
     this.isArrayField.set(true);
@@ -495,7 +494,7 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
       let operator = this.operator.get();
       const options = this.allOptions.get();
       const fieldType = this.fieldType.get();
-      const trackOptions = this.fieldTrackOptions;
+      const trackOptions = !!options.length;
       if (selectedOptions.length === 0 && ((!trackOptions && fieldType === Date) || fieldType === "time" || fieldType === Number)) {
         selectedOptions = this.search.get();
         const numericSearches = [
