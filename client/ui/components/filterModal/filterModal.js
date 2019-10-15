@@ -95,7 +95,7 @@ Template.dynamicTableFilterModal.helpers({
     return opA === opB ? { checked: "checked" } : {};
   },
   checkedIfSelected(o) {
-    const found = _.find(Template.instance().selectedOptions.get(), value => (value instanceof Date ? (new Date(value)).getTime() === (new Date(o)).getTime() : value === o));
+    const found = _.find(Template.instance().selectedOptions.get(), value => (value instanceof Date ? new Date(value).getTime() === new Date(o).getTime() : value === o));
     return found ? { checked: "checked" } : {};
   },
   hasOptions() {
@@ -118,7 +118,7 @@ Template.dynamicTableFilterModal.helpers({
       return [];
     }
     const selectedOptions = _.compact(Template.instance().selectedOptions.get().map((o) => {
-      const match = _.find(options, ({ value }) => (value instanceof Date ? value.toString() === o.toString() : value === o));
+      const match = _.find(options, ({ value }) => (value instanceof Date ? value.getTime() === new Date(o).getTime() : value === o));
       return match;
     }));
     return selectedOptions.map(o => _.extend({ _id: o.value instanceof Date ? o.value.toString() : o.value }, o));
@@ -319,7 +319,7 @@ Template.dynamicTableFilterModal.events({
   "click .label-dynamic-table-selected"(e, templInstance) {
     const selectedOptions = templInstance.selectedOptions.get();
     const newOption = $(e.currentTarget).data("value");
-    templInstance.selectedOptions.set(selectedOptions.filter(f => (f instanceof Date ? f.toString() !== newOption : `${f}` !== `${newOption}`)));
+    templInstance.selectedOptions.set(selectedOptions.filter(f => (f instanceof Date ? f.getTime() !== new Date(newOption).getTime() : `${f}` !== `${newOption}`)));
   },
   "click .input-dynamic-table-option"(e, templInstance) {
     const selectedOptions = templInstance.selectedOptions.get();
@@ -328,7 +328,7 @@ Template.dynamicTableFilterModal.events({
       templInstance.selectedOptions.set(_.union(selectedOptions, [newOption]));
     }
     else {
-      templInstance.selectedOptions.set(selectedOptions.filter(f => (f instanceof Date ? f.toString() !== newOption : f !== newOption)));
+      templInstance.selectedOptions.set(selectedOptions.filter(f => (f instanceof Date ? f.getTime() !== new Date(newOption).getTime() : f !== newOption)));
     }
   },
   "keyup .input-dynamic-table-search"(e, templInstance) {
@@ -383,7 +383,7 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
   this.isArrayField = new ReactiveVar(false);
   this.fieldLabel = new ReactiveVar(this.data.field && this.data.field.label);
   this.fieldType = new ReactiveVar(this.data.field && this.data.field.type);
-  this.fieldTrackOptions = new ReactiveVar(this.data.field && this.data.field.edit.spec.trackOptions);
+  this.fieldTrackOptions = this.data.field && this.data.field.edit && this.data.field.edit.spec && this.data.field.edit.spec.trackOptions;
   if (this.data.field && this.data.field.type && _.isArray(this.data.field && this.data.field.type)) {
     this.fieldType.set(this.data.field.type[0]);
     this.isArrayField.set(true);
@@ -495,7 +495,7 @@ Template.dynamicTableFilterModal.onCreated(function onCreated() {
       let operator = this.operator.get();
       const options = this.allOptions.get();
       const fieldType = this.fieldType.get();
-      const trackOptions = this.fieldTrackOptions.get();
+      const trackOptions = this.fieldTrackOptions;
       if (selectedOptions.length === 0 && ((!trackOptions && fieldType === Date) || fieldType === "time" || fieldType === Number)) {
         selectedOptions = this.search.get();
         const numericSearches = [
