@@ -6,12 +6,12 @@ import { getColumns, getPosition, changed, getCustom } from "../inlineSave.js";
 Template.GroupedTable.onRendered(function onRendered() {
   if (this.data.customGroupButtonSelector) {
     this.autorun(() => {
-      const chain = this.groupChain.get();
-      if (chain.length) {
-        $(this.data.customGroupButtonSelector).addClass("grouped");
+      const grouped = this.groupedBy.get();
+      if (grouped) {
+        $(`${this.data.customGroupButtonSelector}:first`).addClass("grouped");
       }
       else {
-        $(this.data.customGroupButtonSelector).removeClass("grouped");
+        $(`${this.data.customGroupButtonSelector}:first`).removeClass("grouped");
       }
     });
   }
@@ -21,8 +21,8 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.customTableSpec = this.data;
   this.search = new ReactiveVar();
   this.customColumns = new ReactiveVar([]);
-  this.groupChain = new ReactiveVar(_.compact((this.data.groupChain || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
-
+  this.groupedBy = new ReactiveVar(this.data.grouping);
+  this.openGroups = new ReactiveVar([])
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());
   }, 1000);
@@ -33,15 +33,19 @@ Template.GroupedTable.onCreated(function onCreated() {
       id.set(data.id);
     }
   });
-  this.autorun(() => {
-    id.get();
-    getCustom(this.data.custom, this.data.id, (custom) => {
-      this.customColumns.set(_.compact((custom.columns || []).map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
-      if (custom.groupChainFields) {
-        this.groupChain.set(_.compact(custom.groupChainFields.map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
-      }
-    });
-  });
+
+  const callback = (custom) => {
+    this.customColumns.set(_.compact((custom.columns || []).map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
+    this.groupedBy.set(custom.groupedBy);
+    this.openGroups.set(custom.openGroups || []);
+  }
+  const hasCustom = getCustom(this.data.custom, this.data.id, callback);
+  if (! hasCustom) {
+    const groupedBy = this.groupedBy.get();
+    changed(this.customTableSpec.custom, this.customTableSpec.id, { groupedBy: groupedBy || null });
+    getCustom(this.data.custom, this.data.id, callback);
+  }
+
   this.documentMouseDown = (e) => {
     const manageGroupFieldsWrapper = $("#dynamic-table-manage-group-fields-modal")[0];
     if (manageGroupFieldsWrapper) {
@@ -98,9 +102,14 @@ Template.GroupedTable.helpers({
   customTableSpec() {
     return Template.instance().customTableSpec;
   },
-  aGroupChain() {
-    const groupChain = Template.instance().groupChain.get();
-    return groupChain;
+  groupedBy() {
+    return Template.instance().groupedBy.get();
+  },
+  tableId() {
+    return Template.instance().data.id;
+  },
+  openGroups() {
+    return Template.instance().openGroups.get();
   }
 });
 
@@ -117,11 +126,17 @@ Template.GroupedTable.events({
   "click a.manage-group-fields"(e, templInstance, extra) {
     e.preventDefault();
     const manageGroupFieldsOptions = {
-      availableColumns: templInstance.data.groupableFields,
-      selectedColumns: templInstance.groupChain.get(),
-      changeCallback(columns) {
-        templInstance.groupChain.set(columns);
-        changed(templInstance.data.custom, templInstance.data.id, { newGroupChainFields: columns.map(c => c.field) });
+      tableId: templInstance.data.id,
+      dynamicTableSpec: templInstance.customTableSpec,
+      groupedBy: templInstance.groupedBy,
+      changeCallback(groupedBy) {
+        // Needed to reset reactiveVar to false and than true to trigger template refresh.
+        // Timeout creates a new scope so the helper is called twice: 1 - value is null; 2 - value is grouping. It forces the Template to refresh
+        templInstance.groupedBy.set(null);
+        Meteor.setTimeout(() => {
+          templInstance.groupedBy.set(groupedBy && groupedBy.field || null);
+        }, 0);
+        changed(templInstance.customTableSpec.custom, templInstance.customTableSpec.id, { groupedBy: groupedBy && groupedBy.field || null });
       }
     };
     const target = extra ? extra.target : e.currentTarget;

@@ -162,7 +162,7 @@ export function changed(
   custom,
   tableId,
   {
-    newColumns, newFilter, newOrder, newLimit, newSkip, newGroupChainFields, changeOpenGroups, unset
+    newColumns, newFilter, newOrder, newLimit, newSkip, newGroupChainFields, changeOpenGroups, unset, groupedBy
   }
 ) {
   let prefix = "";
@@ -211,6 +211,9 @@ export function changed(
       delete actualFilter[unset];
       $set[`${prefix}filter`] = JSON.stringify(actualFilter);
     }
+  }
+  if (groupedBy || groupedBy === null) {
+    $set[`${prefix}groupedBy`] = groupedBy;
   }
   const update = {};
   if (_.keys($set).length) {

@@ -2,7 +2,7 @@
   <div style="height: 20px">
     <a style="float: right" class="manage-group-fields" href="#">Manage Groups</a>
   </div>
-  {{#if aGroupChain}}
+  {{#if groupedBy}}
     {{#if searching}}
       <input type="text" placeholder="Search..." class="dynamic-table-global-search" />
     {{/if}}
@@ -14,9 +14,11 @@
       expandAll=expandAll
       lazy=lazy
       customTableSpec=customTableSpec
-      groupChain=aGroupChain
-      index=0
       selector=selector
+      groupedBy=groupedBy
+      groupableFields=groupableFields
+      tableId=tableId
+      openGroups=openGroups
     }}
   {{else}}
     {{> CustomizableTable this}}

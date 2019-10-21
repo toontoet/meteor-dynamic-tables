@@ -4,21 +4,18 @@ import "./manageGroupFieldsModal.html";
 
 
 Template.dynamicTableManageGroupFieldsModal.onCreated(function onCreated() {
-  this.newColumns = new ReactiveVar([]);
-  const selectedColumns = this.data.selectedColumns || [];
-  this.selectedColumns = new ReactiveVar(selectedColumns.length ? selectedColumns : [{ _id: Random.id() }]);
+  this.dynamicTableSpec = this.data.dynamicTableSpec;
+  this.groupedBy = this.data.groupedBy;
 });
 
 Template.dynamicTableManageGroupFieldsModal.onRendered(function onRendered() {
   this.maybeCallback = () => {
-    const newFields = _.compact(_.toArray(this.$("select")).map(elem => $(elem).val()));
-    const oldFields = (Tracker.nonreactive(() => this.selectedColumns.get()) || []).map(c => c.field);// NOTE: intentionally non-reactive
-    if (!_.isEqual(newFields, oldFields)) {
-      const cols = _.object(this.data.availableColumns.map(c => c.field), this.data.availableColumns);
-      const newCols = newFields.map(f => cols[f]);
-      this.selectedColumns.curValue = newCols; // NOTE: intentionally non-reactive
-      this.newColumns.set([]);
-      this.data.changeCallback(newCols);
+    const newGrouping = this.$("select").val();
+    const oldGrouping = this.groupedBy.get();
+    if (newGrouping !== oldGrouping) {
+      const cols = _.object(this.dynamicTableSpec.groupableFields.map(c => c.field), this.dynamicTableSpec.groupableFields);
+      const newCol = cols[newGrouping];
+      this.data.changeCallback(newCol);
     }
   };
 });
@@ -27,40 +24,20 @@ Template.dynamicTableManageGroupFieldsModal.events({
   "change select"(e, templInstance) {
     templInstance.maybeCallback();
   },
-  "click .add-group"(e, templInstance) {
-    templInstance.newColumns.get().push({ _id: Random.id() });
-    templInstance.newColumns.dep.changed();
-  },
-  "click .remove-group"(e, templInstance) {
-    const index = parseInt($(e.currentTarget).data("index"), 10);
-    const selectedLength = Math.max(1, templInstance.data.selectedColumns.length);
-    if (index >= selectedLength) {
-      templInstance.newColumns.get().splice(index - selectedLength, 1);
-      templInstance.newColumns.dep.changed();
-    }
-    else {
-      $(e.currentTarget).closest("div").remove();
-    }
-    templInstance.maybeCallback();
-  }
 });
 Template.dynamicTableManageGroupFieldsModal.helpers({
   label(field) {
     return field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title;
   },
-  selectedColumns() {
-    const selectedColumns = Template.instance().selectedColumns.get();
-    return [].concat(selectedColumns, Template.instance().newColumns.get());
+  fieldId(field) {
+    return field.field;
   },
-  selected(field, selectedField) {
-    return field.field === selectedField.field ? { selected: "selected" } : {};
-  },
-  availableColumns() {
-    const availableColumns = Template.instance().data.availableColumns;
-    return availableColumns;
+  selected(field) {
+    const anySelected = field.field === Template.instance().groupedBy.get();
+    return anySelected ? { selected: "selected" } : {};
   },
   groups() {
-    const availableColumns = Template.instance().data.availableColumns;
+    const availableColumns = Template.instance().dynamicTableSpec.groupableFields;
     const groups = _.groupBy(availableColumns, "group");
     delete groups[undefined];
     return _.sortBy(_.map(groups, (columns, title) => ({
@@ -69,7 +46,7 @@ Template.dynamicTableManageGroupFieldsModal.helpers({
     })), "title");
   },
   ungroupedColumns() {
-    const availableColumns = Template.instance().data.availableColumns;
+    const availableColumns = Template.instance().dynamicTableSpec.groupableFields;
     const groups = _.groupBy(availableColumns, "group");
     return _.sortBy(groups.undefined || [], field => field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title);
   }
