@@ -71,7 +71,11 @@ Template.GroupedTable.helpers({
       const columns = _.unique(Template.instance().customColumns.get().length ? Template.instance().customColumns.get() : getColumns(data.columns || data.table.columns), c => c.data + c.id + c.search);
       columns.filter(c => c.searchable !== false).forEach((column) => {
         if (column.search) {
-          searchSelector.$or.push(...column.search(_.extend({}, searchVal, { $options: column.searchOptions })));
+          let res = column.search(_.extend({}, searchVal, { $options: column.searchOptions }));
+          if (!_.isArray(res)) {
+            res = [res];
+          }
+          searchSelector.$or.push(...res);
         }
         else if (column.data) {
           searchSelector.$or.push({ [column.data]: _.extend({}, searchVal, { $options: column.searchOptions }) });

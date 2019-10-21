@@ -54,19 +54,21 @@ function getCount(value, selector) {
 Template.dynamicTableGroup.events({
   "click .dynamic-table-header"(e, templInstance) {
     e.stopImmediatePropagation(); // QUESTION: why is this required? Without it this event handler gets called multiple times
-    const index = parseInt($(e.currentTarget).data("index"), 10);
+    const valueId = $(e.currentTarget).attr("data-table-id");
+
     let open = false;
-    if (templInstance.enabled.get(index)) {
+    if (templInstance.enabled.get(valueId)) {
       open = false;
     }
     else {
       open = true;
-      templInstance.stickyEnabled.set(index, true);
+      templInstance.stickyEnabled.set(valueId, true);
     }
-    templInstance.enabled.set(index, open);
+    templInstance.enabled.set(valueId, open);
 
     const values = templInstance.values.get();
-    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(this, values[index]);
+    const value = values.find(v => v._id === valueId);
+    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(this, value);
     let custom = templInstance.custom.get();
     if (!custom) {
       custom = {};
@@ -94,8 +96,8 @@ Template.dynamicTableGroup.onRendered(function onRendered() {
         values.forEach((value, index) => {
           const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this.data, value);
           if (custom.openGroups && custom.openGroups.includes(tableId)) {
-            this.stickyEnabled.set(index, true);
-            this.enabled.set(index, true);
+            this.stickyEnabled.set(value._id, true);
+            this.enabled.set(value._id, true);
           }
         });
       }
@@ -218,8 +220,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const values = this.values.get();
     if (data.expandAll) {
       values.forEach((v, index) => {
-        this.enabled.set(index, true);
-        this.stickyEnabled.set(index, true);
+        this.enabled.set(v._id, true);
+        this.stickyEnabled.set(v._id, true);
       });
     }
     // counts number of records in a group
@@ -338,11 +340,11 @@ Template.dynamicTableGroup.helpers({
     const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
     return Template.instance().counts.get(tableId);
   },
-  shouldDisplayContent(index) {
-    return !this.lazy || Template.instance().enabled.get(index);
+  shouldDisplayContent(valueId) {
+    return !this.lazy || Template.instance().enabled.get(valueId);
   },
-  shouldDisplayTable(index) {
-    return !this.lazy || Template.instance().stickyEnabled.get(index);
+  shouldDisplayTable(valueId) {
+    return !this.lazy || Template.instance().stickyEnabled.get(valueId);
   },
   newSelector(value, currentSelector) {
     const current = this.groupChain[this.index];
