@@ -137,7 +137,13 @@ function addUndefined(current, values) {
 function processDistinctValues(current, distinctValues) {
   const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(distinctValues) : distinctValues.map(v => ({ label: v, query: v }));
   addUndefined(current, asyncValues); // modifies values
-  this.values.set(asyncValues.map(v => _.extend(v, { _id: JSON.stringify(v.selector || v.query) })));
+  const values = asyncValues.map(v => _.extend(v, { _id: JSON.stringify(v.selector || v.query) }));
+  values.forEach((val) => {
+    if (!val._id) {
+      val._id = JSON.stringify(val.query || val.selector);
+    }
+  });
+  this.values.set(values);
 }
 Template.dynamicTableGroup.onCreated(function onCreated() {
   this.stickyEnabled = new ReactiveDict();
@@ -170,12 +176,22 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     if (_.isArray(current.values)) {
       values = current.values.slice(0, current.values.length);
       addUndefined(current, values); // modifies values
+      values.forEach((val) => {
+        if (!val._id) {
+          val._id = JSON.stringify(val.query || val.selector);
+        }
+      });
       this.values.set(values);
     }
     else if (current.values) {
       values = current.values(data.selector);
       values = values.slice(0, values.length);
       addUndefined(current, values); // modifies values
+      values.forEach((val) => {
+        if (!val._id) {
+          val._id = JSON.stringify(val.query || val.selector);
+        }
+      });
       this.values.set(values);
     }
     else {
