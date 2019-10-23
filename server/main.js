@@ -300,6 +300,9 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
           }
         ];
       }
+      if (options && options.unwind) {
+        pipeline.splice(1, 0, { $unwind: options.unwind });
+      }
       promise = publicationCursor._mongo.db
       .collection(publicationCursor._getCollectionName())
       .aggregate(pipeline)
@@ -374,8 +377,16 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
     });
   };
 
-
-  const updateRecords = canUseAggregate(queries) ? updateRecordsAggregate : updateRecordsMap;
+  let updateRecords;
+  if (options && options.useAggregate) {
+    updateRecords = updateRecordsAggregate;
+  }
+  else if (options && options.useAggregate === false) {
+    updateRecords = updateRecordsMap;
+  }
+  else {
+    updateRecords = canUseAggregate(queries) ? updateRecordsAggregate : updateRecordsMap;
+  }
   const throttledUpdateRecords = options.throttleRefresh ? _.throttle(updateRecords, options.throttleRefresh, { leading: true, trailing: true }) : updateRecords;
 
   let dataHandle;
@@ -489,6 +500,7 @@ function simpleTablePublicationDistinctValuesForField(tableId, publicationName, 
   updateRecords();
 
   this.onStop(() => {
+    this.removed("__dynamicTableDistinctValues", tableId);
     dataHandle.stop();
   });
 }

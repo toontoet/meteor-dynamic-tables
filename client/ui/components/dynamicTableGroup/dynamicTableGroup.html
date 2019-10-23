@@ -15,16 +15,16 @@
     {{/if}}
     {{#each value in currentGroupValues}}
       <div class="dynamic-table-panel" style="{{#unless shouldDisplaySection value}}display: none;{{/unless}}">
-        <div class="dynamic-table-header" data-index="{{@index}}">
+        <div class="dynamic-table-header" data-table-id="{{value._id}}">
           {{#if showPrefix}}{{currentGroupLabel}}: {{/if}}{{value.label}} {{#if hasCount value}}({{count value}}){{/if}}
           <div class="pull-right">
-            <span class="{{#if groupedBy (tableId value)}}grouped{{/if}} dynamic-table-manage-groups" data-index="{{@index}}">
-              <i class="fa fa-th-list" data-index="{{@index}}"></i>
+            <span class="{{#if groupedBy (tableId value)}}grouped{{/if}} dynamic-table-manage-groups" data-table-id="{{value._id}}">
+              <i class="fa fa-th-list" data-table-id="{{value._id}}"></i>
             </span>
           </div>
         </div>
-        <div class="dynamic-table-content" style="{{#if shouldDisplayContent @index}}display: block;{{/if}}">
-          {{#if shouldDisplayTable @index}}
+        <div class="dynamic-table-content" style="{{#if shouldDisplayContent value._id}}display: block;{{/if}}">
+          {{#if shouldDisplayTable value._id}}
             {{#if (groupedBy (tableId value))}}
               {{> dynamicTableGroup
                 forceRefresh=forceRefresh

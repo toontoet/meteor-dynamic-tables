@@ -35,7 +35,16 @@ function handler(e) {
     const possibles = _.toArray($(".select2-container"));
     $select = $(
       possibles
-      .find(elem => $(elem).data("element").data("select2").$dropdown.find(e.currentTarget).length)
+      .find((elem) => {
+        const element = $(elem).data("element");
+        if (element) {
+          const select2Data = element.data("select2");
+          if (select2Data) {
+            return select2Data.$dropdown.find(e.currentTarget).length;
+          }
+        }
+        return false;
+      })
     )
     .closest("td")
     .find(".dynamicTableSelect2ValueEditor");
@@ -57,8 +66,9 @@ jQuery(document).ready(($) => {
 });
 
 Template.dynamicTableSelect2ValueEditor.onCreated(function onCreated() {
-  const selectId = this.data.id || "selectId";
-  this.selectId = selectId;
+  this.selectId = this.data.id || "selectId";
+  this.placeholder = this.data.placeholder || "";
+  this.emptyInputMessage = this.data.emptyInputMessage || "Start Typing...";
 });
 
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
@@ -77,7 +87,12 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     });
   }
   promise.then((asyncOptions) => {
-    this.$("select").select2({
+    const select = this.$("select")
+    select.select2({
+      minimumInputLength: 1,
+      language: {
+        inputTooShort: () => this.emptyInputMessage
+      },
       multiple: !!this.data.multiple,
       triggerEditOnChange: !!this.data.triggerEditOnChange || true,
       allowClear: true,
@@ -106,10 +121,10 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
         text: this.data.placeholder || "Add Tags"
       }
     });
-    this.$("select").val(val);
-    this.$("select").trigger("change", { initial: true });
+    select.val(val);
+    select.trigger("change", { initial: true });
     if (this.data.openSelect2Immediately !== false) {
-      this.$("select").select2("open");
+      select.select2("open");
     }
   });
   if (this.data.saveOnBlur !== false) {

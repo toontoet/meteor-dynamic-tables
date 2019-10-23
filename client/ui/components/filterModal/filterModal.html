@@ -67,8 +67,11 @@
               {{/if}}
             {{/if}}
             {{#if isDate}}
-              <label>Date</label>
+              <!-- <label>Date</label> -->
               <input type="date" class="input-dynamic-table-search" placeholder="Date..." value="{{dateValue}}" />
+              {{#if filter.operator.enabled}}
+                <i class="fa fa-cog"></i>
+              {{/if}}
             {{/if}}
             {{#if isTime}}
               <label>Time</label>
@@ -89,21 +92,27 @@
             <section class="dynamic-table-filter-operator" style="{{#unless showOperators}}display: none;{{/unless}}">
               <label>Where column</label>
               <select class="select-dynamic-table-operator">
-                {{#if isNumericOrDateAndNoOptions}}
+                {{#if isDate}}
                   <option value="$between" {{checkedIfWithValue}}>Equals</option>
                   <option value="$gte">Greater</option>
                   <option value="$lte">Less Than</option>
                 {{else}}
-                  <option value="$in" {{checkedIfWithValue}}>contains (OR)</option>
-                  {{#if hasOptions}}
-                    {{#if isArrayField}}
-                      <option value="$all" {{checkedIfWithAllValue}}>contains (ALL)</option>
+                  {{#if isNumericOrDateAndNoOptions}}
+                    <option value="$between" {{checkedIfWithValue}}>Equals</option>
+                    <option value="$gte">Greater</option>
+                    <option value="$lte">Less Than</option>
+                  {{else}}
+                    <option value="$in" {{checkedIfWithValue}}>contains (OR)</option>
+                    {{#if hasOptions}}
+                      {{#if isArrayField}}
+                        <option value="$all" {{checkedIfWithAllValue}}>contains (ALL)</option>
+                      {{/if}}
                     {{/if}}
-                  {{/if}}
-                  <option value="$nin" {{checkedIfWithoutValue}}>does not contain (OR)</option>
-                  {{#if hasOptions}}
-                    {{#if isArrayField}}
-                      <option value="$not$all" {{checkedIfWithoutAllValue}}>does not contain (ALL)</option>
+                    <option value="$nin" {{checkedIfWithoutValue}}>does not contain (OR)</option>
+                    {{#if hasOptions}}
+                      {{#if isArrayField}}
+                        <option value="$not$all" {{checkedIfWithoutAllValue}}>does not contain (ALL)</option>
+                      {{/if}}
                     {{/if}}
                   {{/if}}
                 {{/if}}

@@ -10,6 +10,7 @@ import "./components/headerCell/headerCell.js";
 import "./components/rawRender/rawRender.js";
 import "./components/tableCell/tableCell.js";
 import "./components/booleanValueEditor/booleanValueEditor.js";
+import "./components/dateValueEditor/dateValueEditor.js";
 import "./components/singleValueTextEditor/singleValueTextEditor.js";
 import "./components/select2ValueEditor/select2ValueEditor.js";
 import "./components/bulkEditModal/bulkEditModal.js";

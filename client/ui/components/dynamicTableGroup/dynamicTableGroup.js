@@ -62,10 +62,17 @@ function shouldDisplaySection(current, value) {
 
 function processDistinctValues(current, distinctValues) {
   const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(distinctValues) : distinctValues.map(v => ({ label: v, query: v }));
-  addUndefined(current, asyncValues);
-  this.values.set(asyncValues.map(v => _.extend(v, { _id: JSON.stringify(v.selector || v.query) })));
+  addUndefined(current, asyncValues); // modifies values
+  const values = asyncValues.map(v => _.extend(v, { _id: JSON.stringify(v.selector || v.query) }));
+  values.forEach((val) => {
+    if (!val._id) {
+      val._id = JSON.stringify(val.query || val.selector);
+    }
+  });
+  this.values.set(values);
 }
 
+// adds uncategorized field
 function addUndefined(current, values) {
   const queries = values.map(v => v.query);
   let negation;
@@ -110,19 +117,22 @@ Template.dynamicTableGroup.events({
     if (e.target !== e.currentTarget) {
       return;
     }
-    const index = parseInt($(e.currentTarget).data("index"), 10);
+
+    const valueId = $(e.currentTarget).attr("data-table-id");
+
     let open = false;
-    if (templInstance.enabled.get(index)) {
+    if (templInstance.enabled.get(valueId)) {
       open = false;
     }
     else {
       open = true;
-      templInstance.stickyEnabled.set(index, true);
+      templInstance.stickyEnabled.set(valueId, true);
     }
-    templInstance.enabled.set(index, open);
+    templInstance.enabled.set(valueId, open);
 
     const values = templInstance.values.get();
-    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(Template.instance(), values[index]);
+    const value = values.find(v => v._id === valueId);
+    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(Template.instance(), value);
     let custom = templInstance.custom.get();
     if (!custom) {
       custom = {};
@@ -141,9 +151,10 @@ Template.dynamicTableGroup.events({
   },
   "click .dynamic-table-manage-groups"(e, templInstance, extra) {
     e.preventDefault();
-    const index = parseInt($(e.currentTarget).data("index"), 10);
+    const valueId = $(e.currentTarget).attr("data-table-id");
     const values = templInstance.values.get();
-    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(templInstance, values[index]);
+    const value = values.find(v => v._id === valueId);
+    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(templInstance, value);
     const currentGrouping = new ReactiveVar(null);
     const custom = templInstance.data.customTableSpec.custom(tableId, false, false, () => {});
     // won't be equal if tableSpec doesn't exist in db; it will return root tableSpec
@@ -198,8 +209,8 @@ Template.dynamicTableGroup.onRendered(function onRendered() {
       values.forEach((value, index) => {
         const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this, value);
         if (openGroups.includes(tableId)) {
-          this.stickyEnabled.set(index, true);
-          this.enabled.set(index, true);
+          this.stickyEnabled.set(value._id, true);
+          this.enabled.set(value._id, true);
         }
       });
     });
@@ -228,19 +239,27 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const data = Template.currentData();
     const groupedByField = data.groupableFields.find(f => f.field === this.groupedBy);
     this.groupedByField = groupedByField;
-
-    let values = [];
     const countWithDistinct = false;//current.count && !current.values; NOTE: can't figure out how to handle the ability to mutate the list in transform.
-
+    let values = [];
     if (_.isArray(groupedByField.values)) {
       values = groupedByField.values.slice(0, groupedByField.values.length);
       addUndefined(groupedByField, values);
+      values.forEach((val) => {
+        if (!val._id) {
+          val._id = JSON.stringify(val.query || val.selector);
+        }
+      });
       this.values.set(values);
     }
     else if (groupedByField.values) {
       values = groupedByField.values(data.selector);
       values = values.slice(0, values.length);
-      addUndefined(groupedByField, values);
+      addUndefined(groupedByField, values); // modifies values
+      values.forEach((val) => {
+        if (!val._id) {
+          val._id = JSON.stringify(val.query || val.selector);
+        }
+      });
       this.values.set(values);
     }
     else {
@@ -256,19 +275,20 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         processDistinctValues.call(this, groupedByField, distinctValues);
       }
       else {
-        distinctValuesSub.set(Tracker.nonreactive(() => this.subscribe(
+        distinctValuesSub.set(this.subscribe(
           "__dynaicTableDistinctValuesForField",
           data.customTableSpec.id + getTableIdSuffix.call(this),
           data.customTableSpec.table.publication,
           groupedByField.valuesField || groupedByField.field,
           data.selector,
-          {},
+          groupedByField.distinctOptions || {},
           countWithDistinct
-        )));
+        ));
       }
     }
   });
 
+  // looks for grouping fot nested tables
   this.autorun(() => {
     const data = Template.currentData();
     const values = this.values.get();
@@ -303,11 +323,13 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const values = this.values.get();
     if (data.expandAll) {
       values.forEach((v, index) => {
-        this.enabled.set(index, true);
-        this.stickyEnabled.set(index, true);
+        this.enabled.set(v._id, true);
+        this.stickyEnabled.set(v._id, true);
       });
     }
+    // counts number of records in a group
     const valuesToCount = values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues));
+    // if online and there's a publication
     if (Tracker.nonreactive(() => Meteor.status().status !== "offline") && data.customTableSpec.table.publication) {
       const ids = valuesToCount.map(value => ({ tableId: this.data.customTableSpec.id + getTableIdSuffix.call(this, value), resultId: JSON.stringify(value.query).replace(/[\{\}.:]/g, "") }));
       const count = this.groupInfo.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this) });
@@ -357,7 +379,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       const loading = Tracker.nonreactive(() => this.loading.get());
       loading.countValues = true;
       this.loading.set(loading);
-      groupCountsSub.set(Tracker.nonreactive(() => this.subscribe(
+      groupCountsSub.set(this.subscribe(
         "__dynamicTableGroupCounts",
         data.customTableSpec.id + getTableIdSuffix.call(this),
         data.customTableSpec.table.publication,
@@ -365,8 +387,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         currentSelector,
         values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
         .map(v => ({ options: { limit: v.ensureValues || (v.ensureValues === undefined && current.ensureValues) }, query: v.query })),
-        current.options || {}
-      )));
+        current.countOptions || current.options || {}
+      ));
     }
   });
   this.autorun(() => {
@@ -406,11 +428,11 @@ Template.dynamicTableGroup.helpers({
     const tableId = this.customTableSpec.id + getTableIdSuffix.call(Template.instance(), value);
     return Template.instance().counts.get(tableId);
   },
-  shouldDisplayContent(index) {
-    return !this.lazy || Template.instance().enabled.get(index);
+  shouldDisplayContent(valueId) {
+    return !this.lazy || Template.instance().enabled.get(valueId);
   },
-  shouldDisplayTable(index) {
-    return !this.lazy || Template.instance().stickyEnabled.get(index);
+  shouldDisplayTable(valueId) {
+    return !this.lazy || Template.instance().stickyEnabled.get(valueId);
   },
   newSelector(value, currentSelector) {
     const current = Template.instance().groupedByField;
