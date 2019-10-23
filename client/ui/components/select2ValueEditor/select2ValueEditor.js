@@ -68,7 +68,6 @@ jQuery(document).ready(($) => {
 Template.dynamicTableSelect2ValueEditor.onCreated(function onCreated() {
   this.selectId = this.data.id || "selectId";
   this.placeholder = this.data.placeholder || "";
-  this.emptyInputMessage = this.data.emptyInputMessage || "Start Typing...";
 });
 
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
@@ -87,11 +86,11 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     });
   }
   promise.then((asyncOptions) => {
-    const select = this.$("select")
+    const select = this.$("select");
     select.select2({
-      minimumInputLength: 1,
+      minimumInputLength: this.data.minimumInputLength !== undefined ? this.data.minimumInputLength : (_.isArray(options) ? 0 : 1),
       language: {
-        inputTooShort: () => this.emptyInputMessage
+        inputTooShort: () => this.data.emptyInputMessage || "Start Typing..."
       },
       multiple: !!this.data.multiple,
       triggerEditOnChange: !!this.data.triggerEditOnChange || true,
