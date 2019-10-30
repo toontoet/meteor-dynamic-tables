@@ -147,7 +147,7 @@ export function inlineSave(templInstance, val, extra) {
   if (oldValue != val) {
     collection.update(
       { _id: doc._id },
-      { $addToSet: { [fieldName]: val } },
+      { $set: { [fieldName]: val } },
       (err, res) => {
         templInstance.data.afterEditCallback(err, res);
       }
