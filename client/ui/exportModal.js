@@ -162,32 +162,37 @@ Template.dynamicTableExportModal.events({
       fields: _.object(fetchFieldNames, _.times(fetchFieldNames.length, () => true))
     };
     let limit = templateInstance.$(".limit").val();
+    console.log(`LIMIT!!! ${limit}`);
     if (limit) {
       if (limit === "current") {
         limit = data.limit;
         options.skip = data.skip;
+        options.sort =  data.sort;  // If only returning visible records then use current sort by name
       }
       else if (limit === "selected") {
         selector.$and.push({ _id: { $in: data.selectedIds } });
         limit = false;
       }
       else {
+        options.sort = {"_id": 1}; // If not just returning visible but all, enforce sort by id
         limit = parseInt(limit, 10);
       }
       if (limit) {
         options.limit = limit;
       }
+    } else {
+      options.sort = {"_id": 1}; // If not just returning visible but all, enforce sort by id
     }
-    let sort = templateInstance.$(".sort").val();
-    if (sort) {
-      if (sort === "current") {
-        sort = data.sort;
-      }
-      else {
-        sort = { [sort]: 1 };
-      }
-      options.sort = sort;
-    }
+    //let sort = templateInstance.$(".sort").val();
+    // if (sort) {
+    //   if (sort === "current") {
+    //     sort = data.sort;
+    //   }
+    //   else {
+    //     sort = { [sort]: 1 };
+    //   }
+      //options.sort =  data.sort;//sort;
+    //}
     const sub = templateInstance.subscribe(
       "__dynamicTableResults",
       `${data.tableId}-export`,
