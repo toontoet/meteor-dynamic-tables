@@ -162,7 +162,8 @@ Template.dynamicTableHeaderCell.events({
         if (newFieldSpec.data !== templInstance.data.column.data) {
           templInstance.data.filterModalCallback(templInstance.data.columnIndex, undefined, undefined, undefined, false, false);
           templInstance.data.column.search = newFieldSpec.search;
-          templInstance.data.column.sortableField = newFieldSpec.sortableField;
+          templInstance.data.column.sortableField = newFieldSpec.sortField || newFieldSpec.sortableField;
+          templInstance.data.column.sortField = newFieldSpec.sortField || newFieldSpec.sortableField;
           if (actualColumn) {
             actualColumn.data = newFieldSpec.data;
             actualColumn.mData = newFieldSpec.data;
