@@ -190,6 +190,7 @@ Template.dynamicTableExportModal.events({
     }
     if (templateInstance.data.tableId === "statable-players-table") {
       options.limit = data.limit;
+      options.skip = data.skip;
       options.sort =  data.sort;  // If only returning visible records then use current sort by name
     }
     //let sort = templateInstance.$(".sort").val();
