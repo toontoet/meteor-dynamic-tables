@@ -93,6 +93,13 @@ function CSVLineFromDocument(doc, exportOptions, columns, fieldNames, selector) 
 }
 
 Template.dynamicTableExportModal.helpers({
+  allAvailable() {
+      if (Template.instance().data.tableId === "statable-players-table") {
+        return false;
+      } else {
+        return true;
+      }
+  },
   isEven(index) {
     return index % 2 === 0;
   },
@@ -154,7 +161,6 @@ Template.dynamicTableExportModal.events({
     const templateInstance = Template.instance();
     const data = templateInstance.data;
     const selector = { $and: [data.selector, data.advancedSearch || {}] };
-
     const fieldNames = $("#dynamicTableExportModalselected-fields").val();
     let fetchFieldNames = _.union(fieldNames, data.extraFields);
     fetchFieldNames = fetchFieldNames.filter(field => !field.includes(".") || !fetchFieldNames.includes(field.split(".")[0]));
@@ -162,7 +168,6 @@ Template.dynamicTableExportModal.events({
       fields: _.object(fetchFieldNames, _.times(fetchFieldNames.length, () => true))
     };
     let limit = templateInstance.$(".limit").val();
-    console.log(`LIMIT!!! ${limit}`);
     if (limit) {
       if (limit === "current") {
         limit = data.limit;
@@ -182,6 +187,10 @@ Template.dynamicTableExportModal.events({
       }
     } else {
       options.sort = {"_id": 1}; // If not just returning visible but all, enforce sort by id
+    }
+    if (templateInstance.data.tableId === "statable-players-table") {
+      options.limit = data.limit;
+      options.sort =  data.sort;  // If only returning visible records then use current sort by name
     }
     //let sort = templateInstance.$(".sort").val();
     // if (sort) {
