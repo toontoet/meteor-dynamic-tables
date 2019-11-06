@@ -128,9 +128,10 @@ Template.CustomizableTable.events({
           }
           const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
           const search = tableTemplateInstance.advancedSearch.get();
-          if (actualColumn.sortableField) {
+          if (actualColumn.sortField || actualColumn.sortableField) {
             delete search[actualColumn.sortableField];
-            unsetField = actualColumn.sortableField;
+            delete search[actualColumn.sortField];
+            unsetField = actualColumn.sortField || actualColumn.sortableField;
           }
           else {
             unsetField = actualColumn.data;
