@@ -193,16 +193,6 @@ Template.dynamicTableExportModal.events({
       options.skip = data.skip;
       options.sort =  data.sort;  // If only returning visible records then use current sort by name
     }
-    //let sort = templateInstance.$(".sort").val();
-    // if (sort) {
-    //   if (sort === "current") {
-    //     sort = data.sort;
-    //   }
-    //   else {
-    //     sort = { [sort]: 1 };
-    //   }
-      //options.sort =  data.sort;//sort;
-    //}
     const sub = templateInstance.subscribe(
       "__dynamicTableResults",
       `${data.tableId}-export`,
