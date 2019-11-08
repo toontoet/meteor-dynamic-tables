@@ -143,13 +143,11 @@ export function inlineSave(templInstance, val, extra) {
   const fieldName = templInstance.data.column.data;
   const oldValue = getValue(doc, fieldName);
   
-  // $addToSet will throw an exception if field is not an array
-  const operator = _.isArray(doc[fieldName]) ? "$addToSet" : "$set";
   // NOTE: intentionally not tripple.
   if (oldValue != val) {
     collection.update(
       { _id: doc._id },
-      { [operator]: { [fieldName]: val } },
+      { $set: { [fieldName]: val } },
       (err, res) => {
         templInstance.data.afterEditCallback(err, res);
       }
