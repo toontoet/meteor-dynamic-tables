@@ -450,7 +450,21 @@ Template.dynamicTableGroup.helpers({
       selector.$and.push(value.query);
     }
     else {
-      selector[current.field] = value.query;
+      if (selector[current.field] !== value.query) {
+        if (selector[current.field]) {
+          if (! selector.$and) {
+            selector.$and = [{ [current.field]: selector[current.field] }];
+          }
+          const includes = selector.$and.filter(q => {
+            const key = Object.keys(q)[0];
+            return key === current.field && q[key] === value.query;
+          }).length;
+          if (! includes) {
+            selector.$and.push({ [current.field]: value.query });
+          }
+        }
+        selector[current.field] = value.query;
+      }
     }
     return selector;
   },
