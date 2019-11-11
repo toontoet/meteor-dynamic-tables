@@ -6,7 +6,18 @@
     {{#if searching}}
       <input type="text" placeholder="Search..." class="dynamic-table-global-search" />
     {{/if}}
-    {{> dynamicTableGroup forceRefresh=forceRefresh showPrefix=showPrefix noGroups=noGroups loading=loading expandAll=expandAll lazy=lazy customTableSpec=customTableSpec groupChain=aGroupChain index=0 selector=selector}}
+    {{> dynamicTableGroup
+      forceRefresh=forceRefresh
+      showPrefix=showPrefix
+      noGroups=noGroups
+      loading=loading
+      expandAll=expandAll
+      lazy=lazy
+      customTableSpec=customTableSpec
+      groupChain=aGroupChain
+      index=0
+      selector=selector
+    }}
   {{else}}
     {{> CustomizableTable this}}
   {{/if}}
