@@ -1,6 +1,10 @@
 <template name="GroupedTable">
-  <div style="height: 20px">
-    <a style="float: right" class="manage-group-fields" href="#">Manage Groups</a>
+  <div style="height: 40px;">
+    <div class="pull-right">
+      <span class="dynamic-table-manage-groups">
+        <i class="fa fa-th-list"></i> Group
+      </span>
+    </div>
   </div>
   {{#if aGroupChain}}
     {{#if searching}}

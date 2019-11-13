@@ -21,7 +21,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.customTableSpec = this.data;
   this.search = new ReactiveVar();
   this.customColumns = new ReactiveVar([]);
-  this.groupChain = new ReactiveVar(_.compact((this.data.groupChain || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
+  this.groupChain = new ReactiveVar(_.compact((this.data.defaultGrouping || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
 
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());
@@ -118,7 +118,7 @@ Template.GroupedTable.events({
   "keyup .dynamic-table-global-search"(e, templInstance) {
     templInstance.searchFn();
   },
-  "click a.manage-group-fields"(e, templInstance, extra) {
+  "click span.dynamic-table-manage-groups"(e, templInstance, extra) {
     e.preventDefault();
     const manageGroupFieldsOptions = {
       availableColumns: templInstance.data.groupableFields,
