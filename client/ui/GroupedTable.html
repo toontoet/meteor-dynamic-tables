@@ -1,7 +1,21 @@
 <template name="GroupedTable">
+  <style>
+    .dynamic-table-manage-controller {
+      cursor: pointer;
+      margin-right: 20px;
+      vertical-align: middle;
+      line-height: 20px;
+    }
+    .dynamic-table-manage-controller.active {
+      color: #3599cc;
+    }
+  </style>
   <div style="height: 40px;">
     <div class="pull-right">
-      <span class="dynamic-table-manage-groups">
+      <span class="aspects dynamic-table-manage-controller">
+        <i class="fa fa-sort"></i> Sort
+      </span>
+      <span class="groups dynamic-table-manage-controller">
         <i class="fa fa-th-list"></i> Group
       </span>
     </div>

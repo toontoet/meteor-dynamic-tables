@@ -1,28 +1,28 @@
 <template name="dynamicTableManageGroupFieldsModal">
   <div class="dynamic-table-manage-group-fields">
     {{#each selectedField in selectedColumns}}
-    <div>
-      <label for="dynamic-table-manage-group-label-{{@index}}">
-        {{#if @index}}
-          <i class="fa fa-times remove-group" data-index="{{@index}}" style="margin-left: 5px"></i> then by
-        {{else}}
-          Group by
-        {{/if}}
-      </label>
-      <select id="dynamic-table-manage-group-label-{{@index}}">
-        <option value="">Select a Column</option>
-        {{#each group in groups}}
-          <optgroup label="{{group.title}}">
-            {{#each field in group.columns}}
-              <option value="{{field.field}}" {{selected field selectedField}}>{{label field}}</option>
-            {{/each}}
-          </optgroup>
-        {{/each}}
-        {{#each field in ungroupedColumns}}
-          <option value="{{field.field}}" {{selected field selectedField}}>{{label field}}</option>
-        {{/each}}
-      </select>
-    </div>
+      <div>
+        <label for="dynamic-table-manage-group-label-{{@index}}">
+          {{#if @index}}
+            <i class="fa fa-times remove-group" data-index="{{@index}}" style="margin-left: 5px"></i> then by
+          {{else}}
+            Group by
+          {{/if}}
+        </label>
+        <select id="dynamic-table-manage-group-label-{{@index}}">
+          <option value="">Select a Column</option>
+          {{#each group in groups}}
+            <optgroup label="{{group.title}}">
+              {{#each field in group.columns}}
+                <option value="{{field.field}}" {{selected field selectedField}}>{{label field}}</option>
+              {{/each}}
+            </optgroup>
+          {{/each}}
+          {{#each field in ungroupedColumns}}
+            <option value="{{field.field}}" {{selected field selectedField}}>{{label field}}</option>
+          {{/each}}
+        </select>
+      </div>
     {{/each}}
     <div style="width: 100%">
       <span class="add-group"><i class="fa fa-plus"></i> Select another column to group by</span>

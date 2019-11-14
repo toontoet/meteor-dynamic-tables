@@ -1,7 +1,30 @@
 import "./components/dynamicTableGroup/dynamicTableGroup.js";
 import "./GroupedTable.html";
+
 import "./components/manageGroupFieldsModal/manageGroupFieldsModal.js";
+import "./components/manageAspectsModal/manageAspectsModal.js";
 import { getColumns, getPosition, changed, getCustom } from "../inlineSave.js";
+
+// creates sort/group modal
+function createModal(target, modal, templInstance) {
+  const bounds = getPosition(target);
+  const left = Math.max((bounds.left + $(target).outerWidth()) - 350, 0);
+  const div = $(`#${modal.id}`).length ? $(`#${modal.id}`) : $("<div>");
+  div.attr("id", modal.id)
+     .html("")
+     .css("position", "absolute")
+     .css("top", bounds.top + $(target).outerHeight())
+     .css("left", left);
+  if (div[0].__blazeTemplate) {
+    Blaze.remove(div[0].__blazeTemplate);
+  }
+  div[0].__blazeTemplate = Blaze.renderWithData(modal.template, modal.options, div[0]);
+  document.body.appendChild(div[0]);
+  const tooFar = (left + 350) - $(window).width();
+  if (tooFar > 0) {
+    div.css("left", (left - (tooFar + 5)) + "px");
+  }
+}
 
 Template.GroupedTable.onRendered(function onRendered() {
   if (this.data.customGroupButtonSelector) {
@@ -43,14 +66,17 @@ Template.GroupedTable.onCreated(function onCreated() {
     });
   });
   this.documentMouseDown = (e) => {
-    const manageGroupFieldsWrapper = $("#dynamic-table-manage-group-fields-modal")[0];
-    if (manageGroupFieldsWrapper) {
-      if ($(manageGroupFieldsWrapper).has(e.target).length) {
-        return;
+    const modalIds = ["dynamic-table-manage-aspects-modal", "dynamic-table-manage-group-fields-modal"];
+    modalIds.forEach(id => {
+      const manageGroupFieldsWrapper = $(`#${id}`)[0];
+      if (manageGroupFieldsWrapper) {
+        if ($(manageGroupFieldsWrapper).has(e.target).length) {
+          return;
+        }
+        Blaze.remove(manageGroupFieldsWrapper.__blazeTemplate);
+        manageGroupFieldsWrapper.innerHTML = "";
       }
-      Blaze.remove(manageGroupFieldsWrapper.__blazeTemplate);
-      manageGroupFieldsWrapper.innerHTML = "";
-    }
+    });
   };
 
   document.addEventListener("mousedown", this.documentMouseDown);
@@ -118,38 +144,37 @@ Template.GroupedTable.events({
   "keyup .dynamic-table-global-search"(e, templInstance) {
     templInstance.searchFn();
   },
-  "click span.dynamic-table-manage-groups"(e, templInstance, extra) {
-    e.preventDefault();
-    const manageGroupFieldsOptions = {
-      availableColumns: templInstance.data.groupableFields,
-      selectedColumns: templInstance.groupChain.get(),
-      changeCallback(columns) {
-        templInstance.groupChain.set(columns);
-        changed(templInstance.data.custom, templInstance.data.id, { newGroupChainFields: columns.map(c => c.field) });
+  "click span.dynamic-table-manage-controller.groups"(e, templInstance, extra) {
+    const modalMeta = {
+      template: Template.dynamicTableManageGroupFieldsModal,
+      id: "dynamic-table-manage-group-fields-modal",
+      options: {
+        availableColumns: templInstance.data.groupableFields,
+        selectedColumns: templInstance.groupChain.get(),
+        changeCallback(columns) {
+          templInstance.groupChain.set(columns);
+          changed(templInstance.data.custom, templInstance.data.id, { newGroupChainFields: columns.map(c => c.field) });
+        }
       }
-    };
+    }
     const target = extra ? extra.target : e.currentTarget;
-    const bounds = getPosition(target);
-    const left = Math.max((bounds.left + $(target).outerWidth()) - 350, 0);
-    const div = $("#dynamic-table-manage-group-fields-modal").length ? $("#dynamic-table-manage-group-fields-modal") : $("<div>");
-    div.attr("id", "dynamic-table-manage-group-fields-modal")
-    .html("")
-    .css("position", "absolute")
-    .css("top", bounds.top + $(target).outerHeight())
-    .css("left", left);
-
-    if (div[0].__blazeTemplate) {
-      Blaze.remove(div[0].__blazeTemplate);
+    createModal(target, modalMeta, templInstance);
+  },
+  "click span.dynamic-table-manage-controller.aspects"(e, templInstance, extra) {
+    const modalMeta = {
+      template: Template.dynamicTableManageAspectsModal,
+      id: "dynamic-table-manage-aspects-modal",
+      options: {
+        availableColumns: templInstance.data.groupableFields,
+        sorting: [],
+        changeCallback(columns) {
+          console.log("CHANGE CALLBACK");
+          // templInstance.groupChain.set(columns);
+          // changed(templInstance.data.custom, templInstance.data.id, { newGroupChainFields: columns.map(c => c.field) });
+        }
+      }
     }
-    div[0].__blazeTemplate = Blaze.renderWithData(
-      Template.dynamicTableManageGroupFieldsModal,
-      manageGroupFieldsOptions,
-      div[0]
-    );
-    document.body.appendChild(div[0]);
-    const tooFar = (left + 350) - $(window).width();
-    if (tooFar > 0) {
-      div.css("left", (left - (tooFar + 5)) + "px");
-    }
+    const target = extra ? extra.target : e.currentTarget;
+    createModal(target, modalMeta, templInstance);
   }
 });
