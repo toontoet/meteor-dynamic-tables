@@ -286,3 +286,24 @@ export function mergeRequiredColumns(currentColumns, availableColumns) {
   });
   return clonedAndMergedColumns;
 }
+
+// creates sort/group modal
+export function createModal(target, modal, templInstance) {
+  const bounds = getPosition(target);
+  const left = Math.max((bounds.left + $(target).outerWidth()) - 350, 0);
+  const div = $(`#${modal.id}`).length ? $(`#${modal.id}`) : $("<div>");
+  div.attr("id", modal.id)
+     .html("")
+     .css("position", "absolute")
+     .css("top", bounds.top + $(target).outerHeight())
+     .css("left", left);
+  if (div[0].__blazeTemplate) {
+    Blaze.remove(div[0].__blazeTemplate);
+  }
+  div[0].__blazeTemplate = Blaze.renderWithData(modal.template, modal.options, div[0]);
+  document.body.appendChild(div[0]);
+  const tooFar = (left + 350) - $(window).width();
+  if (tooFar > 0) {
+    div.css("left", (left - (tooFar + 5)) + "px");
+  }
+}

@@ -2,7 +2,7 @@ import { ReactiveDict } from "meteor/reactive-dict";
 import "./dynamicTableGroup.html";
 import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../db.js";
-import { changed, getCustom, getValue } from "../../../inlineSave.js";
+import { changed, getCustom, getValue, createModal } from "../../../inlineSave.js";
 
 /**
  * selectorToId - description
