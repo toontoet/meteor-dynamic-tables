@@ -51,59 +51,21 @@ function getCount(value, selector) {
   this.counts.set(tableId, count);
 }
 
-Template.dynamicTableGroup.events({
-  "click .dynamic-table-header"(e, templInstance) {
-    e.stopImmediatePropagation(); // QUESTION: why is this required? Without it this event handler gets called multiple times
-    const valueId = $(e.currentTarget).attr("data-table-id");
-
-    let open = false;
-    if (templInstance.enabled.get(valueId)) {
-      open = false;
-    }
-    else {
-      open = true;
-      templInstance.stickyEnabled.set(valueId, true);
-    }
-    templInstance.enabled.set(valueId, open);
-
-    const values = templInstance.values.get();
-    const value = values.find(v => v._id === valueId);
-    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(this, value);
-    let custom = templInstance.custom.get();
-    if (!custom) {
-      custom = {};
-    }
-    if (!custom.openGroups) {
-      custom.openGroups = [];
-    }
-    const indexInList = custom.openGroups.indexOf(tableId);
-    if (!open && indexInList !== -1) {
-      custom.openGroups.splice(indexInList, 1);
-    }
-    else if (open) {
-      custom.openGroups.push(tableId);
-    }
-    changed(templInstance.data.customTableSpec.custom, tableId, { changeOpenGroups: { [tableId]: open } });
+function shouldDisplaySection(current, value) {
+  if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow)) {
+    return true;
   }
-});
-
-Template.dynamicTableGroup.onRendered(function onRendered() {
-  this.autorun(() => {
-    const values = this.values.get();
-    const custom = this.custom.get();
-    Tracker.afterFlush(() => {
-      if (custom) {
-        values.forEach((value, index) => {
-          const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this.data, value);
-          if (custom.openGroups && custom.openGroups.includes(tableId)) {
-            this.stickyEnabled.set(value._id, true);
-            this.enabled.set(value._id, true);
-          }
-        });
-      }
-    });
-  });
-});
+  if (!value.count && !current.count && !value.ensureValues && !current.ensureValues) {
+    return true;
+  }
+  const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
+  const count = Template.instance().counts.get(tableId);
+  const ensureValues = value.ensureValues || current.ensureValues;
+  if (ensureValues && count < ensureValues) {
+    return 0;
+  }
+  return count;
+}
 
 // adds uncategorized field
 function addUndefined(current, values) {
@@ -145,6 +107,7 @@ function processDistinctValues(current, distinctValues) {
   });
   this.values.set(values);
 }
+
 Template.dynamicTableGroup.onCreated(function onCreated() {
   this.stickyEnabled = new ReactiveDict();
   this.enabled = new ReactiveDict();
@@ -167,6 +130,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     }
     lastGroupChain = data.groupChain;
   });
+
   const distinctValuesSub = new ReactiveVar();
   this.autorun(() => {
     const data = Template.currentData();
@@ -217,7 +181,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       }
     }
   });
-	// counting number of elements in each group
+
+  // counting number of elements in each group
   this.autorun(() => {
     const sub = distinctValuesSub.get();
     const data = Template.currentData();
@@ -230,6 +195,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       processDistinctValues.call(this, current, distinctValues);
     }
   });
+
   this.autorun(() => {
     const data = Template.currentData();
     const current = data.groupChain[data.index];
@@ -282,6 +248,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   });
   const groupCountsSub = new ReactiveVar();
 
+  // I think it triggers on values
   this.autorun(() => {
     const data = Template.currentData();
     const current = data.groupChain[data.index];
@@ -304,6 +271,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       ));
     }
   });
+
+  // on groupCountsSub ready
   this.autorun(() => {
     const sub = groupCountsSub.get();
     if (sub && sub.ready()) {
@@ -314,21 +283,25 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   });
 });
 
-function shouldDisplaySection(current, value) {
-  if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow)) {
-    return true;
-  }
-  if (!value.count && !current.count && !value.ensureValues && !current.ensureValues) {
-    return true;
-  }
-  const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
-  const count = Template.instance().counts.get(tableId);
-  const ensureValues = value.ensureValues || current.ensureValues;
-  if (ensureValues && count < ensureValues) {
-    return 0;
-  }
-  return count;
-}
+Template.dynamicTableGroup.onRendered(function onRendered() {
+  // opens groups
+  this.autorun(() => {
+    const values = this.values.get();
+    const custom = this.custom.get();
+    Tracker.afterFlush(() => {
+      if (custom) {
+        values.forEach((value, index) => {
+          const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this.data, value);
+          if (custom.openGroups && custom.openGroups.includes(tableId)) {
+            this.stickyEnabled.set(value._id, true);
+            this.enabled.set(value._id, true);
+          }
+        });
+      }
+    });
+  });
+});
+
 Template.dynamicTableGroup.helpers({
   waitingAndLoading() {
     return this.loading && Object.keys(Template.instance().loading.get()).length !== 0;
@@ -420,5 +393,64 @@ Template.dynamicTableGroup.helpers({
   tableId(value){
     const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
     return tableId;
+  },
+  advanced(option) {
+    const advanced = {
+      ordering: true,
+      grouping: true,
+      columning: true
+    }
+
+    return advanced[option];
+  }
+});
+
+Template.dynamicTableGroup.events({
+  "click .dynamic-table-header"(e, templInstance) {
+    e.stopImmediatePropagation(); // QUESTION: why is this required? Without it this event handler gets called multiple times
+    if (e.target != e.currentTarget) {
+      return 
+    }
+    console.log("HEADER CLICK");
+    const valueId = $(e.currentTarget).attr("data-table-id");
+
+    let open = false;
+    if (templInstance.enabled.get(valueId)) {
+      open = false;
+    }
+    else {
+      open = true;
+      templInstance.stickyEnabled.set(valueId, true);
+    }
+    templInstance.enabled.set(valueId, open);
+
+    const values = templInstance.values.get();
+    const value = values.find(v => v._id === valueId);
+    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(this, value);
+    let custom = templInstance.custom.get();
+    if (!custom) {
+      custom = {};
+    }
+    if (!custom.openGroups) {
+      custom.openGroups = [];
+    }
+    const indexInList = custom.openGroups.indexOf(tableId);
+    if (!open && indexInList !== -1) {
+      custom.openGroups.splice(indexInList, 1);
+    }
+    else if (open) {
+      custom.openGroups.push(tableId);
+    }
+    changed(templInstance.data.customTableSpec.custom, tableId, { changeOpenGroups: { [tableId]: open } });
+  },
+  "click .dynamic-table-manage-controller.aspects"(e, templInstance) {
+    e.preventDefault()
+    console.log("ASPECTS CLICK IN HEADER")
+  },
+  "click .dynamic-table-manage-controller.groups"(e, templInstance) {
+    console.log("GROUPS CLICK IN HEADER")
+  },
+  "click .dynamic-table-manage-controller.columns"(e, templInstance) {
+    console.log("HIDESHOW CLICK IN HEADER")
   }
 });

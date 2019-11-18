@@ -14,3 +14,13 @@
   padding:15px;
   display: none;
 }
+
+.dynamic-table-manage-controller {
+  cursor: pointer;
+  margin-right: 20px;
+  vertical-align: middle;
+  line-height: 20px;
+}
+.dynamic-table-manage-controller.active {
+  color: #3599cc;
+}

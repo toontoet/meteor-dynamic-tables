@@ -145,7 +145,8 @@ Template.GroupedTable.events({
   "keyup .dynamic-table-global-search"(e, templInstance) {
     templInstance.searchFn();
   },
-  "click span.dynamic-table-manage-controller.groups"(e, templInstance, extra) {
+  "click span.grouped-table-manage-controller.groups"(e, templInstance, extra) {
+    console.log("GROUPS CLICK IN GROUPED TABLE")
     const modalMeta = {
       template: Template.dynamicTableManageGroupFieldsModal,
       id: "dynamic-table-manage-group-fields-modal",
@@ -161,7 +162,8 @@ Template.GroupedTable.events({
     const target = extra ? extra.target : e.currentTarget;
     createModal(target, modalMeta, templInstance);
   },
-  "click span.dynamic-table-manage-controller.aspects"(e, templInstance, extra) {
+  "click span.grouped-table-manage-controller.aspects"(e, templInstance, extra) {
+    console.log("ASPECTS CLICK IN GROUPED TABLE")
     const modalMeta = {
       template: Template.dynamicTableManageAspectsModal,
       id: "dynamic-table-manage-aspects-modal",

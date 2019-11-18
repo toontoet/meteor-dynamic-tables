@@ -9,7 +9,10 @@
           {{{loading.message}}}
         {{/if}}
         {{#if loading.tmpl}}
-          {{>Template.dynamic template=loading.tmpl data=loading.tmplContext}}
+          {{> Template.dynamic
+            template=loading.tmpl
+            data=loading.tmplContext
+          }}
         {{/if}}
       </div>
     {{/if}}
@@ -17,13 +20,44 @@
       <div class="dynamic-table-panel" style="{{#unless shouldDisplaySection value}}display: none;{{/unless}}">
         <div class="dynamic-table-header" data-index="{{@index}}" data-table-id="{{value._id}}">
           {{#if showPrefix}}{{currentGroupLabel}}: {{/if}}{{value.label}} {{#if hasCount value}}({{count value}}){{/if}}
+          <div class="pull-right">
+            {{#if advanced "ordering"}}
+              <span class="aspects dynamic-table-manage-controller">
+                <i class="fa fa-sort"></i>
+              </span>
+            {{/if}}
+            {{#if advanced "grouping"}}
+              <span class="groups dynamic-table-manage-controller">
+                <i class="fa fa-th-list"></i>
+              </span>
+            {{/if}}
+            {{#if advanced "columning"}}
+              <span class="columns dynamic-table-manage-controller">
+                <i class="fa fa-eye-slash"></i>
+              </span>
+            {{/if}}
+          </div>
         </div>
         <div class="dynamic-table-content" style="{{#if shouldDisplayContent value._id}}display: block;{{/if}}">
           {{#if shouldDisplayTable value._id}}
             {{#if lastLevel}}
-              {{> CustomizableTable (table value (newSelector value selector))}}
+              {{> CustomizableTable
+                (table value (newSelector value selector))
+              }}
             {{else}}
-              {{> dynamicTableGroup forceRefresh=forceRefresh showPrefix=showPrefix noGroups=noGroups loading=loading customTableSpec=customTableSpec expandAll=expandAll lazy=lazy groupChain=groupChain index=nextIndex tableIdSuffixChain=(tableIdSuffixChain value) selector=(newSelector value selector)}}
+              {{> dynamicTableGroup
+                forceRefresh=forceRefresh
+                showPrefix=showPrefix
+                noGroups=noGroups
+                loading=loading
+                customTableSpec=customTableSpec
+                expandAll=expandAll
+                lazy=lazy
+                groupChain=groupChain
+                index=nextIndex
+                tableIdSuffixChain=(tableIdSuffixChain value)
+                selector=(newSelector value selector)
+              }}
             {{/if}}
           {{/if}}
         </div>
