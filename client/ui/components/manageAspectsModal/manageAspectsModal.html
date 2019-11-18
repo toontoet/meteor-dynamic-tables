@@ -1,4 +1,9 @@
 <template name="dynamicTableManageAspectsModal">
+  <style>
+    .btn.order.active {
+      color: #3599cc;
+    }
+  </style>
   <div class="dynamic-table-manage-aspects">
     {{#each aspect in aspects}}
       <div>
@@ -10,7 +15,7 @@
           {{/if}}
         </label>
 
-        <select id="dynamic-table-manage-aspect-label-{{@index}}">
+        <select id="dynamic-table-manage-aspect-label-{{@index}}" data-index="{{@index}}">
           <option value="">Select a Column</option>
           {{#each group in groups}}
             <optgroup label="{{group.title}}">
@@ -23,8 +28,8 @@
             <option value="{{field.field}}" {{selected field aspect}}>{{label field}}</option>
           {{/each}}
         </select>
-        <button>A-Z</button>
-        <button>Z-A</button>
+        <button id="btn-asc-{{@index}}" data-index="{{@index}}" class="btn order asc {{activeOrder 'asc' @index}}">A-Z</button>
+        <button id="btn-desc-{{@index}}" data-index="{{@index}}" class="btn order desc {{activeOrder 'desc' @index}}">Z-A</button>
       </div>
     {{/each}}
     <div style="width: 100%">

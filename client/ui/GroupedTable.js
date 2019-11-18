@@ -45,7 +45,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.search = new ReactiveVar();
   this.customColumns = new ReactiveVar([]);
   this.groupChain = new ReactiveVar(_.compact((this.data.defaultGrouping || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
-
+  this.aspects = new ReactiveVar(this.data.defaultOrder);
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());
   }, 1000);
@@ -60,6 +60,7 @@ Template.GroupedTable.onCreated(function onCreated() {
     id.get();
     getCustom(this.data.custom, this.data.id, (custom) => {
       this.customColumns.set(_.compact((custom.columns || []).map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
+      this.aspects.set(custom.order);
       if (custom.groupChainFields) {
         this.groupChain.set(_.compact(custom.groupChainFields.map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
       }
@@ -166,14 +167,13 @@ Template.GroupedTable.events({
       id: "dynamic-table-manage-aspects-modal",
       options: {
         availableColumns: templInstance.data.groupableFields,
-        sorting: [],
-        changeCallback(columns) {
-          console.log("CHANGE CALLBACK");
-          // templInstance.groupChain.set(columns);
-          // changed(templInstance.data.custom, templInstance.data.id, { newGroupChainFields: columns.map(c => c.field) });
+        aspects: templInstance.aspects,
+        changeCallback(aspects) {
+          templInstance.aspects.set(aspects);
+          changed(templInstance.data.custom, templInstance.data.id, { newOrder: aspects });
         }
       }
-    }
+    };
     const target = extra ? extra.target : e.currentTarget;
     createModal(target, modalMeta, templInstance);
   }

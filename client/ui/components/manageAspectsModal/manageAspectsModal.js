@@ -5,23 +5,16 @@ import { Random } from "meteor/random";
 
 Template.dynamicTableManageAspectsModal.onCreated(function onCreated() {
   this.newColumns = new ReactiveVar([]);
-
-  const aspects = this.data.aspects || [];
-  this.aspects = new ReactiveVar(aspects.length ? aspects : [{ _id: Random.id() }]);
+  const aspects = Template.currentData().aspects.get() || [];
+  this.aspects = new ReactiveVar(aspects.length ? aspects : [{ order: "asc" }]);
 });
 
 Template.dynamicTableManageAspectsModal.onRendered(function onRendered() {
-  // this.maybeCallback = () => {
-  //   const newFields = _.compact(_.toArray(this.$("select")).map(elem => $(elem).val()));
-  //   const oldFields = (Tracker.nonreactive(() => this.selectedColumns.get()) || []).map(c => c.field);// NOTE: intentionally non-reactive
-  //   if (!_.isEqual(newFields, oldFields)) {
-  //     const cols = _.object(this.data.availableColumns.map(c => c.field), this.data.availableColumns);
-  //     const newCols = newFields.map(f => cols[f]);
-  //     this.selectedColumns.curValue = newCols; // NOTE: intentionally non-reactive
-  //     this.newColumns.set([]);
-  //     this.data.changeCallback(newCols);
-  //   }
-  // };
+  this.updateOrder = (newAspects) => {
+    this.newColumns.set([]);
+    this.aspects.set(newAspects);
+    this.data.changeCallback(newAspects);
+  };
 });
 
 Template.dynamicTableManageAspectsModal.helpers({
@@ -32,7 +25,7 @@ Template.dynamicTableManageAspectsModal.helpers({
     return [].concat(Template.instance().aspects.get(), Template.instance().newColumns.get());
   },
   selected(field, selectedField) {
-    return field.field === selectedField.field ? { selected: "selected" } : {};
+    return field.field === selectedField.data ? { selected: "selected" } : {};
   },
   availableColumns() {
     const availableColumns = Template.instance().data.availableColumns;
@@ -51,30 +44,64 @@ Template.dynamicTableManageAspectsModal.helpers({
     const availableColumns = Template.instance().data.availableColumns;
     const groups = _.groupBy(availableColumns, "group");
     return _.sortBy(groups.undefined || [], field => field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title);
+  },
+  activeOrder(order, index) {
+    const aspect = Template.instance().aspects.get()[index];
+    if (! aspect) {
+      return "nah";
+    }
+    return aspect.order === order ? "active" : "nah";
   }
 });
 
 Template.dynamicTableManageAspectsModal.events({
+  "click .btn.order"(e, templInstance) {
+    const target = $(e.currentTarget);
+    const aspects = templInstance.aspects.get();
+    const index = target.data("index");
+    if (target.hasClass("active")) {
+      return;
+    }
+
+    if (! aspects[index]) {
+      Notifications.error("No Value Selected", "Select column before sorting by it.", { timeout: 8000 });
+      return;
+    }
+
+    aspects[index].order = target.hasClass("asc") ? "asc" : "desc";
+    templInstance.updateOrder(aspects);
+  },
   "change select"(e, templInstance) {
-    console.log("SELECT CHANGED: ", e)
-    // templInstance.maybeCallback();
+    const target = $(e.currentTarget);
+    const index = target.data("index");
+    const aspects = templInstance.aspects.get();
+    if (! aspects[index]) {
+      aspects[index] = { order: "asc" };
+    }
+    const data = target.val();
+    if (data) {
+      aspects[index].data = data;
+    }
+    else {
+      aspects.splice(index, 1);
+    }
+    templInstance.updateOrder(aspects);
   },
   "click .add-aspect"(e, templInstance) {
-    console.log("ADD ASPECT CLICK: ", e)
-    // templInstance.newColumns.get().push({ _id: Random.id() });
-    // templInstance.newColumns.dep.changed();
+    templInstance.newColumns.get().push({ data: Random.id() });
+    templInstance.newColumns.dep.changed();
   },
   "click .remove-aspect"(e, templInstance) {
-    console.log("REMOVE ASPECT CLICK: ", e)
-    // const index = parseInt($(e.currentTarget).data("index"), 10);
-    // const selectedLength = Math.max(1, templInstance.data.selectedColumns.length);
-    // if (index >= selectedLength) {
-    //   templInstance.newColumns.get().splice(index - selectedLength, 1);
-    //   templInstance.newColumns.dep.changed();
-    // }
-    // else {
-    //   $(e.currentTarget).closest("div").remove();
-    // }
-    // templInstance.maybeCallback();
+    const target = $(e.currentTarget);
+    const index = target.data("index");
+    const aspects = templInstance.aspects.get();
+    if (index >= aspects.length) {
+      templInstance.newColumns.get().splice(index - aspects.length, 1);
+      templInstance.newColumns.dep.changed();
+    }
+    else {
+      aspects.splice(index, 1);
+      templInstance.updateOrder(aspects);
+    }
   }
 });
