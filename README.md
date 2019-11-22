@@ -312,6 +312,9 @@ In addition to these fields, any option defined by DataTables can be used (e.g.,
 | subscriptionOptions | Object | Additional options to pass to the subscriotion | Optional |
 | sortable | Object | Optionally add a jQuery sortable. This works best on local collections | Optional |
 | manageFieldsTitle | String | Title of column in the manage fields modal | Optional |
+| bulkEditPublication | String | The name of the publication to use for bulk edit form, if not provided `publication` field is used | Optional |
+| updateCollection | String | The name of the collection to use for bulk edit form, if not provided `collection` field is used | Optional |
+
 
 ### ColumnSpec
 
