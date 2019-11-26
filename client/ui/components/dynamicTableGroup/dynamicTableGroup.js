@@ -4,6 +4,9 @@ import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../db.js";
 import { changed, getCustom, getValue, createModal } from "../../../inlineSave.js";
 
+import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
+import "../manageAspectsModal/manageAspectsModal.js";
+
 /**
  * selectorToId - description
  *
@@ -21,9 +24,9 @@ function selectorToId(selector, tableIdSuffix) {
   .replace(/[^\d\w]/g, "");
 }
 
-/** @this = root data context */
+/** @this = template instance */
 function getTableIdSuffix(value) {
-  const current = this.groupChain[this.index];
+  const current = this.grouping;
 
   const selector = {};
   if (value && value.query.$nor) {
@@ -42,15 +45,6 @@ function getTableIdSuffix(value) {
 }
 
 /** @this = template instance */
-function getCount(value, selector) {
-  const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this.data, value);
-  let count = value.count;
-  if (_.isFunction(value.count)) {
-    count = value.count(tableId, selector);
-  }
-  this.counts.set(tableId, count);
-}
-
 function shouldDisplaySection(current, value) {
   if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow)) {
     return true;
@@ -58,7 +52,7 @@ function shouldDisplaySection(current, value) {
   if (!value.count && !current.count && !value.ensureValues && !current.ensureValues) {
     return true;
   }
-  const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
+  const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(Template.instance(), value);
   const count = Template.instance().counts.get(tableId);
   const ensureValues = value.ensureValues || current.ensureValues;
   if (ensureValues && count < ensureValues) {
@@ -117,9 +111,37 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.groupInfo = getGroupedInfoCollection(this.data.customTableSpec.table.collection._connection);
   this.distinctValues = getDistinctValuesCollection(this.data.customTableSpec.table.collection._connection);
   this.custom = new ReactiveVar();
-  let lastGroupChain = {};
-  getCustom(this.data.customTableSpec.custom, this.data.customTableSpec.id, (custom) => {
+
+  this.currentOrder = this.data.aspects;
+  this.grouping = _.compact((this.data.groupChain).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf)))[0];
+  const groupChain = this.data.groupChain.slice(0);
+        groupChain.shift();
+  this.groupChain = new ReactiveVar(groupChain);
+  this.nestedGrouping = new ReactiveDict();
+
+  getCustom(this.data.customTableSpec.custom, this.data.tableId, (custom) => {
     this.custom.set(custom);
+  });
+
+  // looks for grouping fot nested tables
+  this.autorun(() => {
+    const data = Template.currentData();
+    const values = this.values.get();
+    if (values.length) {
+      values.forEach(value => {
+        const nestedTableId = data.customTableSpec.id + getTableIdSuffix.call(this, value);
+        getCustom(data.customTableSpec.custom, nestedTableId, (custom) => {
+          /*------------------------------------------------------
+          / FIX ME!
+          /   Need to find way to identify if custom is received
+          /   from nested table or parent
+          /*-----------------------------------------------------*/
+          if (!custom.tableId && custom.groupChainFields) {
+            this.nestedGrouping.set(nestedTableId, custom.groupChainFields);
+          }
+        });
+      });
+    }
   });
 
   this.autorun(() => {
@@ -134,7 +156,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   const distinctValuesSub = new ReactiveVar();
   this.autorun(() => {
     const data = Template.currentData();
-    const current = data.groupChain[data.index]; // current grouping
+    const current = this.grouping; // current grouping
     const countWithDistinct = false;//current.count && !current.values; NOTE: can't figure out how to handle the ability to mutate the list in transform.
     let values = [];
     if (_.isArray(current.values)) {
@@ -171,7 +193,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       else {
         distinctValuesSub.set(this.subscribe(
           "__dynaicTableDistinctValuesForField",
-          data.customTableSpec.id + getTableIdSuffix.call(this.data),
+          data.customTableSpec.id + getTableIdSuffix.call(this),
           data.customTableSpec.table.publication,
           current.valuesField || current.field,
           data.selector,
@@ -186,19 +208,19 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.autorun(() => {
     const sub = distinctValuesSub.get();
     const data = Template.currentData();
-    const current = data.groupChain[data.index];
+    const current = this.grouping;
     if (sub && sub.ready()) {
       const loading = Tracker.nonreactive(() => this.loading.get());
       delete loading.distinctValues;
       this.loading.set(loading);
-      const distinctValues = (this.distinctValues.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this.data) }) || { groups: [] }).groups.map(v => v.value);
+      const distinctValues = (this.distinctValues.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this) }) || { groups: [] }).groups.map(v => v.value);
       processDistinctValues.call(this, current, distinctValues);
     }
   });
 
   this.autorun(() => {
     const data = Template.currentData();
-    const current = data.groupChain[data.index];
+    const current = this.grouping;
     const values = this.values.get();
     if (data.expandAll) {
       values.forEach((v, index) => {
@@ -210,8 +232,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const valuesToCount = values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues));
     // if online and there's a publication
     if (Tracker.nonreactive(() => Meteor.status().status !== "offline") && data.customTableSpec.table.publication) {
-      const ids = valuesToCount.map(value => ({ tableId: this.data.customTableSpec.id + getTableIdSuffix.call(data, value), resultId: JSON.stringify(value.query).replace(/[\{\}.:]/g, "") }));
-      const count = this.groupInfo.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this.data) });
+      const ids = valuesToCount.map(value => ({ tableId: this.data.customTableSpec.id + getTableIdSuffix.call(this, value), resultId: JSON.stringify(value.query).replace(/[\{\}.:]/g, "") }));
+      const count = this.groupInfo.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this) });
       ids.forEach(({ tableId, resultId }) => {
         if (count && count[resultId]) {
           this.counts.set(tableId, count[resultId]);
@@ -242,7 +264,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           selector = _.extend({ [current.field]: value.query }, data.selector);
         }
         const count = data.customTableSpec.table.collection.find(selector).count();
-        this.counts.set(this.data.customTableSpec.id + getTableIdSuffix.call(data, value), count);
+        this.counts.set(this.data.customTableSpec.id + getTableIdSuffix.call(this, value), count);
       });
     }
   });
@@ -251,7 +273,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   // I think it triggers on values
   this.autorun(() => {
     const data = Template.currentData();
-    const current = data.groupChain[data.index];
+    const current = this.grouping;
     const values = this.values.get();
     const currentSelector = data.selector;
     const countWithDistinct = false;//current.count && !current.values;
@@ -261,7 +283,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       this.loading.set(loading);
       groupCountsSub.set(this.subscribe(
         "__dynamicTableGroupCounts",
-        data.customTableSpec.id + getTableIdSuffix.call(this.data),
+        data.customTableSpec.id + getTableIdSuffix.call(this),
         data.customTableSpec.table.publication,
         current.field,
         currentSelector,
@@ -291,7 +313,7 @@ Template.dynamicTableGroup.onRendered(function onRendered() {
     Tracker.afterFlush(() => {
       if (custom) {
         values.forEach((value, index) => {
-          const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this.data, value);
+          const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this, value);
           if (custom.openGroups && custom.openGroups.includes(tableId)) {
             this.stickyEnabled.set(value._id, true);
             this.enabled.set(value._id, true);
@@ -303,6 +325,9 @@ Template.dynamicTableGroup.onRendered(function onRendered() {
 });
 
 Template.dynamicTableGroup.helpers({
+  myid() { // for debugging only
+    return Template.instance().data.tableId;
+  },
   waitingAndLoading() {
     return this.loading && Object.keys(Template.instance().loading.get()).length !== 0;
   },
@@ -313,20 +338,20 @@ Template.dynamicTableGroup.helpers({
     return this.noGroups === true;
   },
   hasVisibleGroups() {
-    const current = this.groupChain[this.index];
-    const values = Template.instance().values.get().filter(value => shouldDisplaySection.call(this, current, value));
+    const current = Template.instance().grouping;
+    const values = Template.instance().values.get().filter(value => shouldDisplaySection.call(Template.instance(), current, value));
     return values.length;
   },
   shouldDisplaySection(value) {
-    const current = this.groupChain[this.index];
-    return shouldDisplaySection.call(this, current, value);
+    const current = Template.instance().grouping;
+    return shouldDisplaySection.call(Template.instance(), current, value);
   },
   hasCount(value) {
-    const current = this.groupChain[this.index];
+    const current = Template.instance().grouping;
     return value.count || (value.count === undefined && current.count);
   },
   count(value) {
-    const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
+    const tableId = this.customTableSpec.id + getTableIdSuffix.call(Template.instance(), value);
     return Template.instance().counts.get(tableId);
   },
   shouldDisplayContent(valueId) {
@@ -336,8 +361,7 @@ Template.dynamicTableGroup.helpers({
     return !this.lazy || Template.instance().stickyEnabled.get(valueId);
   },
   newSelector(value, currentSelector) {
-    const current = this.groupChain[this.index];
-
+    const current = Template.instance().grouping;
     const selector = _.extend({}, currentSelector);
     if (value.selector) {
       if (!selector.$and) {
@@ -357,7 +381,7 @@ Template.dynamicTableGroup.helpers({
     return selector;
   },
   table(value, newSelector) {
-    const tableIdSuffix = getTableIdSuffix.call(this, value);
+    const tableIdSuffix = getTableIdSuffix.call(Template.instance(), value);
     return _.extend(
       {},
       this.customTableSpec,
@@ -365,19 +389,19 @@ Template.dynamicTableGroup.helpers({
     );
   },
   lastLevel() {
-    return this.index + 1 === this.groupChain.length;
+    return !Template.instance().groupChain.get().length;
   },
   nextIndex() {
     return this.index + 1;
   },
   currentGroupLabel() {
-    return this.groupChain[this.index].label;
+    return Template.instance().grouping.label;
   },
   currentGroupValues() {
     return Template.instance().values.get();
   },
   tableIdSuffixChain(value) {
-    const current = this.groupChain[this.index];
+    const current = Template.instance().grouping;
     const tableIdSuffixChain = [];
     tableIdSuffixChain.push(...(this.tableIdSuffixChain || []));
     const selector = {};
@@ -391,7 +415,7 @@ Template.dynamicTableGroup.helpers({
     return tableIdSuffixChain;
   },
   tableId(value){
-    const tableId = this.customTableSpec.id + getTableIdSuffix.call(this, value);
+    const tableId = this.customTableSpec.id + getTableIdSuffix.call(Template.instance(), value);
     return tableId;
   },
   advanced(option) {
@@ -402,6 +426,17 @@ Template.dynamicTableGroup.helpers({
     }
 
     return advanced[option];
+  },
+  groupChain(tableId) {
+    const data = Template.currentData();
+    const nestedGroupChain = Template.instance().nestedGrouping.get(tableId) || []
+    const groupChain = nestedGroupChain.length ? nestedGroupChain : Template.instance().groupChain.get();
+    return groupChain;
+  },
+  hasGrouping(tableId) {
+    const nestedGroupChain = Template.instance().nestedGrouping.get(tableId);
+    const groupChain = nestedGroupChain && nestedGroupChain.length ? nestedGroupChain : Template.instance().groupChain.get();
+    return groupChain && groupChain.length
   }
 });
 
@@ -409,9 +444,8 @@ Template.dynamicTableGroup.events({
   "click .dynamic-table-header"(e, templInstance) {
     e.stopImmediatePropagation(); // QUESTION: why is this required? Without it this event handler gets called multiple times
     if (e.target != e.currentTarget) {
-      return 
+      return
     }
-    console.log("HEADER CLICK");
     const valueId = $(e.currentTarget).attr("data-table-id");
 
     let open = false;
@@ -426,7 +460,7 @@ Template.dynamicTableGroup.events({
 
     const values = templInstance.values.get();
     const value = values.find(v => v._id === valueId);
-    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(this, value);
+    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(Template.instance(), value);
     let custom = templInstance.custom.get();
     if (!custom) {
       custom = {};
@@ -444,13 +478,48 @@ Template.dynamicTableGroup.events({
     changed(templInstance.data.customTableSpec.custom, tableId, { changeOpenGroups: { [tableId]: open } });
   },
   "click .dynamic-table-manage-controller.aspects"(e, templInstance) {
-    e.preventDefault()
-    console.log("ASPECTS CLICK IN HEADER")
+    /**
+        TODO:
+          Aspects Modal
+    */
   },
   "click .dynamic-table-manage-controller.groups"(e, templInstance) {
-    console.log("GROUPS CLICK IN HEADER")
+    const valueId = $(e.currentTarget).attr("data-table-id");
+    const values = templInstance.values.get();
+    const value = values.find(v => v._id === valueId);
+    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(templInstance, value);
+
+    const nestedGrouping = templInstance.nestedGrouping.get(tableId);
+    const grouping = nestedGrouping && nestedGrouping.length ? nestedGrouping : Template.instance().groupChain.get();
+
+    const modalMeta = {
+      template: Template.dynamicTableManageGroupFieldsModal,
+      id: "dynamic-table-manage-group-fields-modal",
+      options: {
+        availableColumns: templInstance.data.groupableFields,
+        selectedColumns: grouping,
+        changeCallback(newGroupChain) {
+          const myGroupChain = templInstance.groupChain.get().slice(0); // ?
+          templInstance.groupChain.set([]);
+          templInstance.nestedGrouping.set(tableId, []);
+          Meteor.setTimeout(() => {
+            templInstance.nestedGrouping.set(tableId, newGroupChain);
+            templInstance.groupChain.set(myGroupChain);
+          }, 0)
+          changed(templInstance.data.customTableSpec.custom, tableId, { newGroupChainFields: newGroupChain });
+        }
+      }
+    };
+    const target = e.currentTarget;
+    createModal(target, modalMeta, templInstance);
   },
   "click .dynamic-table-manage-controller.columns"(e, templInstance) {
-    console.log("HIDESHOW CLICK IN HEADER")
+    /**
+        TODO:
+          Hide/Show Modal
+    */
+  },
+  "click .console-log-grouping-and-selector"(e, templInstance) { // for debugging only
+    console.log(templInstance)
   }
 });

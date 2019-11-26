@@ -1,5 +1,5 @@
 <template name="dynamicTableGroup">
-  <div class="dynamic-table-group">
+  <div class="dynamic-table-group" id="{{myid}}">
     {{#if waitingAndLoading}}
       <div class="dynamic-table-loading-group">
         {{#if showLoadingMessage}}
@@ -27,7 +27,7 @@
               </span>
             {{/if}}
             {{#if advanced "grouping"}}
-              <span class="groups dynamic-table-manage-controller">
+              <span class="groups dynamic-table-manage-controller" data-table-id="{{value._id}}">
                 <i class="fa fa-th-list"></i>
               </span>
             {{/if}}
@@ -36,15 +36,14 @@
                 <i class="fa fa-eye-slash"></i>
               </span>
             {{/if}}
+            <span class="console-log-grouping-and-selector" data-table-id="{{value._id}}">
+              Console
+            </span>
           </div>
         </div>
         <div class="dynamic-table-content" style="{{#if shouldDisplayContent value._id}}display: block;{{/if}}">
           {{#if shouldDisplayTable value._id}}
-            {{#if lastLevel}}
-              {{> CustomizableTable
-                (table value (newSelector value selector))
-              }}
-            {{else}}
+            {{#if hasGrouping (tableId value)}}
               {{> dynamicTableGroup
                 forceRefresh=forceRefresh
                 showPrefix=showPrefix
@@ -53,10 +52,16 @@
                 customTableSpec=customTableSpec
                 expandAll=expandAll
                 lazy=lazy
-                groupChain=groupChain
+                groupChain=(groupChain (tableId value))
                 index=nextIndex
                 tableIdSuffixChain=(tableIdSuffixChain value)
                 selector=(newSelector value selector)
+                tableId=(tableId value)
+                groupableFields=groupableFields
+              }}
+            {{else}}
+              {{> CustomizableTable
+                (table value (newSelector value selector))
               }}
             {{/if}}
           {{/if}}

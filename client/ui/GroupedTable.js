@@ -28,6 +28,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());
   }, 1000);
+
   const id = new ReactiveVar(this.data.id);
   this.autorun(() => {
     const data = Template.currentData();
@@ -35,13 +36,14 @@ Template.GroupedTable.onCreated(function onCreated() {
       id.set(data.id);
     }
   });
+
   this.autorun(() => {
     id.get();
     getCustom(this.data.custom, this.data.id, (custom) => {
       this.customColumns.set(_.compact((custom.columns || []).map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
       this.aspects.set(custom.order);
       if (custom.groupChainFields) {
-        this.groupChain.set(_.compact(custom.groupChainFields.map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
+        this.groupChain.set(custom.groupChainFields);
       }
     });
   });
@@ -111,6 +113,9 @@ Template.GroupedTable.helpers({
   aGroupChain() {
     const groupChain = Template.instance().groupChain.get();
     return groupChain;
+  },
+  tableId() {
+    return Template.instance().data.id;
   }
 });
 
@@ -125,7 +130,6 @@ Template.GroupedTable.events({
     templInstance.searchFn();
   },
   "click span.grouped-table-manage-controller.groups"(e, templInstance, extra) {
-    console.log("GROUPS CLICK IN GROUPED TABLE")
     const modalMeta = {
       template: Template.dynamicTableManageGroupFieldsModal,
       id: "dynamic-table-manage-group-fields-modal",
@@ -133,8 +137,9 @@ Template.GroupedTable.events({
         availableColumns: templInstance.data.groupableFields,
         selectedColumns: templInstance.groupChain.get(),
         changeCallback(columns) {
-          templInstance.groupChain.set(columns);
-          changed(templInstance.data.custom, templInstance.data.id, { newGroupChainFields: columns.map(c => c.field) });
+          templInstance.groupChain.set([]);
+          Meteor.setTimeout(() => templInstance.groupChain.set(columns), 0);
+          changed(templInstance.data.custom, templInstance.data.id, { newGroupChainFields: columns });
         }
       }
     }
@@ -142,13 +147,12 @@ Template.GroupedTable.events({
     createModal(target, modalMeta, templInstance);
   },
   "click span.grouped-table-manage-controller.aspects"(e, templInstance, extra) {
-    console.log("ASPECTS CLICK IN GROUPED TABLE")
     const modalMeta = {
       template: Template.dynamicTableManageAspectsModal,
       id: "dynamic-table-manage-aspects-modal",
       options: {
         availableColumns: templInstance.data.groupableFields,
-        aspects: templInstance.aspects,
+        aspects: templInstance.aspects.get(),
         changeCallback(aspects) {
           templInstance.aspects.set(aspects);
           changed(templInstance.data.custom, templInstance.data.id, { newOrder: aspects });
