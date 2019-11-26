@@ -5,8 +5,7 @@ import { Random } from "meteor/random";
 
 Template.dynamicTableManageAspectsModal.onCreated(function onCreated() {
   this.newColumns = new ReactiveVar([]);
-  const aspects = Template.currentData().aspects.get() || [];
-  this.aspects = new ReactiveVar(aspects.length ? aspects : [{ order: "asc" }]);
+  this.aspects = new ReactiveVar(this.data.aspects || []);
 });
 
 Template.dynamicTableManageAspectsModal.onRendered(function onRendered() {
@@ -22,7 +21,8 @@ Template.dynamicTableManageAspectsModal.helpers({
     return field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title;
   },
   aspects() {
-    return [].concat(Template.instance().aspects.get(), Template.instance().newColumns.get());
+    const aspects = [].concat(Template.instance().aspects.get(), Template.instance().newColumns.get());
+    return aspects.length ? aspects : [{ order: "asc" }];
   },
   selected(field, selectedField) {
     return field.field === selectedField.data ? { selected: "selected" } : {};
