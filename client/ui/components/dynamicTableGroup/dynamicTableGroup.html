@@ -22,7 +22,7 @@
           {{#if showPrefix}}{{currentGroupLabel}}: {{/if}}{{value.label}} {{#if hasCount value}}({{count value}}){{/if}}
           <div class="pull-right">
             {{#if advanced "ordering"}}
-              <span class="aspects dynamic-table-manage-controller">
+              <span class="aspects dynamic-table-manage-controller" data-table-id="{{value._id}}">
                 <i class="fa fa-sort"></i>
               </span>
             {{/if}}

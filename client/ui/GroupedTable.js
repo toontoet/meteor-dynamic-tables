@@ -23,7 +23,8 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.customTableSpec = this.data;
   this.search = new ReactiveVar();
   this.customColumns = new ReactiveVar([]);
-  this.groupChain = new ReactiveVar(_.compact((this.data.defaultGrouping || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
+  // this.groupChain = new ReactiveVar(_.compact((this.data.defaultGrouping || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
+  this.groupChain = new ReactiveVar(this.data.defaultGrouping || []);
   this.aspects = new ReactiveVar(this.data.defaultOrder);
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());

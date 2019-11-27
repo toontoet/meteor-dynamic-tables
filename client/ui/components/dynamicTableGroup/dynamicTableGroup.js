@@ -118,6 +118,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         groupChain.shift();
   this.groupChain = new ReactiveVar(groupChain);
   this.nestedGrouping = new ReactiveDict();
+  this.nestedOrder = new ReactiveDict();
 
   getCustom(this.data.customTableSpec.custom, this.data.tableId, (custom) => {
     this.custom.set(custom);
@@ -136,8 +137,13 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           /   Need to find way to identify if custom is received
           /   from nested table or parent
           /*-----------------------------------------------------*/
-          if (!custom.tableId && custom.groupChainFields) {
-            this.nestedGrouping.set(nestedTableId, custom.groupChainFields);
+          if (! custom.tableId) {
+            if(custom.groupChainFields) {
+              this.nestedGrouping.set(nestedTableId, custom.groupChainFields);
+            }
+            if (custom.order) {
+              this.nestedOrder.set(nestedTableId, custom.order);
+            }
           }
         });
       });
@@ -478,13 +484,33 @@ Template.dynamicTableGroup.events({
     changed(templInstance.data.customTableSpec.custom, tableId, { changeOpenGroups: { [tableId]: open } });
   },
   "click .dynamic-table-manage-controller.aspects"(e, templInstance) {
-    /**
-        TODO:
-          Aspects Modal
-    */
+    const target = e.currentTarget;
+
+    const valueId = $(target).attr("data-table-id");
+    const values = templInstance.values.get();
+    const value = values.find(v => v._id === valueId);
+    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(templInstance, value);
+
+    const order = templInstance.nestedOrder.get(tableId) || [];
+
+    const modalMeta = {
+      template: Template.dynamicTableManageAspectsModal,
+      id: "dynamic-table-manage-aspects-modal",
+      options: {
+        availableColumns: templInstance.data.groupableFields,
+        aspects: order,
+        changeCallback(aspects) {
+          // templInstance.nestedOrder.set(tableId, aspects);
+          changed(templInstance.data.customTableSpec.custom, tableId, { newOrder: aspects });
+        }
+      }
+    };
+    createModal(target, modalMeta, templInstance);
   },
   "click .dynamic-table-manage-controller.groups"(e, templInstance) {
-    const valueId = $(e.currentTarget).attr("data-table-id");
+    const target = e.currentTarget;
+
+    const valueId = $(target).attr("data-table-id");
     const values = templInstance.values.get();
     const value = values.find(v => v._id === valueId);
     const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(templInstance, value);
@@ -510,7 +536,6 @@ Template.dynamicTableGroup.events({
         }
       }
     };
-    const target = e.currentTarget;
     createModal(target, modalMeta, templInstance);
   },
   "click .dynamic-table-manage-controller.columns"(e, templInstance) {
