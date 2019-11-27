@@ -99,7 +99,7 @@ Template.bulkEditModal.events({
       promise = new Promise((resolve, reject) => {
         Meteor.call(
           bulkUpdateMethod,
-          collection,
+          collection._name,
           documentsToUpdate.map(d => d._id),
           modifier.$set,
           _.object(_.keys(modifier.extra), _.values(modifier.extra).map(v => v && v.map(o => ({ selected: o.selected, text: o.text, search: o.search, id: o.id })))),
