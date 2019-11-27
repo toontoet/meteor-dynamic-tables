@@ -117,6 +117,10 @@ Template.GroupedTable.helpers({
   },
   tableId() {
     return Template.instance().data.id;
+  },
+  order() {
+    const aspects = Template.instance().aspects.get();
+    return aspects;
   }
 });
 

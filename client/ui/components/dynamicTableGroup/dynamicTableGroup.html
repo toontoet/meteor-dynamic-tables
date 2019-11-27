@@ -22,12 +22,12 @@
           {{#if showPrefix}}{{currentGroupLabel}}: {{/if}}{{value.label}} {{#if hasCount value}}({{count value}}){{/if}}
           <div class="pull-right">
             {{#if advanced "ordering"}}
-              <span class="aspects dynamic-table-manage-controller" data-table-id="{{value._id}}">
+              <span class="aspects dynamic-table-manage-controller {{#if ordered (tableId value)}} active {{/if}}" data-table-id="{{value._id}}">
                 <i class="fa fa-sort"></i>
               </span>
             {{/if}}
             {{#if advanced "grouping"}}
-              <span class="groups dynamic-table-manage-controller" data-table-id="{{value._id}}">
+              <span class="groups dynamic-table-manage-controller {{#if grouped (tableId value)}} active {{/if}}" data-table-id="{{value._id}}">
                 <i class="fa fa-th-list"></i>
               </span>
             {{/if}}
@@ -36,9 +36,6 @@
                 <i class="fa fa-eye-slash"></i>
               </span>
             {{/if}}
-            <span class="console-log-grouping-and-selector" data-table-id="{{value._id}}">
-              Console
-            </span>
           </div>
         </div>
         <div class="dynamic-table-content" style="{{#if shouldDisplayContent value._id}}display: block;{{/if}}">

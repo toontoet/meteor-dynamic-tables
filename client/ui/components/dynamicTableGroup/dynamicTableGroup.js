@@ -435,7 +435,7 @@ Template.dynamicTableGroup.helpers({
   },
   groupChain(tableId) {
     const data = Template.currentData();
-    const nestedGroupChain = Template.instance().nestedGrouping.get(tableId) || []
+    const nestedGroupChain = Template.instance().nestedGrouping.get(tableId) || [];
     const groupChain = nestedGroupChain.length ? nestedGroupChain : Template.instance().groupChain.get();
     return groupChain;
   },
@@ -443,6 +443,14 @@ Template.dynamicTableGroup.helpers({
     const nestedGroupChain = Template.instance().nestedGrouping.get(tableId);
     const groupChain = nestedGroupChain && nestedGroupChain.length ? nestedGroupChain : Template.instance().groupChain.get();
     return groupChain && groupChain.length
+  },
+  ordered(tableId) {
+    const nestedOrder = Template.instance().nestedOrder.get(tableId);
+    return nestedOrder;
+  },
+  grouped(tableId) {
+    const nestedGroupChain = Template.instance().nestedGrouping.get(tableId) || [];
+    return nestedGroupChain.length;
   }
 });
 
@@ -543,8 +551,5 @@ Template.dynamicTableGroup.events({
         TODO:
           Hide/Show Modal
     */
-  },
-  "click .console-log-grouping-and-selector"(e, templInstance) { // for debugging only
-    console.log(templInstance)
   }
 });
