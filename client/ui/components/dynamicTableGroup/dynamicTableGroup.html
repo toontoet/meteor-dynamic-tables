@@ -22,17 +22,17 @@
           {{#if showPrefix}}{{currentGroupLabel}}: {{/if}}{{value.label}} {{#if hasCount value}}({{count value}}){{/if}}
           <div class="pull-right">
             {{#if advanced "ordering"}}
-              <span class="aspects dynamic-table-manage-controller {{#if ordered (tableId value)}} active {{/if}}" data-table-id="{{value._id}}">
+              <span class="aspects dynamic-table-manage-controller {{#if ordered (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
                 <i class="fa fa-sort"></i>
               </span>
             {{/if}}
             {{#if advanced "grouping"}}
-              <span class="groups dynamic-table-manage-controller {{#if grouped (tableId value)}} active {{/if}}" data-table-id="{{value._id}}">
+              <span class="groups dynamic-table-manage-controller {{#if grouped (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
                 <i class="fa fa-th-list"></i>
               </span>
             {{/if}}
             {{#if advanced "columning"}}
-              <span class="columns dynamic-table-manage-controller">
+              <span class="columns dynamic-table-manage-controller" data-table-id="{{tableId value}}">
                 <i class="fa fa-eye-slash"></i>
               </span>
             {{/if}}

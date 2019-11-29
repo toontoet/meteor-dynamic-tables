@@ -2,10 +2,11 @@ import { ReactiveDict } from "meteor/reactive-dict";
 import "./dynamicTableGroup.html";
 import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../db.js";
-import { changed, getCustom, getValue, createModal } from "../../../inlineSave.js";
+import { changed, getCustom, getColumns, getValue, createModal } from "../../../inlineSave.js";
 
 import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "../manageAspectsModal/manageAspectsModal.js";
+import "../manageFieldsModal/manageFieldsModal.js";
 
 /**
  * selectorToId - description
@@ -119,6 +120,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.groupChain = new ReactiveVar(groupChain);
   this.nestedGrouping = new ReactiveDict();
   this.nestedOrder = new ReactiveDict();
+  this.nestedColumns = new ReactiveDict();
 
   getCustom(this.data.customTableSpec.custom, this.data.tableId, (custom) => {
     this.custom.set(custom);
@@ -138,13 +140,15 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           /   from nested table or parent
           /*-----------------------------------------------------*/
           if (! custom.tableId) {
-            if(custom.groupChainFields) {
+            if (custom.groupChainFields) {
               this.nestedGrouping.set(nestedTableId, custom.groupChainFields);
             }
             if (custom.order) {
               this.nestedOrder.set(nestedTableId, custom.order);
             }
           }
+          const columns = custom.columns || JSON.parse(JSON.stringify(this.data.customTableSpec.columns().filter(c => c.default).map(c => ({ data: c.data, id: data.id }))));
+          this.nestedColumns.set(nestedTableId, columns);
         });
       });
     }
@@ -494,10 +498,7 @@ Template.dynamicTableGroup.events({
   "click .dynamic-table-manage-controller.aspects"(e, templInstance) {
     const target = e.currentTarget;
 
-    const valueId = $(target).attr("data-table-id");
-    const values = templInstance.values.get();
-    const value = values.find(v => v._id === valueId);
-    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(templInstance, value);
+    const tableId = $(target).attr("data-table-id");
 
     const order = templInstance.nestedOrder.get(tableId) || [];
 
@@ -517,11 +518,7 @@ Template.dynamicTableGroup.events({
   },
   "click .dynamic-table-manage-controller.groups"(e, templInstance) {
     const target = e.currentTarget;
-
-    const valueId = $(target).attr("data-table-id");
-    const values = templInstance.values.get();
-    const value = values.find(v => v._id === valueId);
-    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(templInstance, value);
+    const tableId = $(target).attr("data-table-id");
 
     const nestedGrouping = templInstance.nestedGrouping.get(tableId);
     const grouping = nestedGrouping && nestedGrouping.length ? nestedGrouping : Template.instance().groupChain.get();
@@ -547,9 +544,93 @@ Template.dynamicTableGroup.events({
     createModal(target, modalMeta, templInstance);
   },
   "click .dynamic-table-manage-controller.columns"(e, templInstance) {
-    /**
-        TODO:
-          Hide/Show Modal
-    */
+    const target = e.currentTarget;
+    const tableId = $(target).attr("data-table-id");
+
+    const manageColumnsOptions = _.extend({
+      availableColumns: getColumns(templInstance.data.customTableSpec.columns),
+      selectedColumns: templInstance.nestedColumns.get(tableId),
+      tableData: templInstance.data,
+      changeCallback(column, add) {
+        let unsetField = false;
+        const columns = templInstance.nestedColumns.get(tableId);
+        if (add) {
+          columns.push(column);
+        }
+        else {
+          const actualColumn = columns.find((col) => {
+            if (column.id) {
+              return column.id === col.id;
+            }
+            return column.data === col.data;
+          });
+          if (!actualColumn) {
+            return;
+          }
+          /*
+          HOW ?
+          */
+          // if (! templInstance.nestedGrouping.get()) {
+          //   const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
+          //   const search = tableTemplateInstance.advancedSearch.get();
+          //   if (actualColumn.sortField || actualColumn.sortableField) {
+          //     delete search[actualColumn.sortableField];
+          //     delete search[actualColumn.sortField];
+          //     unsetField = actualColumn.sortField || actualColumn.sortableField;
+          //   }
+          //   else {
+          //     unsetField = actualColumn.data;
+          //     delete search[actualColumn.data];
+          //   }
+          //   tableTemplateInstance.advancedSearch.set(search);
+          //   tableTemplateInstance.query.dep.changed();
+          // }
+          columns.splice(columns.indexOf(actualColumn), 1);
+        }
+        changed(templInstance.data.customTableSpec.custom, tableId, { newColumns: columns, unset: unsetField });
+        templInstance.nestedColumns.set(tableId, columns);
+        manageColumnsOptions.customColumns = columns;
+
+        $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageColumnsOptions);
+      }
+    }, templInstance.data.manageFieldsOptions || {});
+
+    if (manageColumnsOptions.edit) {
+      manageColumnsOptions.edit.addedCallback = (columnSpec) => {
+        if (!_.isFunction(templInstance.data.columns)) {
+          templInstance.data.columns.push(columnSpec);
+        }
+        manageColumnsOptions.changeCallback(columnSpec, true);
+      };
+      manageColumnsOptions.edit.editedCallback = (columnSpec, prevColumnSpec) => {
+        if (!_.isFunction(templInstance.data.columns)) {
+          const realColumn = templInstance.data.columns.find(c => (columnSpec.id ? c.id === columnSpec.id : c.data === columnSpec.data));
+          templInstance.data.columns.splice(templInstance.data.columns.indexOf(realColumn), 1, columnSpec);
+        }
+        const columns = templInstance.$("table").dataTable().api().context[0].aoColumns;
+        const actualColumn = columns.find(c => (columnSpec.id ? c.id === columnSpec.id : c.data === columnSpec.data));
+        if (actualColumn) {
+          if (actualColumn.nTh) {
+            actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.split(actualColumn.title).join(columnSpec.title);
+          }
+          actualColumn.title = columnSpec.label || columnSpec.title;
+          if (actualColumn.filterModal && actualColumn.filterModal.field) {
+            actualColumn.filterModal.field.label = actualColumn.title;
+
+            if (actualColumn.filterModal.field.edit && actualColumn.filterModal.field.edit.spec) {
+              actualColumn.filterModal.field.edit.spec.label = actualColumn.title;
+            }
+          }
+        }
+      };
+    }
+
+    const modalMeta = {
+      template: Template.dynamicTableManageFieldsModal,
+      id: "dynamic-table-manage-fields-modal",
+      options: manageColumnsOptions
+    };
+
+    createModal(target, modalMeta,templInstance);
   }
 });
