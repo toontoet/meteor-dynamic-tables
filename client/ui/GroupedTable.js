@@ -3,6 +3,7 @@ import "./GroupedTable.html";
 
 import "./components/manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "./components/manageAspectsModal/manageAspectsModal.js";
+import "./components/manageFieldsModal/manageFieldsModal.js";
 import { getColumns, getPosition, changed, getCustom, createModal} from "../inlineSave.js";
 
 Template.GroupedTable.onRendered(function onRendered() {
@@ -41,15 +42,17 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.autorun(() => {
     id.get();
     getCustom(this.data.custom, this.data.id, (custom) => {
-      this.customColumns.set(_.compact((custom.columns || []).map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
+      const columns = custom.columns || this.data.table.columns || this.data.columns().filter(c => c.default);
+      this.customColumns.set(_.compact(columns.map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
       this.aspects.set(custom.order);
       if (custom.groupChainFields) {
         this.groupChain.set(custom.groupChainFields);
       }
     });
   });
+
   this.documentMouseDown = (e) => {
-    const modalIds = ["dynamic-table-manage-aspects-modal", "dynamic-table-manage-group-fields-modal"];
+    const modalIds = ["dynamic-table-manage-aspects-modal", "dynamic-table-manage-group-fields-modal", "dynamic-table-manage-fields-modal"];
     modalIds.forEach(id => {
       const manageGroupFieldsWrapper = $(`#${id}`)[0];
       if (manageGroupFieldsWrapper) {
@@ -134,7 +137,7 @@ Template.GroupedTable.events({
   "keyup .dynamic-table-global-search"(e, templInstance) {
     templInstance.searchFn();
   },
-  "click span.grouped-table-manage-controller.groups"(e, templInstance, extra) {
+  "click span.grouped-table-manage-controller.groups"(e, templInstance) {
     const modalMeta = {
       template: Template.dynamicTableManageGroupFieldsModal,
       id: "dynamic-table-manage-group-fields-modal",
@@ -148,10 +151,9 @@ Template.GroupedTable.events({
         }
       }
     }
-    const target = extra ? extra.target : e.currentTarget;
-    createModal(target, modalMeta, templInstance);
+    createModal(e.currentTarget, modalMeta, templInstance);
   },
-  "click span.grouped-table-manage-controller.aspects"(e, templInstance, extra) {
+  "click span.grouped-table-manage-controller.aspects"(e, templInstance) {
     const modalMeta = {
       template: Template.dynamicTableManageAspectsModal,
       id: "dynamic-table-manage-aspects-modal",
@@ -164,7 +166,91 @@ Template.GroupedTable.events({
         }
       }
     };
-    const target = extra ? extra.target : e.currentTarget;
-    createModal(target, modalMeta, templInstance);
+    createModal(e.currentTarget, modalMeta, templInstance);
+  },
+  "click span.grouped-table-manage-controller.columns"(e, templInstance) {
+    const manageColumnsOptions = _.extend({
+      availableColumns: getColumns(templInstance.data.columns),
+      selectedColumns: templInstance.customColumns.get() || [],
+      tableData: templInstance.data,
+      changeCallback(column, add) {
+        let unsetField = false;
+        const columns = templInstance.customColumns.get();
+        if (add) {
+          columns.push(column);
+        }
+        else {
+          const actualColumn = columns.find((col) => {
+            if (column.id) {
+              return column.id === col.id;
+            }
+            return column.data === col.data;
+          });
+          if (!actualColumn) {
+            return;
+          }
+
+          if (! templInstance.groupChain.get().length) {
+            const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
+            const search = tableTemplateInstance.advancedSearch.get();
+            if (actualColumn.sortField || actualColumn.sortableField) {
+              delete search[actualColumn.sortableField];
+              delete search[actualColumn.sortField];
+              unsetField = actualColumn.sortField || actualColumn.sortableField;
+            }
+            else {
+              unsetField = actualColumn.data;
+              delete search[actualColumn.data];
+            }
+            tableTemplateInstance.advancedSearch.set(search);
+            tableTemplateInstance.query.dep.changed();
+          }
+          columns.splice(columns.indexOf(actualColumn), 1);
+        }
+        changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns, unset: unsetField });
+        templInstance.customColumns.set(columns);
+        manageColumnsOptions.customColumns = columns;
+
+        $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageColumnsOptions);
+      }
+    }, templInstance.data.manageFieldsOptions || {});
+
+    if (manageColumnsOptions.edit) {
+      manageColumnsOptions.edit.addedCallback = (columnSpec) => {
+        if (!_.isFunction(templInstance.data.columns)) {
+          templInstance.data.columns.push(columnSpec);
+        }
+        manageColumnsOptions.changeCallback(columnSpec, true);
+      };
+      manageColumnsOptions.edit.editedCallback = (columnSpec, prevColumnSpec) => {
+        if (!_.isFunction(templInstance.data.columns)) {
+          const realColumn = templInstance.data.columns.find(c => (columnSpec.id ? c.id === columnSpec.id : c.data === columnSpec.data));
+          templInstance.data.columns.splice(templInstance.data.columns.indexOf(realColumn), 1, columnSpec);
+        }
+        const columns = templInstance.$("table").dataTable().api().context[0].aoColumns;
+        const actualColumn = columns.find(c => (columnSpec.id ? c.id === columnSpec.id : c.data === columnSpec.data));
+        if (actualColumn) {
+          if (actualColumn.nTh) {
+            actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.split(actualColumn.title).join(columnSpec.title);
+          }
+          actualColumn.title = columnSpec.label || columnSpec.title;
+          if (actualColumn.filterModal && actualColumn.filterModal.field) {
+            actualColumn.filterModal.field.label = actualColumn.title;
+
+            if (actualColumn.filterModal.field.edit && actualColumn.filterModal.field.edit.spec) {
+              actualColumn.filterModal.field.edit.spec.label = actualColumn.title;
+            }
+          }
+        }
+      };
+    }
+
+    const modalMeta = {
+      template: Template.dynamicTableManageFieldsModal,
+      id: "dynamic-table-manage-fields-modal",
+      options: manageColumnsOptions
+    };
+
+    createModal(e.currentTarget, modalMeta, templInstance);
   }
 });
