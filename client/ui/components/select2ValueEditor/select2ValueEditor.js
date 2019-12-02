@@ -158,6 +158,9 @@ Template.dynamicTableSelect2ValueEditor.onDestroyed(function onDestroyed() {
 
 Template.dynamicTableSelect2ValueEditor.helpers({
   inputClass() {
+    return Template.instance().selectId;
+  },
+  customClass() {
     return Template.currentData().customClass;
   }
 });

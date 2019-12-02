@@ -367,6 +367,18 @@ editTmplContext(rowData) {
 }
 ```
 
+### BulkEditSpec
+
+The bulk edit functionality allows update multiple rows with common value(s)
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| publication | String | The name of the publication to use for bulk edit form, if not provided table `publication` field is used | Optional |
+| collection | String | The name of the collection to use for bulk edit form, if not provided table `collection` field is used | Optional |
+| updateMethod | String | Meteor method name | Optional |
+| onSuccess | Function | This function is triggered, if bulk edit is completed without throwing any error | Optional |
+| onError | Function | This function is triggered, if bulk edit throws any error | Optional |
+
 ### ExportSpec
 
 The export functionality allows multiple CSV rows to be output per data row, and in theory multiple columns per column - this allows clean exporting of mongo documents containing arrays
