@@ -53,7 +53,7 @@ function shouldDisplaySection(current, value) {
   if (!value.count && !current.count && !value.ensureValues && !current.ensureValues) {
     return true;
   }
-  const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(Template.instance(), value);
+  const tableId = this.data.tableId + getTableIdSuffix.call(Template.instance(), value);
   const count = Template.instance().counts.get(tableId);
   const ensureValues = value.ensureValues || current.ensureValues;
   if (ensureValues && count < ensureValues) {
@@ -63,7 +63,7 @@ function shouldDisplaySection(current, value) {
 }
 
 // adds uncategorized field
-function addUndefined(current, values) {
+function getUncategorized(current, values) {
   const queries = values.map(v => v.query);
   let negation;
   if (queries.length && _.isObject(queries[0])) {
@@ -72,28 +72,30 @@ function addUndefined(current, values) {
   else {
     negation = { $not: { $in: queries } };
   }
+
   if (_.isObject(current.undefined)) {
-    values.push({
+    return {
       label: current.undefined.label || "Uncategorized",
       query: current.undefined.query || negation,
       selector: current.undefined.selector,
       count: current.undefined.count === undefined ? current.count : current.undefined.count,
       alwaysShow: current.undefined.alwaysShow || current.alwaysShow
-    });
+    };
   }
   else if (current.undefined) {
-    values.push({
+    return {
       label: current.undefined === true ? "Uncategorized" : current.undefined,
       query: negation,
       count: current.count,
       alwaysShow: current.alwaysShow
-    });
+    };
   }
 }
 
 function processDistinctValues(current, distinctValues) {
   const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(distinctValues) : distinctValues.map(v => ({ label: v, query: v }));
-  addUndefined(current, asyncValues); // modifies values
+  const uncategorized = getUncategorized(current, asyncValues);
+  asyncValues.push(uncategorized);
   const values = asyncValues.map(v => _.extend(v, { _id: JSON.stringify(v.selector || v.query) }));
   values.forEach((val) => {
     if (!val._id) {
@@ -126,13 +128,58 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     this.custom.set(custom);
   });
 
+  const distinctValuesSub = new ReactiveVar();
+
+  // triggers when context data sets
+  // loads values
+  this.autorun(() => {
+    const data = Template.currentData();
+    const current = this.grouping;
+    const countWithDistinct = false; //current.count && !current.values; NOTE: can't figure out how to handle the ability to mutate the list in transform.
+    if (current.values) {
+      const values = (_.isArray(current.values) ? current.values : current.values(data.selector)).slice(0);
+      const uncategorized = getUncategorized(current, values);
+      values.push(uncategorized);
+
+      values.forEach((val) => {
+        if (!val._id) {
+          val._id = JSON.stringify(val.query || val.selector);
+        }
+      });
+      this.values.set(values);
+    }
+    else {
+      const loading = Tracker.nonreactive(() => this.loading.get());
+      loading.distinctValues = true;
+      this.loading.set(loading);
+      if (Tracker.nonreactive(() => Meteor.status().status === "offline" || !data.customTableSpec.table.publication)) {
+        const distinctValues = _.unique(_.compact(
+          data.customTableSpec.table.collection.find(data.selector, { fields: { [current.valuesField || current.field]: 1 } }).map(i => getValue(i, current.valuesField || current.field))
+        ));
+        processDistinctValues.call(this, current, distinctValues);
+      }
+      else {
+        distinctValuesSub.set(this.subscribe(
+          "__dynaicTableDistinctValuesForField",
+          data.tableId + getTableIdSuffix.call(this),
+          data.customTableSpec.table.publication,
+          current.valuesField || current.field,
+          data.selector,
+          current.distinctOptions || {},
+          countWithDistinct
+        ));
+      }
+    }
+  });
+
+  // triggers when values are set
   // looks for grouping fot nested tables
   this.autorun(() => {
     const data = Template.currentData();
     const values = this.values.get();
     if (values.length) {
       values.forEach(value => {
-        const nestedTableId = data.customTableSpec.id + getTableIdSuffix.call(this, value);
+        const nestedTableId = data.tableId + getTableIdSuffix.call(this, value);
         getCustom(data.customTableSpec.custom, nestedTableId, (custom) => {
           /*------------------------------------------------------
           / FIX ME!
@@ -154,67 +201,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     }
   });
 
-  this.autorun(() => {
-    const data = Template.currentData();
-    if (JSON.stringify(lastGroupChain) !== JSON.stringify(data.groupChain)) {
-      this.enabled.destroy();
-      this.stickyEnabled.destroy();
-    }
-    lastGroupChain = data.groupChain;
-  });
-
-  const distinctValuesSub = new ReactiveVar();
-  this.autorun(() => {
-    const data = Template.currentData();
-    const current = this.grouping; // current grouping
-    const countWithDistinct = false;//current.count && !current.values; NOTE: can't figure out how to handle the ability to mutate the list in transform.
-    let values = [];
-    if (_.isArray(current.values)) {
-      values = current.values.slice(0, current.values.length);
-      addUndefined(current, values); // modifies values
-      values.forEach((val) => {
-        if (!val._id) {
-          val._id = JSON.stringify(val.query || val.selector);
-        }
-      });
-      this.values.set(values);
-    }
-    else if (current.values) {
-      values = current.values(data.selector);
-      values = values.slice(0, values.length);
-      addUndefined(current, values); // modifies values
-      values.forEach((val) => {
-        if (!val._id) {
-          val._id = JSON.stringify(val.query || val.selector);
-        }
-      });
-      this.values.set(values);
-    }
-    else {
-      const loading = Tracker.nonreactive(() => this.loading.get());
-      loading.distinctValues = true;
-      this.loading.set(loading);
-      if (Tracker.nonreactive(() => Meteor.status().status === "offline" || !data.customTableSpec.table.publication)) {
-        const distinctValues = _.unique(_.compact(
-          data.customTableSpec.table.collection.find(data.selector, { fields: { [current.valuesField || current.field]: 1 } }).map(i => getValue(i, current.valuesField || current.field))
-        ));
-        processDistinctValues.call(this, current, distinctValues);
-      }
-      else {
-        distinctValuesSub.set(this.subscribe(
-          "__dynaicTableDistinctValuesForField",
-          data.customTableSpec.id + getTableIdSuffix.call(this),
-          data.customTableSpec.table.publication,
-          current.valuesField || current.field,
-          data.selector,
-          current.distinctOptions || {},
-          countWithDistinct
-        ));
-      }
-    }
-  });
-
-  // counting number of elements in each group
+  // processed when distinctValuesSub is ready
+  // sets values
   this.autorun(() => {
     const sub = distinctValuesSub.get();
     const data = Template.currentData();
@@ -223,11 +211,13 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       const loading = Tracker.nonreactive(() => this.loading.get());
       delete loading.distinctValues;
       this.loading.set(loading);
-      const distinctValues = (this.distinctValues.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this) }) || { groups: [] }).groups.map(v => v.value);
+      const distinctValues = (this.distinctValues.findOne({ _id: data.tabelId + getTableIdSuffix.call(this) }) || { groups: [] }).groups.map(v => v.value);
       processDistinctValues.call(this, current, distinctValues);
     }
   });
 
+  // triggers when values are set
+  // counts number of records in each group
   this.autorun(() => {
     const data = Template.currentData();
     const current = this.grouping;
@@ -238,12 +228,11 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         this.stickyEnabled.set(v._id, true);
       });
     }
-    // counts number of records in a group
     const valuesToCount = values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues));
     // if online and there's a publication
     if (Tracker.nonreactive(() => Meteor.status().status !== "offline") && data.customTableSpec.table.publication) {
-      const ids = valuesToCount.map(value => ({ tableId: this.data.customTableSpec.id + getTableIdSuffix.call(this, value), resultId: JSON.stringify(value.query).replace(/[\{\}.:]/g, "") }));
-      const count = this.groupInfo.findOne({ _id: data.customTableSpec.id + getTableIdSuffix.call(this) });
+      const ids = valuesToCount.map(value => ({ tableId: this.data.tableId + getTableIdSuffix.call(this, value), resultId: JSON.stringify(value.query).replace(/[\{\}.:]/g, "") }));
+      const count = this.groupInfo.findOne({ _id: data.tableId + getTableIdSuffix.call(this) });
       ids.forEach(({ tableId, resultId }) => {
         if (count && count[resultId]) {
           this.counts.set(tableId, count[resultId]);
@@ -274,26 +263,27 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           selector = _.extend({ [current.field]: value.query }, data.selector);
         }
         const count = data.customTableSpec.table.collection.find(selector).count();
-        this.counts.set(this.data.customTableSpec.id + getTableIdSuffix.call(this, value), count);
+        this.counts.set(this.data.tableId + getTableIdSuffix.call(this, value), count);
       });
     }
   });
   const groupCountsSub = new ReactiveVar();
 
-  // I think it triggers on values
+  // triggers when values are set
+  // does groupCountsSub
   this.autorun(() => {
     const data = Template.currentData();
     const current = this.grouping;
     const values = this.values.get();
     const currentSelector = data.selector;
-    const countWithDistinct = false;//current.count && !current.values;
+    const countWithDistinct = false; //current.count && !current.values;
     if (!countWithDistinct && Tracker.nonreactive(() => Meteor.status().status !== "offline" && data.customTableSpec.table.publication)) {
       const loading = Tracker.nonreactive(() => this.loading.get());
       loading.countValues = true;
       this.loading.set(loading);
       groupCountsSub.set(this.subscribe(
         "__dynamicTableGroupCounts",
-        data.customTableSpec.id + getTableIdSuffix.call(this),
+        data.tableId + getTableIdSuffix.call(this),
         data.customTableSpec.table.publication,
         current.field,
         currentSelector,
@@ -323,7 +313,7 @@ Template.dynamicTableGroup.onRendered(function onRendered() {
     Tracker.afterFlush(() => {
       if (custom) {
         values.forEach((value, index) => {
-          const tableId = this.data.customTableSpec.id + getTableIdSuffix.call(this, value);
+          const tableId = this.data.tableId + getTableIdSuffix.call(this, value);
           if (custom.openGroups && custom.openGroups.includes(tableId)) {
             this.stickyEnabled.set(value._id, true);
             this.enabled.set(value._id, true);
@@ -335,9 +325,6 @@ Template.dynamicTableGroup.onRendered(function onRendered() {
 });
 
 Template.dynamicTableGroup.helpers({
-  myid() { // for debugging only
-    return Template.instance().data.tableId;
-  },
   waitingAndLoading() {
     return this.loading && Object.keys(Template.instance().loading.get()).length !== 0;
   },
@@ -361,7 +348,7 @@ Template.dynamicTableGroup.helpers({
     return value.count || (value.count === undefined && current.count);
   },
   count(value) {
-    const tableId = this.customTableSpec.id + getTableIdSuffix.call(Template.instance(), value);
+    const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
     return Template.instance().counts.get(tableId);
   },
   shouldDisplayContent(valueId) {
@@ -395,14 +382,11 @@ Template.dynamicTableGroup.helpers({
     return _.extend(
       {},
       this.customTableSpec,
-      { selector: newSelector, id: this.customTableSpec.id + tableIdSuffix }
+      { selector: newSelector, id: this.tableId + tableIdSuffix }
     );
   },
   lastLevel() {
     return !Template.instance().groupChain.get().length;
-  },
-  nextIndex() {
-    return this.index + 1;
   },
   currentGroupLabel() {
     return Template.instance().grouping.label;
@@ -425,7 +409,8 @@ Template.dynamicTableGroup.helpers({
     return tableIdSuffixChain;
   },
   tableId(value){
-    const tableId = this.customTableSpec.id + getTableIdSuffix.call(Template.instance(), value);
+    /* this is data context */
+    const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
     return tableId;
   },
   advanced(option) {
@@ -478,7 +463,7 @@ Template.dynamicTableGroup.events({
 
     const values = templInstance.values.get();
     const value = values.find(v => v._id === valueId);
-    const tableId = templInstance.data.customTableSpec.id + getTableIdSuffix.call(Template.instance(), value);
+    const tableId = templInstance.data.tableId + getTableIdSuffix.call(templInstance, value);
     let custom = templInstance.custom.get();
     if (!custom) {
       custom = {};
