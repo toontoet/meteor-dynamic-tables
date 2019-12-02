@@ -312,9 +312,6 @@ In addition to these fields, any option defined by DataTables can be used (e.g.,
 | subscriptionOptions | Object | Additional options to pass to the subscriotion | Optional |
 | sortable | Object | Optionally add a jQuery sortable. This works best on local collections | Optional |
 | manageFieldsTitle | String | Title of column in the manage fields modal | Optional |
-| bulkEditPublication | String | The name of the publication to use for bulk edit form, if not provided `publication` field is used | Optional |
-| updateCollection | String | The name of the collection to use for bulk edit form, if not provided `collection` field is used | Optional |
-
 
 ### ColumnSpec
 
@@ -369,6 +366,18 @@ editTmplContext(rowData) {
     });
 }
 ```
+
+### BulkEditSpec
+
+The bulk edit functionality allows update multiple rows with common value(s)
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| publication | String | The name of the publication to use for bulk edit form, if not provided table `publication` field is used | Optional |
+| collection | String | The name of the collection to use for bulk edit form, if not provided table `collection` field is used | Optional |
+| updateMethod | String | Meteor method name | Optional |
+| onSuccess | Function | This function is triggered, if bulk edit is completed without throwing any error | Optional |
+| onError | Function | This function is triggered, if bulk edit throws any error | Optional |
 
 ### ExportSpec
 

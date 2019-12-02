@@ -30,8 +30,8 @@ Template.bulkEditModal.events({
     const documentIds = Template.currentData().documentIds;
     const columns = tableData.table.columns ? tableData.table.columns : [];
     const editableCols = columns.filter(col => !!col.editTmpl).map(col => col.data);
-    const collection = tableData.table.updateCollection || tableData.table.collection;
     const bulkEditOptions = tableData.table.bulkEditOptions;
+    const collection = bulkEditOptions.collection || tableData.table.collection;
     const additionalCols = Template.dynamicTableBulkEditForm.additionalCols;
     const allColumns = tableData.allColumns || columns;
 
