@@ -146,8 +146,7 @@ Template.GroupedTable.events({
         availableColumns: templInstance.data.groupableFields,
         selectedColumns: templInstance.groupChain.get(),
         changeCallback(columns) {
-          templInstance.groupChain.set([]);
-          Meteor.setTimeout(() => templInstance.groupChain.set(columns), 0);
+          templInstance.groupChain.set(columns);
           changed(templInstance.data.custom, templInstance.data.id, { newGroupChainFields: columns });
         }
       }

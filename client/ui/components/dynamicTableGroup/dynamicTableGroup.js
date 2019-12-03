@@ -122,6 +122,16 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.nestedOrder = new ReactiveDict();
   this.nestedColumns = new ReactiveDict();
 
+  const groupChain = new ReactiveVar(this.data.groupChain);
+  this.autorun(() => {
+    const data = Template.currentData();
+    if (JSON.stringify(groupChain.get()) !== JSON.stringify(data.groupChain)) {
+      groupChain.set(data.groupChain);
+      this.groupChain.set(_.rest(data.groupChain));
+      this.grouping = data.groupableFields.find(gf => gf.field === _.first(data.groupChain));
+    }
+  })
+
   getCustom(this.data.customTableSpec.custom, this.data.tableId, (custom) => {
     this.custom.set(custom);
   });
@@ -529,13 +539,7 @@ Template.dynamicTableGroup.events({
         availableColumns: templInstance.data.groupableFields,
         selectedColumns: grouping,
         changeCallback(newGroupChain) {
-          const myGroupChain = templInstance.groupChain.get().slice(0); // ?
-          templInstance.groupChain.set([]);
-          templInstance.nestedGrouping.set(tableId, []);
-          Meteor.setTimeout(() => {
-            templInstance.nestedGrouping.set(tableId, newGroupChain);
-            templInstance.groupChain.set(myGroupChain);
-          }, 0)
+          templInstance.nestedGrouping.set(tableId, newGroupChain);
           changed(templInstance.data.customTableSpec.custom, tableId, { newGroupChainFields: newGroupChain });
         }
       }
