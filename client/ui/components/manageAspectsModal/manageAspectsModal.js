@@ -5,13 +5,13 @@ import { Random } from "meteor/random";
 
 Template.dynamicTableManageAspectsModal.onCreated(function onCreated() {
   this.newColumns = new ReactiveVar([]);
-  this.aspects = new ReactiveVar(this.data.aspects || []);
+  this.aspects = new ReactiveVar(JSON.parse(JSON.stringify(this.data.aspects)) || []);
 });
 
 Template.dynamicTableManageAspectsModal.onRendered(function onRendered() {
   this.updateOrder = (newAspects) => {
     this.newColumns.set([]);
-    this.aspects.set(newAspects);
+    this.aspects.set(JSON.parse(JSON.stringify(newAspects)));
     this.data.changeCallback(newAspects);
   };
 });

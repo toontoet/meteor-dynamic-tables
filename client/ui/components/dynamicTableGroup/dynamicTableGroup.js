@@ -116,10 +116,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.custom = new ReactiveVar();
 
   this.currentOrder = this.data.aspects;
-  this.grouping = _.compact((this.data.groupChain).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf)))[0];
-  const groupChain = this.data.groupChain.slice(0);
-        groupChain.shift();
-  this.groupChain = new ReactiveVar(groupChain);
+  this.grouping = this.data.groupableFields.find(gf => gf.field === _.first(this.data.groupChain));
+  this.groupChain = new ReactiveVar(_.rest(this.data.groupChain));
   this.nestedGrouping = new ReactiveDict();
   this.nestedOrder = new ReactiveDict();
   this.nestedColumns = new ReactiveDict();
@@ -482,11 +480,8 @@ Template.dynamicTableGroup.events({
   },
   "click .dynamic-table-manage-controller.aspects"(e, templInstance) {
     const target = e.currentTarget;
-
     const tableId = $(target).attr("data-table-id");
-
-    const order = templInstance.nestedOrder.get(tableId) || [];
-
+    let order = templInstance.nestedOrder.get(tableId) || [];
     const modalMeta = {
       template: Template.dynamicTableManageAspectsModal,
       id: "dynamic-table-manage-aspects-modal",
@@ -494,7 +489,26 @@ Template.dynamicTableGroup.events({
         availableColumns: templInstance.data.groupableFields,
         aspects: order,
         changeCallback(aspects) {
-          // templInstance.nestedOrder.set(tableId, aspects);
+          // filters all open tables that are in the group
+          const tables = templInstance.$("table").toArray().filter(t => t.id.indexOf(tableId) === 0);
+          tables.forEach(table => {
+            const tableTemplateInstance = Blaze.getView(table).templateInstance();
+            const query = tableTemplateInstance.query.get();
+
+            // transforms order - [{}, {}] into one object with all keys and values
+            const sortifyOrder = (order, sort = { }) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
+            const currentSorts = sortifyOrder(order.map(a => ({ [a.data]: a.order === "asc" ? 1 : -1 })));
+            // if they are equal, but table sort is custom
+            //          ?
+            //
+            if (_.isEqual(currentSorts, query.options.sort)) {
+              const newSorts = sortifyOrder(aspects.map(a => ({ [a.data]: a.order === "asc" ? 1 : -1 })));
+              order = aspects;
+              query.options.sort = newSorts;
+            }
+
+            tableTemplateInstance.query.dep.changed();
+          })
           changed(templInstance.data.customTableSpec.custom, tableId, { newOrder: aspects });
         }
       }

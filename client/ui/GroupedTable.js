@@ -24,7 +24,6 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.customTableSpec = this.data;
   this.search = new ReactiveVar();
   this.customColumns = new ReactiveVar([]);
-  // this.groupChain = new ReactiveVar(_.compact((this.data.defaultGrouping || []).map(gcf => this.data.groupableFields.find(gc => gc.field === gcf))));
   this.groupChain = new ReactiveVar(this.data.defaultGrouping || []);
   this.aspects = new ReactiveVar(this.data.defaultOrder);
   this.searchFn = _.debounce(() => {
@@ -44,7 +43,9 @@ Template.GroupedTable.onCreated(function onCreated() {
     getCustom(this.data.custom, this.data.id, (custom) => {
       const columns = custom.columns || this.data.table.columns || this.data.columns().filter(c => c.default);
       this.customColumns.set(_.compact(columns.map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
-      this.aspects.set(custom.order);
+      if (custom.order) {
+        this.aspects.set(custom.order);
+      }
       if (custom.groupChainFields) {
         this.groupChain.set(custom.groupChainFields);
       }
@@ -119,11 +120,11 @@ Template.GroupedTable.helpers({
     return groupChain;
   },
   tableId() {
+    // see line :34 ; maybe need to be changed
     return Template.instance().data.id;
   },
   order() {
-    const aspects = Template.instance().aspects.get();
-    return aspects;
+    return Template.instance().aspects.get();
   }
 });
 
@@ -154,14 +155,33 @@ Template.GroupedTable.events({
     createModal(e.currentTarget, modalMeta, templInstance);
   },
   "click span.grouped-table-manage-controller.aspects"(e, templInstance) {
+    let order = templInstance.aspects.get();
     const modalMeta = {
       template: Template.dynamicTableManageAspectsModal,
       id: "dynamic-table-manage-aspects-modal",
       options: {
         availableColumns: templInstance.data.groupableFields,
-        aspects: templInstance.aspects.get(),
+        aspects: order,
         changeCallback(aspects) {
-          templInstance.aspects.set(aspects);
+          // forEach table in grouped table
+          templInstance.$("table").toArray().forEach(table => {
+            const tableTemplateInstance = Blaze.getView(table).templateInstance();
+            const query = tableTemplateInstance.query.get();
+
+            // transforms order - [{}, {}] into one object with all keys and values
+            const sortifyOrder = (order, sort = { }) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
+            const currentSorts = sortifyOrder(order.map(a => ({ [a.data]: a.order === "asc" ? 1 : -1 })));
+            // if they are equal, but table sort is custom
+            //          ?
+            //
+            if (_.isEqual(currentSorts, query.options.sort)) {
+              const newSorts = sortifyOrder(aspects.map(a => ({ [a.data]: a.order === "asc" ? 1 : -1 })));
+              order = aspects;
+              query.options.sort = newSorts;
+            }
+
+            tableTemplateInstance.query.dep.changed();
+          })
           changed(templInstance.data.custom, templInstance.data.id, { newOrder: aspects });
         }
       }
