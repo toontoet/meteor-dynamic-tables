@@ -118,6 +118,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.grouping = this.data.groupableFields.find(gf => gf.field === _.first(this.data.groupChain));
   this.groupChain = new ReactiveVar(_.rest(this.data.groupChain));
   this.aspects = new ReactiveVar(this.data.aspects);
+  this.columns = new ReactiveVar(this.data.columns);
   this.nestedGrouping = new ReactiveDict();
   this.nestedOrder = new ReactiveDict();
   this.nestedColumns = new ReactiveDict();
@@ -126,8 +127,10 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   const groupChain = new ReactiveVar(this.data.groupChain);
   this.autorun(() => {
     const data = Template.currentData();
+    if (JSON.stringify(Tracker.nonreactive(() => this.columns.get())) !== JSON.stringify(data.columns)) {
+      this.columns.set(data.columns);
+    }
     if (JSON.stringify(Tracker.nonreactive(() => this.aspects.get())) !== JSON.stringify(data.aspects)) {
-      console.log("Got new aspects");
       this.aspects.set(data.aspects);
     }
     if (JSON.stringify(Tracker.nonreactive(() => groupChain.get())) !== JSON.stringify(data.groupChain)) {
@@ -200,8 +203,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
             this.nestedColumns.set(nestedTableId, custom.columns);
           }
           else if (! this.data.columns) {
-            const defaultColumns = JSON.parse(JSON.stringify(this.data.customTableSpec.columns().filter(c => c.default).map(c => ({ data: c.data, id: data.id }))))
-            this.nestedColumns.set(nestedTableId, defaultColumns)
+            const defaultColumns = JSON.parse(JSON.stringify(this.data.customTableSpec.columns().filter(c => c.default).map(c => ({ data: c.data, id: c.id }))));
+            this.nestedColumns.set(nestedTableId, defaultColumns);
           }
           /*------------------------------------------------------
           / FIX ME!
@@ -399,16 +402,14 @@ Template.dynamicTableGroup.helpers({
   },
   table(value, newSelector) {
     const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
-    const nesteOrder = Template.instance().nestedOrder.get(tableId);
-    const ownOrder = Template.instance().aspects.get();
     return _.extend(
       {},
       this.customTableSpec,
       {
         selector: newSelector,
         id: tableId,
-        aspects: nesteOrder || ownOrder,
-        selectedColumns: Template.instance().nestedColumns.get(tableId) || this.columns
+        aspects: Template.instance().nestedOrder.get(tableId) || Template.instance().aspects.get(),
+        selectedColumns: Template.instance().nestedColumns.get(tableId) || Template.instance().columns.get()
       }
     );
   },
@@ -458,7 +459,7 @@ Template.dynamicTableGroup.helpers({
   hasGrouping(tableId) {
     const nestedGroupChain = Template.instance().nestedGrouping.get(tableId);
     const groupChain = nestedGroupChain && nestedGroupChain.length ? nestedGroupChain : Template.instance().groupChain.get();
-    return groupChain && groupChain.length
+    return groupChain && groupChain.length;
   },
   grouped(tableId) {
     const nestedGroupChain = Template.instance().nestedGrouping.get(tableId) || [];
@@ -474,7 +475,8 @@ Template.dynamicTableGroup.helpers({
   },
   columns(tableId) {
     const nestedColumns = Template.instance().nestedColumns.get(tableId);
-    return nestedColumns || this.columns;
+    const ownColumns = Template.instance().columns.get();
+    return nestedColumns || ownColumns;
   }
 });
 

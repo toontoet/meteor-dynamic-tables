@@ -127,7 +127,7 @@ Template.GroupedTable.helpers({
     return Template.instance().aspects.get();
   },
   columns() {
-    return Template.instance().customColumns.get();
+    return Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id }));
   },
   table() {
     return _.extend(

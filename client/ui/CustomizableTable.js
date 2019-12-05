@@ -23,10 +23,11 @@ Template.CustomizableTable.onCreated(function onCreated() {
     changed(this.data.custom, this.data.id, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
   };
   this.order = new ReactiveVar(this.data.aspects)
-  this.selectedColumns = new ReactiveVar(filterColumns(getColumns(this.data.columns), this.data.selectedColumns.map(c => c.id || c.data)))
+  this.selectedColumns = new ReactiveVar(filterColumns(getColumns(this.data.columns), this.data.selectedColumns.map(c => c.id || c.data)));
 
   this.autorun(() => {
     const data = Template.currentData();
+    // refreshes table when order has been changed
     if (JSON.stringify(Tracker.nonreactive(() => this.order.get())) !== JSON.stringify(data.aspects)) {
       this.order.set(data.aspects);
       // filters all open tables that are in the group
@@ -38,7 +39,16 @@ Template.CustomizableTable.onCreated(function onCreated() {
       const newSorts = sortifyOrder(data.aspects.map(a => ({ [a.id || a.data]: a.order === "asc" ? 1 : -1 })));
       query.options.sort = newSorts;
       tableTemplateInstance.query.dep.changed();
+    }
 
+    // refreshes table when columns has been changed
+    const currentColumns = Tracker.nonreactive(() => this.selectedColumns.get()).map(c => ({ data: c.data, id: c.id }));
+    if (JSON.stringify(currentColumns) !== JSON.stringify(data.selectedColumns)) {
+      const tableTemplateInstance = Blaze.getView(this.$("table")[0]).templateInstance();
+      const newColumns = filterColumns(getColumns(data.columns), data.selectedColumns.map(c => c.id || c.data));
+      this.selectedColumns.set(newColumns);
+      tableTemplateInstance.columns = newColumns;
+      tableTemplateInstance.query.dep.changed();
     }
   });
 
