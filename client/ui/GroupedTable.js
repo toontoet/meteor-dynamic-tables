@@ -24,7 +24,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.customTableSpec = this.data;
   this.search = new ReactiveVar();
   this.customColumns = new ReactiveVar([]);
-  this.groupChain = new ReactiveVar(this.data.defaultGrouping || []);
+  this.groupChain = new ReactiveVar(this.data.defaultGrouping);
   this.aspects = new ReactiveVar(this.data.defaultOrder);
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());
@@ -123,8 +123,21 @@ Template.GroupedTable.helpers({
     // see line :34 ; maybe need to be changed
     return Template.instance().data.id;
   },
-  order() {
+  aspects() {
     return Template.instance().aspects.get();
+  },
+  columns() {
+    return Template.instance().customColumns.get();
+  },
+  table() {
+    return _.extend(
+      {},
+      this,
+      {
+        aspects: Template.instance().aspects.get(),
+        selectedColumns: Template.instance().customColumns.get()
+      }
+    )
   }
 });
 
@@ -168,19 +181,19 @@ Template.GroupedTable.events({
             const query = tableTemplateInstance.query.get();
 
             // transforms order - [{}, {}] into one object with all keys and values
-            const sortifyOrder = (order, sort = { }) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
+            const sortifyOrder = (order, sort = {}) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
             const currentSorts = sortifyOrder(order.map(a => ({ [a.data]: a.order === "asc" ? 1 : -1 })));
             // if they are equal, but table sort is custom
             //          ?
             //
             if (_.isEqual(currentSorts, query.options.sort)) {
               const newSorts = sortifyOrder(aspects.map(a => ({ [a.data]: a.order === "asc" ? 1 : -1 })));
-              order = aspects;
               query.options.sort = newSorts;
             }
 
             tableTemplateInstance.query.dep.changed();
           })
+          order = aspects;
           changed(templInstance.data.custom, templInstance.data.id, { newOrder: aspects });
         }
       }
@@ -234,6 +247,8 @@ Template.GroupedTable.events({
       }
     }, templInstance.data.manageFieldsOptions || {});
 
+    // To be changed
+    // It duplicates code in dynamic table group
     if (manageColumnsOptions.edit) {
       manageColumnsOptions.edit.addedCallback = (columnSpec) => {
         if (!_.isFunction(templInstance.data.columns)) {

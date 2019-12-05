@@ -46,14 +46,18 @@
                 showPrefix=showPrefix
                 noGroups=noGroups
                 loading=loading
-                customTableSpec=customTableSpec
                 expandAll=expandAll
                 lazy=lazy
-                groupChain=(groupChain (tableId value))
+                customTableSpec=customTableSpec
+                groupableFields=groupableFields
+
                 tableIdSuffixChain=(tableIdSuffixChain value)
                 selector=(newSelector value selector)
                 tableId=(tableId value)
-                groupableFields=groupableFields
+
+                groupChain=(groupChain (tableId value))
+                aspects=(aspects (tableId value))
+                columns=(columns (tableId value))
               }}
             {{else}}
               {{> CustomizableTable

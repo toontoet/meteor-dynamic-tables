@@ -12,7 +12,7 @@
   </style>
   <div style="height: 40px;">
     <div class="pull-right">
-      <span class="aspects grouped-table-manage-controller {{#if order}} active {{/if}}">
+      <span class="aspects grouped-table-manage-controller {{#if aspects}} active {{/if}}">
         <i class="fa fa-sort"></i> Sort
       </span>
       <span class="groups grouped-table-manage-controller {{#if aGroupChain}} active {{/if}}">
@@ -35,13 +35,17 @@
       expandAll=expandAll
       lazy=lazy
       customTableSpec=customTableSpec
-      groupChain=aGroupChain
       groupableFields=groupableFields
-      index=0
       selector=selector
       tableId=tableId
+
+      groupChain=aGroupChain
+      aspects=aspects
+      columns=columns
     }}
   {{else}}
-    {{> CustomizableTable this}}
+    {{> CustomizableTable
+      table
+    }}
   {{/if}}
 </template>

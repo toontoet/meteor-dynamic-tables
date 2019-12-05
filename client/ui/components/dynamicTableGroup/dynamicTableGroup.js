@@ -122,16 +122,18 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.nestedOrder = new ReactiveDict();
   this.nestedColumns = new ReactiveDict();
 
+  // reactivity to refresh tables when goups are changed
   const groupChain = new ReactiveVar(this.data.groupChain);
   this.autorun(() => {
     const data = Template.currentData();
-    if (JSON.stringify(groupChain.get()) !== JSON.stringify(data.groupChain)) {
+    if (JSON.stringify(Tracker.nonreactive(() => groupChain.get())) !== JSON.stringify(data.groupChain)) {
       groupChain.set(data.groupChain);
       this.groupChain.set(_.rest(data.groupChain));
       this.grouping = data.groupableFields.find(gf => gf.field === _.first(data.groupChain));
     }
   })
 
+  // TODO: remove it becaus get getCustom twice
   getCustom(this.data.customTableSpec.custom, this.data.tableId, (custom) => {
     this.custom.set(custom);
   });
@@ -189,6 +191,14 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       values.forEach(value => {
         const nestedTableId = data.tableId + getTableIdSuffix.call(this, value);
         getCustom(data.customTableSpec.custom, nestedTableId, (custom) => {
+          // const columns = custom.columns || this.customTableSpec.table.columns || this.customTableSpec.columns().filter(c => c.default);
+          if (custom.columns) {
+            this.nestedColumns.set(nestedTableId, custom.columns);
+          } 
+          else if (! this.data.columns) {
+            const defaultColumns = JSON.parse(JSON.stringify(this.data.customTableSpec.columns().filter(c => c.default).map(c => ({ data: c.data, id: data.id }))))
+            this.nestedColumns.set(nestedTableId, defaultColumns)
+          }
           /*------------------------------------------------------
           / FIX ME!
           /   Need to find way to identify if custom is received
@@ -202,8 +212,6 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
               this.nestedOrder.set(nestedTableId, custom.order);
             }
           }
-          const columns = custom.columns || JSON.parse(JSON.stringify(this.data.customTableSpec.columns().filter(c => c.default).map(c => ({ data: c.data, id: data.id }))));
-          this.nestedColumns.set(nestedTableId, columns);
         });
       });
     }
@@ -386,11 +394,16 @@ Template.dynamicTableGroup.helpers({
     return selector;
   },
   table(value, newSelector) {
-    const tableIdSuffix = getTableIdSuffix.call(Template.instance(), value);
+    const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
     return _.extend(
       {},
       this.customTableSpec,
-      { selector: newSelector, id: this.tableId + tableIdSuffix }
+      {
+        selector: newSelector,
+        id: tableId,
+        aspects: Template.instance().nestedOrder.get(tableId) || this.aspects,
+        selectedColumns: Template.instance().nestedColumns.get(tableId) || this.columns
+      }
     );
   },
   lastLevel() {
@@ -441,13 +454,20 @@ Template.dynamicTableGroup.helpers({
     const groupChain = nestedGroupChain && nestedGroupChain.length ? nestedGroupChain : Template.instance().groupChain.get();
     return groupChain && groupChain.length
   },
-  ordered(tableId) {
-    const nestedOrder = Template.instance().nestedOrder.get(tableId);
-    return nestedOrder;
-  },
   grouped(tableId) {
     const nestedGroupChain = Template.instance().nestedGrouping.get(tableId) || [];
     return nestedGroupChain.length;
+  },
+  ordered(tableId) {
+    return Template.instance().nestedOrder.get(tableId);
+  },
+  aspects(tableId) {
+    const nestedOrder = Template.instance().nestedOrder.get(tableId);
+    return nestedOrder || this.aspects;
+  },
+  columns(tableId) {
+    const nestedColumns = Template.instance().nestedColumns.get(tableId);
+    return nestedColumns || this.columns;
   }
 });
 
@@ -491,7 +511,7 @@ Template.dynamicTableGroup.events({
   "click .dynamic-table-manage-controller.aspects"(e, templInstance) {
     const target = e.currentTarget;
     const tableId = $(target).attr("data-table-id");
-    let order = templInstance.nestedOrder.get(tableId) || [];
+    let order = templInstance.nestedOrder.get(tableId) || templInstance.data.aspects;
     const modalMeta = {
       template: Template.dynamicTableManageAspectsModal,
       id: "dynamic-table-manage-aspects-modal",
@@ -513,12 +533,12 @@ Template.dynamicTableGroup.events({
             //
             if (_.isEqual(currentSorts, query.options.sort)) {
               const newSorts = sortifyOrder(aspects.map(a => ({ [a.data]: a.order === "asc" ? 1 : -1 })));
-              order = aspects;
               query.options.sort = newSorts;
             }
 
             tableTemplateInstance.query.dep.changed();
           })
+          order = aspects;
           changed(templInstance.data.customTableSpec.custom, tableId, { newOrder: aspects });
         }
       }
