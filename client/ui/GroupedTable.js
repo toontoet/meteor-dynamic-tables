@@ -175,25 +175,7 @@ Template.GroupedTable.events({
         availableColumns: templInstance.data.groupableFields,
         aspects: order,
         changeCallback(aspects) {
-          // forEach table in grouped table
-          templInstance.$("table").toArray().forEach(table => {
-            const tableTemplateInstance = Blaze.getView(table).templateInstance();
-            const query = tableTemplateInstance.query.get();
-
-            // transforms order - [{}, {}] into one object with all keys and values
-            const sortifyOrder = (order, sort = {}) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
-            const currentSorts = sortifyOrder(order.map(a => ({ [a.data]: a.order === "asc" ? 1 : -1 })));
-            // if they are equal, but table sort is custom
-            //          ?
-            //
-            if (_.isEqual(currentSorts, query.options.sort)) {
-              const newSorts = sortifyOrder(aspects.map(a => ({ [a.data]: a.order === "asc" ? 1 : -1 })));
-              query.options.sort = newSorts;
-            }
-
-            tableTemplateInstance.query.dep.changed();
-          })
-          order = aspects;
+          templInstance.aspects.set(aspects);
           changed(templInstance.data.custom, templInstance.data.id, { newOrder: aspects });
         }
       }

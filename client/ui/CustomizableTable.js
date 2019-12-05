@@ -25,6 +25,22 @@ Template.CustomizableTable.onCreated(function onCreated() {
   this.order = new ReactiveVar(this.data.aspects)
   this.selectedColumns = new ReactiveVar(filterColumns(getColumns(this.data.columns), this.data.selectedColumns.map(c => c.id || c.data)))
 
+  this.autorun(() => {
+    const data = Template.currentData();
+    if (JSON.stringify(Tracker.nonreactive(() => this.order.get())) !== JSON.stringify(data.aspects)) {
+      this.order.set(data.aspects);
+      // filters all open tables that are in the group
+      const tableTemplateInstance = Blaze.getView(this.$("table")[0]).templateInstance();
+      const query = Tracker.nonreactive(() => tableTemplateInstance.query.get());
+
+      // transforms order - [{}, {}] into one object with all keys and values
+      const sortifyOrder = (order, sort = {}) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
+      const newSorts = sortifyOrder(data.aspects.map(a => ({ [a.id || a.data]: a.order === "asc" ? 1 : -1 })));
+      query.options.sort = newSorts;
+      tableTemplateInstance.query.dep.changed();
+
+    }
+  });
 
   // let stop = false;
   // if (this.data.custom) {

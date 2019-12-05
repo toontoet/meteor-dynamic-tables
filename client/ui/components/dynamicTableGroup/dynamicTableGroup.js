@@ -115,9 +115,9 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.distinctValues = getDistinctValuesCollection(this.data.customTableSpec.table.collection._connection);
   this.custom = new ReactiveVar();
 
-  this.currentOrder = this.data.aspects;
   this.grouping = this.data.groupableFields.find(gf => gf.field === _.first(this.data.groupChain));
   this.groupChain = new ReactiveVar(_.rest(this.data.groupChain));
+  this.aspects = new ReactiveVar(this.data.aspects);
   this.nestedGrouping = new ReactiveDict();
   this.nestedOrder = new ReactiveDict();
   this.nestedColumns = new ReactiveDict();
@@ -126,12 +126,16 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   const groupChain = new ReactiveVar(this.data.groupChain);
   this.autorun(() => {
     const data = Template.currentData();
+    if (JSON.stringify(Tracker.nonreactive(() => this.aspects.get())) !== JSON.stringify(data.aspects)) {
+      console.log("Got new aspects");
+      this.aspects.set(data.aspects);
+    }
     if (JSON.stringify(Tracker.nonreactive(() => groupChain.get())) !== JSON.stringify(data.groupChain)) {
       groupChain.set(data.groupChain);
       this.groupChain.set(_.rest(data.groupChain));
       this.grouping = data.groupableFields.find(gf => gf.field === _.first(data.groupChain));
     }
-  })
+  });
 
   // TODO: remove it becaus get getCustom twice
   getCustom(this.data.customTableSpec.custom, this.data.tableId, (custom) => {
@@ -194,7 +198,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           // const columns = custom.columns || this.customTableSpec.table.columns || this.customTableSpec.columns().filter(c => c.default);
           if (custom.columns) {
             this.nestedColumns.set(nestedTableId, custom.columns);
-          } 
+          }
           else if (! this.data.columns) {
             const defaultColumns = JSON.parse(JSON.stringify(this.data.customTableSpec.columns().filter(c => c.default).map(c => ({ data: c.data, id: data.id }))))
             this.nestedColumns.set(nestedTableId, defaultColumns)
@@ -208,7 +212,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
             if (custom.groupChainFields) {
               this.nestedGrouping.set(nestedTableId, custom.groupChainFields);
             }
-            if (custom.order) {
+            if (custom.order && custom.order.length) {
               this.nestedOrder.set(nestedTableId, custom.order);
             }
           }
@@ -395,13 +399,15 @@ Template.dynamicTableGroup.helpers({
   },
   table(value, newSelector) {
     const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
+    const nesteOrder = Template.instance().nestedOrder.get(tableId);
+    const ownOrder = Template.instance().aspects.get();
     return _.extend(
       {},
       this.customTableSpec,
       {
         selector: newSelector,
         id: tableId,
-        aspects: Template.instance().nestedOrder.get(tableId) || this.aspects,
+        aspects: nesteOrder || ownOrder,
         selectedColumns: Template.instance().nestedColumns.get(tableId) || this.columns
       }
     );
@@ -463,7 +469,8 @@ Template.dynamicTableGroup.helpers({
   },
   aspects(tableId) {
     const nestedOrder = Template.instance().nestedOrder.get(tableId);
-    return nestedOrder || this.aspects;
+    const ownOrder = Template.instance().aspects.get();
+    return nestedOrder || ownOrder;
   },
   columns(tableId) {
     const nestedColumns = Template.instance().nestedColumns.get(tableId);
@@ -519,26 +526,7 @@ Template.dynamicTableGroup.events({
         availableColumns: templInstance.data.groupableFields,
         aspects: order,
         changeCallback(aspects) {
-          // filters all open tables that are in the group
-          const tables = templInstance.$("table").toArray().filter(t => t.id.indexOf(tableId) === 0);
-          tables.forEach(table => {
-            const tableTemplateInstance = Blaze.getView(table).templateInstance();
-            const query = tableTemplateInstance.query.get();
-
-            // transforms order - [{}, {}] into one object with all keys and values
-            const sortifyOrder = (order, sort = { }) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
-            const currentSorts = sortifyOrder(order.map(a => ({ [a.data]: a.order === "asc" ? 1 : -1 })));
-            // if they are equal, but table sort is custom
-            //          ?
-            //
-            if (_.isEqual(currentSorts, query.options.sort)) {
-              const newSorts = sortifyOrder(aspects.map(a => ({ [a.data]: a.order === "asc" ? 1 : -1 })));
-              query.options.sort = newSorts;
-            }
-
-            tableTemplateInstance.query.dep.changed();
-          })
-          order = aspects;
+          templInstance.nestedOrder.set(tableId, aspects);
           changed(templInstance.data.customTableSpec.custom, tableId, { newOrder: aspects });
         }
       }
