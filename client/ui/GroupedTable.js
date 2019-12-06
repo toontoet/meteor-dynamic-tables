@@ -135,7 +135,7 @@ Template.GroupedTable.helpers({
       this,
       {
         aspects: Template.instance().aspects.get(),
-        selectedColumns: Template.instance().customColumns.get()
+        selectedColumns: Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id }))
       }
     )
   }
@@ -223,8 +223,7 @@ Template.GroupedTable.events({
         }
         changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns, unset: unsetField });
         templInstance.customColumns.set(columns);
-        manageColumnsOptions.customColumns = columns;
-
+        manageColumnsOptions.selectedColumns = columns;
         $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageColumnsOptions);
       }
     }, templInstance.data.manageFieldsOptions || {});

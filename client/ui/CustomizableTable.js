@@ -12,7 +12,6 @@ function filterColumns(columns, selectedColumnDataOrIds) {
 }
 
 Template.CustomizableTable.onCreated(function onCreated() {
-  this.selectedColumns = new ReactiveVar([]);
   this.advancedFilter = new ReactiveVar();
   this.limit = new ReactiveVar(this.data.table.pageLength || 25);
   this.skip = new ReactiveVar(0);

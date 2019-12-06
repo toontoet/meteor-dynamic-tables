@@ -559,14 +559,16 @@ Template.dynamicTableGroup.events({
   "click .dynamic-table-manage-controller.columns"(e, templInstance) {
     const target = e.currentTarget;
     const tableId = $(target).attr("data-table-id");
+    const compressedColumns = templInstance.nestedColumns.get(tableId) || templInstance.columns.get();
+    const selectedColumns = _.compact(compressedColumns.map(c => _.find(getColumns(templInstance.data.customTableSpec.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data)));
 
     const manageColumnsOptions = _.extend({
       availableColumns: getColumns(templInstance.data.customTableSpec.columns),
-      selectedColumns: templInstance.nestedColumns.get(tableId),
+      selectedColumns: selectedColumns,
       tableData: templInstance.data,
       changeCallback(column, add) {
         let unsetField = false;
-        const columns = templInstance.nestedColumns.get(tableId);
+        const columns = compressedColumns;
         if (add) {
           columns.push(column);
         }
@@ -602,7 +604,7 @@ Template.dynamicTableGroup.events({
         }
         changed(templInstance.data.customTableSpec.custom, tableId, { newColumns: columns, unset: unsetField });
         templInstance.nestedColumns.set(tableId, columns);
-        manageColumnsOptions.customColumns = columns;
+        manageColumnsOptions.selectedColumns= columns;
 
         $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageColumnsOptions);
       }
