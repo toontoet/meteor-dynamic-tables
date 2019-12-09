@@ -6,20 +6,17 @@
       vertical-align: middle;
       line-height: 20px;
     }
-    .grouped-table-manage-controller.active {
-      color: #3599cc;
-    }
   </style>
   <div style="height: 40px;">
     <div class="pull-right">
       <span class="aspects grouped-table-manage-controller {{#if aspects}} active {{/if}}">
         <i class="fa fa-sort"></i> Sort
       </span>
-      <span class="groups grouped-table-manage-controller {{#if aGroupChain}} active {{/if}}">
-        <i class="fa fa-th-list"></i> Group
-      </span>
       <span class="columns grouped-table-manage-controller">
         <i class="fa fa-eye-slash"></i> Hide/Show Columns
+      </span>
+      <span class="groups grouped-table-manage-controller {{#if aGroupChain}} active {{/if}}">
+        <i class="fa fa-th-list"></i> Group
       </span>
     </div>
   </div>
@@ -36,6 +33,7 @@
       lazy=lazy
       customTableSpec=customTableSpec
       groupableFields=groupableFields
+      advanced=advanced
       selector=selector
       tableId=tableId
 

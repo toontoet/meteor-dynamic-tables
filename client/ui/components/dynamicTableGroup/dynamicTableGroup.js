@@ -441,14 +441,8 @@ Template.dynamicTableGroup.helpers({
     const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
     return tableId;
   },
-  advanced(option) {
-    const advanced = {
-      ordering: true,
-      grouping: true,
-      columning: true
-    }
-
-    return advanced[option];
+  advancedControl(option) {
+    return this.advanced[option];
   },
   groupChain(tableId) {
     const data = Template.currentData();
