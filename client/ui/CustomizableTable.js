@@ -22,7 +22,8 @@ Template.CustomizableTable.onCreated(function onCreated() {
     changed(this.data.custom, this.data.id, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
   };
   this.order = new ReactiveVar(this.data.aspects)
-  this.selectedColumns = new ReactiveVar(filterColumns(getColumns(this.data.columns), this.data.selectedColumns.map(c => c.id || c.data)));
+  const columns = this.data.selectedColumns || this.data.table.columns || getColumns(this.data.columns);
+  this.selectedColumns = new ReactiveVar(filterColumns(getColumns(this.data.columns), columns.map(c => c.id || c.data)));
 
   this.autorun(() => {
     const data = Template.currentData();
@@ -42,9 +43,10 @@ Template.CustomizableTable.onCreated(function onCreated() {
 
     // refreshes table when columns has been changed
     const currentColumns = Tracker.nonreactive(() => this.selectedColumns.get()).map(c => ({ data: c.data, id: c.id }));
-    if (JSON.stringify(currentColumns) !== JSON.stringify(data.selectedColumns)) {
+    const newColumns = (data.selectedColumns || data.table.columns || getColumns(data.columns)).map(c => ({ data: c.data, id: c.id }));
+    if (JSON.stringify(currentColumns) !== JSON.stringify(newColumns)) {
       const tableTemplateInstance = Blaze.getView(this.$("table")[0]).templateInstance();
-      const newColumns = filterColumns(getColumns(data.columns), data.selectedColumns.map(c => c.id || c.data));
+      const columns = filterColumns(getColumns(data.columns), newColumns.map(c => c.id || c.data));
       this.selectedColumns.set(newColumns);
       tableTemplateInstance.columns = newColumns;
       tableTemplateInstance.query.dep.changed();
