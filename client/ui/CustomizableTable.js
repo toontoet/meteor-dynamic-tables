@@ -162,19 +162,28 @@ Template.CustomizableTable.helpers({
 
 
 Template.CustomizableTable.events({
-  "click a.clear-fields"(e, templInstance) {
-    e.preventDefault();
-    templInstance.selectedColumns.set(templInstance.data.table ? templInstance.data.table.columns : getColumns(templInstance.data.columns));
-    templInstance.advancedFilter.set(undefined);
-    templInstance.order.set(undefined);
-  },
-  "click a.clear-filters"(e, templInstance) {
-    e.preventDefault();
-    const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
-    tableTemplateInstance.advancedSearch.set({});
-    changed(templInstance.data.custom, templInstance.data.id, { newColumns: templInstance.selectedColumns.get(), unset: "all" });
-    tableTemplateInstance.query.dep.changed();
-  },
+  /********************************************************************
+  *                                                                   *
+  *   TO BE REMOVED                                                   *
+  *     Could not find where these events are triggered.              *
+  *                                                                   *
+  *********************************************************************/
+  
+  // "click a.clear-fields"(e, templInstance) {
+  //   console.log("click a.clear-fields")
+  //   e.preventDefault();
+  //   templInstance.selectedColumns.set(templInstance.data.table ? templInstance.data.table.columns : getColumns(templInstance.data.columns));
+  //   templInstance.advancedFilter.set(undefined);
+  //   templInstance.order.set(undefined);
+  // },
+  // "click a.clear-filters"(e, templInstance) {
+  //   console.log("click a.clear-filters")
+  //   e.preventDefault();
+  //   const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
+  //   tableTemplateInstance.advancedSearch.set({});
+  //   changed(templInstance.data.custom, templInstance.data.id, { newColumns: templInstance.selectedColumns.get(), unset: "all" });
+  //   tableTemplateInstance.query.dep.changed();
+  // },
   // "click a.manage-fields"(e, templInstance) {
   //   e.preventDefault();
   //   const manageFieldsOptions = _.extend({
@@ -269,17 +278,18 @@ Template.CustomizableTable.events({
   //     div.css("left", (bounds.left - (tooFar + 5)) + "px");
   //   }
   // },
-  "click a.add-column"(e, templInstance) {
-    e.preventDefault();
-    const columns = templInstance.selectedColumns.get();
-    const columnData = $(e.currentTarget).data("column");
-    const column = _.findWhere(columns, { data: columnData });
-    if (column) {
-      columns.splice(columns.indexOf(column), 1);
-    }
-    else {
-      columns.push(_.findWhere(getColumns(templInstance.data.columns), { data: columnData }));
-    }
-    templInstance.selectedColumns.set(columns);
-  }
+  // "click a.add-column"(e, templInstance) {
+  //   console.log("click a.add-column")
+  //   e.preventDefault();
+  //   const columns = templInstance.selectedColumns.get();
+  //   const columnData = $(e.currentTarget).data("column");
+  //   const column = _.findWhere(columns, { data: columnData });
+  //   if (column) {
+  //     columns.splice(columns.indexOf(column), 1);
+  //   }
+  //   else {
+  //     columns.push(_.findWhere(getColumns(templInstance.data.columns), { data: columnData }));
+  //   }
+  //   templInstance.selectedColumns.set(columns);
+  // }
 });

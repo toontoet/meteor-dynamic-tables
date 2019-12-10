@@ -95,7 +95,9 @@ function getUncategorized(current, values) {
 function processDistinctValues(current, distinctValues) {
   const asyncValues = current.transformDistinctValues ? current.transformDistinctValues(distinctValues) : distinctValues.map(v => ({ label: v, query: v }));
   const uncategorized = getUncategorized(current, asyncValues);
-  asyncValues.push(uncategorized);
+  if (uncategorized) {
+    asyncValues.push(uncategorized);
+  }
   const values = asyncValues.map(v => _.extend(v, { _id: JSON.stringify(v.selector || v.query) }));
   values.forEach((val) => {
     if (!val._id) {
@@ -115,15 +117,16 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.distinctValues = getDistinctValuesCollection(this.data.customTableSpec.table.collection._connection);
   this.custom = new ReactiveVar();
 
-  this.grouping = this.data.groupableFields.find(gf => gf.field === _.first(this.data.groupChain));
-  this.groupChain = new ReactiveVar(_.rest(this.data.groupChain));
-  this.aspects = new ReactiveVar(this.data.aspects);
-  this.columns = new ReactiveVar(this.data.columns);
-  this.nestedGrouping = new ReactiveDict();
-  this.nestedOrder = new ReactiveDict();
-  this.nestedColumns = new ReactiveDict();
+  this.grouping = this.data.groupableFields.find(gf => gf.field === _.first(this.data.groupChain)); // the critirea which current group was grouped by
+  this.groupChain = new ReactiveVar(_.rest(this.data.groupChain)); // inherited groupchain excluding current grouping
+  this.aspects = new ReactiveVar(this.data.aspects); // current ordering
+  this.columns = new ReactiveVar(this.data.columns); // current columns
 
-  // reactivity to refresh tables when goups are changed
+  this.nestedGrouping = new ReactiveDict(); // set of groupchains for nested tables
+  this.nestedOrder = new ReactiveDict();    // set of orders for nested tables
+  this.nestedColumns = new ReactiveDict();  // set of columns for nested tables
+
+  // reactivity to refresh tables when goups/aspects/columns are changed
   const groupChain = new ReactiveVar(this.data.groupChain);
   this.autorun(() => {
     const data = Template.currentData();
@@ -140,7 +143,12 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     }
   });
 
-  // TODO: remove it becaus get getCustom twice
+  /****************************************************************
+  * TODO:                                                         *
+  *   To be removed. GroupedTable gets root custom and            *
+  *   dynamicTableGroup gets custom of each nested table/group.   *
+  *   We can just pass it to the kid.                             *
+  *****************************************************************/
   getCustom(this.data.customTableSpec.custom, this.data.tableId, (custom) => {
     this.custom.set(custom);
   });
@@ -156,7 +164,9 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     if (current.values) {
       const values = (_.isArray(current.values) ? current.values : current.values(data.selector)).slice(0);
       const uncategorized = getUncategorized(current, values);
-      values.push(uncategorized);
+      if (uncategorized) {
+        values.push(uncategorized);
+      }
 
       values.forEach((val) => {
         if (!val._id) {
@@ -206,11 +216,11 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
             const defaultColumns = JSON.parse(JSON.stringify(this.data.customTableSpec.columns().filter(c => c.default).map(c => ({ data: c.data, id: c.id }))));
             this.nestedColumns.set(nestedTableId, defaultColumns);
           }
-          /*------------------------------------------------------
-          / FIX ME!
-          /   Need to find way to identify if custom is received
-          /   from nested table or parent
-          /*-----------------------------------------------------*/
+          /**********************************************************
+          * FIX ME!                                                 *
+          *   Need to find a way to identify if custom is received  *
+          *   from nested table or parent/root                      *
+          ***********************************************************/
           if (! custom.tableId) {
             if (custom.groupChainFields) {
               this.nestedGrouping.set(nestedTableId, custom.groupChainFields);
@@ -413,9 +423,6 @@ Template.dynamicTableGroup.helpers({
       }
     );
   },
-  lastLevel() {
-    return !Template.instance().groupChain.get().length;
-  },
   currentGroupLabel() {
     return Template.instance().grouping.label;
   },
@@ -445,7 +452,6 @@ Template.dynamicTableGroup.helpers({
     return this.advanced[option];
   },
   groupChain(tableId) {
-    const data = Template.currentData();
     const nestedGroupChain = Template.instance().nestedGrouping.get(tableId) || [];
     const groupChain = nestedGroupChain.length ? nestedGroupChain : Template.instance().groupChain.get();
     return groupChain;
@@ -576,24 +582,6 @@ Template.dynamicTableGroup.events({
           if (!actualColumn) {
             return;
           }
-          /*
-          HOW ?
-          */
-          // if (! templInstance.nestedGrouping.get()) {
-          //   const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
-          //   const search = tableTemplateInstance.advancedSearch.get();
-          //   if (actualColumn.sortField || actualColumn.sortableField) {
-          //     delete search[actualColumn.sortableField];
-          //     delete search[actualColumn.sortField];
-          //     unsetField = actualColumn.sortField || actualColumn.sortableField;
-          //   }
-          //   else {
-          //     unsetField = actualColumn.data;
-          //     delete search[actualColumn.data];
-          //   }
-          //   tableTemplateInstance.advancedSearch.set(search);
-          //   tableTemplateInstance.query.dep.changed();
-          // }
           columns.splice(columns.indexOf(actualColumn), 1);
         }
         changed(templInstance.data.customTableSpec.custom, tableId, { newColumns: columns, unset: unsetField });

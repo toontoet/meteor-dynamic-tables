@@ -24,8 +24,8 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.customTableSpec = this.data;
   this.search = new ReactiveVar();
   this.customColumns = new ReactiveVar([]);
-  this.groupChain = new ReactiveVar(this.data.defaultGrouping);
-  this.aspects = new ReactiveVar(this.data.defaultOrder);
+  this.groupChain = new ReactiveVar(this.data.defaultGrouping || []);
+  this.aspects = new ReactiveVar(this.data.defaultOrder || []);
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());
   }, 1000);
@@ -40,7 +40,7 @@ Template.GroupedTable.onCreated(function onCreated() {
 
   this.autorun(() => {
     id.get();
-    getCustom(this.data.custom, this.data.id, (custom) => {
+    const stop = getCustom(this.data.custom, this.data.id, (custom) => {
       const columns = custom.columns || this.data.table.columns || this.data.columns().filter(c => c.default);
       this.customColumns.set(_.compact(columns.map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
       if (custom.order) {
@@ -50,6 +50,10 @@ Template.GroupedTable.onCreated(function onCreated() {
         this.groupChain.set(custom.groupChainFields);
       }
     });
+    if (! stop) {
+      const columns = this.data.table.columns || this.data.columns().filter(c => c.default);
+      this.customColumns.set(_.compact(columns.map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
+    }
   });
 
   this.documentMouseDown = (e) => {
