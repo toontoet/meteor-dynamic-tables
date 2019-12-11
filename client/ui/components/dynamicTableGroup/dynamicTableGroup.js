@@ -427,7 +427,19 @@ Template.dynamicTableGroup.helpers({
     return Template.instance().grouping.label;
   },
   currentGroupValues() {
-    return Template.instance().values.get();
+    const templInstance = Template.instance();
+    const order = templInstance.aspects.get()[0] || {};
+    const grouping = templInstance.grouping;
+    const values = templInstance.values.get();
+
+    if (grouping.field === order.data && values.length) {
+      const uncategorized = _.last(values);
+      const sortable = _.without(values, uncategorized);
+      const operator = order.order === "desc" ? -1 : 1;
+      // if we sure that values are sorted by default then sort function may be replaced with .reversed.
+      return _.union(sortable.sort((a, b) => a.label > b.label ? operator : b.label > a.label ? -1 * operator : 0), uncategorized);
+    }
+    return values;
   },
   tableIdSuffixChain(value) {
     const current = Template.instance().grouping;
