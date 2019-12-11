@@ -36,7 +36,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
 
       // transforms order - [{}, {}] into one object with all keys and values
       const sortifyOrder = (order, sort = {}) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
-      const newSorts = sortifyOrder(data.aspects.map(a => ({ [a.id || a.data]: a.order === "asc" ? 1 : -1 })));
+      const newSorts = sortifyOrder(data.aspects.map(a => ({ [a.data || a.id]: a.order === "asc" ? 1 : -1 })));
       query.options.sort = newSorts;
       tableTemplateInstance.query.dep.changed();
     }

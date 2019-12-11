@@ -244,7 +244,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       const loading = Tracker.nonreactive(() => this.loading.get());
       delete loading.distinctValues;
       this.loading.set(loading);
-      const distinctValues = (this.distinctValues.findOne({ _id: data.tabelId + getTableIdSuffix.call(this) }) || { groups: [] }).groups.map(v => v.value);
+      const distinctValues = (this.distinctValues.findOne({ _id: data.tableId + getTableIdSuffix.call(this) }) || { groups: [] }).groups.map(v => v.value);
       processDistinctValues.call(this, current, distinctValues);
     }
   });
