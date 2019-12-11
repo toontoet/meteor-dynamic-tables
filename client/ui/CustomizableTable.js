@@ -47,8 +47,8 @@ Template.CustomizableTable.onCreated(function onCreated() {
     if (JSON.stringify(currentColumns) !== JSON.stringify(newColumns)) {
       const tableTemplateInstance = Blaze.getView(this.$("table")[0]).templateInstance();
       const columns = filterColumns(getColumns(data.columns), newColumns.map(c => c.id || c.data));
-      this.selectedColumns.set(newColumns);
-      tableTemplateInstance.columns = newColumns;
+      this.selectedColumns.set(columns);
+      tableTemplateInstance.columns = columns;
       tableTemplateInstance.query.dep.changed();
     }
   });
