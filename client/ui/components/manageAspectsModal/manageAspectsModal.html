@@ -20,12 +20,12 @@
           {{#each group in groups}}
             <optgroup label="{{group.title}}">
               {{#each field in group.columns}}
-                <option value="{{field.field}}" {{selected field aspect}}>{{label field}}</option>
+                <option value="{{field.data}}" {{selected field aspect}}>{{label field}}</option>
               {{/each}}
             </optgroup>
           {{/each}}
           {{#each field in ungroupedColumns}}
-            <option value="{{field.field}}" {{selected field aspect}}>{{label field}}</option>
+            <option value="{{field.data}}" {{selected field aspect}}>{{label field}}</option>
           {{/each}}
         </select>
         <button id="btn-asc-{{@index}}" data-index="{{@index}}" class="btn order asc {{activeOrder 'asc' @index}}">A-Z</button>

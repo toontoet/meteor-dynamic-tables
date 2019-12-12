@@ -25,7 +25,7 @@ Template.dynamicTableManageAspectsModal.helpers({
     return aspects.length ? aspects : [{ order: "asc" }];
   },
   selected(field, selectedField) {
-    return field.field === selectedField.data ? { selected: "selected" } : {};
+    return field.data === selectedField.data ? { selected: "selected" } : {};
   },
   availableColumns() {
     const availableColumns = Template.instance().data.availableColumns;
@@ -78,13 +78,17 @@ Template.dynamicTableManageAspectsModal.events({
     if (! aspects[index]) {
       aspects[index] = { order: "asc" };
     }
+
     const data = target.val();
     if (data) {
-      aspects[index].data = data;
+      const column = _.find(this.availableColumns, c => c.data === data);
+      aspects[index].data = column.data;
+      aspects[index].id = column.id; // not sure if id is needed
     }
     else {
       aspects.splice(index, 1);
     }
+
     templInstance.updateOrder(aspects);
   },
   "click .add-aspect"(e, templInstance) {

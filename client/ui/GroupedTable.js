@@ -171,13 +171,12 @@ Template.GroupedTable.events({
     createModal(e.currentTarget, modalMeta, templInstance);
   },
   "click span.grouped-table-manage-controller.aspects"(e, templInstance) {
-    let order = templInstance.aspects.get();
     const modalMeta = {
       template: Template.dynamicTableManageAspectsModal,
       id: "dynamic-table-manage-aspects-modal",
       options: {
-        availableColumns: templInstance.data.groupableFields,
-        aspects: order,
+        availableColumns: getColumns(this.columns).filter(c => c.sortable !== false),
+        aspects: templInstance.aspects.get(),
         changeCallback(aspects) {
           templInstance.aspects.set(aspects);
           changed(templInstance.data.custom, templInstance.data.id, { newOrder: aspects });

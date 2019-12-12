@@ -537,10 +537,15 @@ Template.dynamicTableGroup.events({
       template: Template.dynamicTableManageAspectsModal,
       id: "dynamic-table-manage-aspects-modal",
       options: {
-        availableColumns: templInstance.data.groupableFields,
+        availableColumns: getColumns(templInstance.data.customTableSpec.columns).filter(c => c.sortable !== false),
         aspects: order,
         changeCallback(aspects) {
-          templInstance.nestedOrder.set(tableId, aspects);
+          if (aspects.length) {
+            templInstance.nestedOrder.set(tableId, aspects);
+          }
+          else {
+            templInstance.nestedOrder.delete(tableId);
+          }
           changed(templInstance.data.customTableSpec.custom, tableId, { newOrder: aspects });
         }
       }

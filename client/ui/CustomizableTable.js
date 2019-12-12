@@ -30,7 +30,6 @@ Template.CustomizableTable.onCreated(function onCreated() {
     // refreshes table when order has been changed
     if (JSON.stringify(Tracker.nonreactive(() => this.order.get())) !== JSON.stringify(data.aspects)) {
       this.order.set(data.aspects);
-      // filters all open tables that are in the group
       const tableTemplateInstance = Blaze.getView(this.$("table")[0]).templateInstance();
       const query = Tracker.nonreactive(() => tableTemplateInstance.query.get());
 
@@ -126,8 +125,7 @@ Template.CustomizableTable.helpers({
     table.pageNumber = tmplInstance.skip.get() / table.pageLength;
     if (customOrder) {
       table.order = customOrder.map((o) => {
-        // TO BE FIXED
-        const column = _.find(table.columns, c => (o.id ? c.id === o.id : c.data === o.data.split(".searchableValue")[0]));
+        const column = _.find(table.columns, c => (o.id ? c.id === o.id : c.data === o.data));
         return [
           table.columns.indexOf(column),
           o.order
