@@ -94,11 +94,10 @@ function CSVLineFromDocument(doc, exportOptions, columns, fieldNames, selector) 
 
 Template.dynamicTableExportModal.helpers({
   allAvailable() {
-      if (Template.instance().data.tableId === "statable-players-table") {
-        return false;
-      } else {
-        return true;
+      if (typeof Template.instance().data.allAvailableForExport !== "undefined") {
+        return Template.instance().data.allAvailableForExport;
       }
+      return true;
   },
   isEven(index) {
     return index % 2 === 0;
@@ -188,7 +187,7 @@ Template.dynamicTableExportModal.events({
     } else {
       options.sort = {"_id": 1}; // If not just returning visible but all, enforce sort by id
     }
-    if (templateInstance.data.tableId === "statable-players-table") {
+    if (templateInstance.data.allAvailableForExport === false) {
       options.limit = data.limit;
       options.skip = data.skip;
       options.sort =  data.sort;  // If only returning visible records then use current sort by name
