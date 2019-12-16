@@ -8,22 +8,30 @@
     }
   </style>
   <div style="height: 40px;">
+    <div class="pull-left">
+      {{#if searching}}
+        <input type="text" placeholder="Search..." class="dynamic-table-global-search" />
+      {{/if}}
+    </div>
     <div class="pull-right">
-      <span class="aspects grouped-table-manage-controller {{#if aspects}} active {{/if}}">
-        <i class="fa fa-sort"></i> Sort
-      </span>
-      <span class="columns grouped-table-manage-controller">
-        <i class="fa fa-eye-slash"></i> Hide/Show Columns
-      </span>
-      <span class="groups grouped-table-manage-controller {{#if aGroupChain}} active {{/if}}">
-        <i class="fa fa-th-list"></i> Group
-      </span>
+      {{#if advanced.ordering.root}}
+        <span class="aspects grouped-table-manage-controller {{#if aspects}} active {{/if}}">
+          <i class="fa fa-sort"></i> Sort
+        </span>
+      {{/if}}
+      {{#if advanced.columning.root}}
+        <span class="columns grouped-table-manage-controller">
+          <i class="fa fa-eye-slash"></i> Hide/Show Columns
+        </span>
+      {{/if}}
+      {{#if advanced.grouping.root}}
+        <span class="groups grouped-table-manage-controller {{#if aGroupChain}} active {{/if}}">
+          <i class="fa fa-th-list"></i> Group
+        </span>
+      {{/if}}
     </div>
   </div>
   {{#if aGroupChain}}
-    {{#if searching}}
-      <input type="text" placeholder="Search..." class="dynamic-table-global-search" />
-    {{/if}}
     {{> dynamicTableGroup
       forceRefresh=forceRefresh
       showPrefix=showPrefix

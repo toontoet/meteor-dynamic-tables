@@ -461,7 +461,12 @@ Template.dynamicTableGroup.helpers({
     return tableId;
   },
   advancedControl(option) {
-    return this.advanced[option];
+    if (Template.instance().groupChain.get().length) {
+      return this.advanced[option].branch
+    }
+    else {
+      return this.advanced[option].leaf;
+    }
   },
   groupChain(tableId) {
     const nestedGroupChain = Template.instance().nestedGrouping.get(tableId) || [];
