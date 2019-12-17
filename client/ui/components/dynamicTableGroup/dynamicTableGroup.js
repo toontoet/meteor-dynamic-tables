@@ -432,7 +432,7 @@ Template.dynamicTableGroup.helpers({
     const grouping = templInstance.grouping;
     const values = templInstance.values.get();
 
-    if (grouping.field === order.data && values.length) {
+    if (grouping.field === order.data || grouping.valuesField === order.data && values.length) {
       const uncategorized = _.last(values);
       const sortable = _.without(values, uncategorized);
       const operator = order.order === "desc" ? -1 : 1;
