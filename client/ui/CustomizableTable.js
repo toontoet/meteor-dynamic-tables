@@ -52,35 +52,37 @@ Template.CustomizableTable.onCreated(function onCreated() {
     }
   });
 
-  // let stop = false;
-  // if (this.data.custom) {
-  //   stop = getCustom(this.data.custom, this.data.id, (custom) => {
-  //     if (custom.columns && custom.columns.length) {
-  //       const availableColumns = getColumns(this.data.columns);
-  //       custom.columns = mergeRequiredColumns(custom.columns, availableColumns);
-  //     }
-  //     const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
-  //     this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columnsToUse.map(c => c.id || c.data)));
-  //     this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
-  //     const oldOrder = Tracker.nonreactive(() => this.order.get());
-  //     // debugger
-  //     if (custom.order && EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
-  //       this.order.set(custom.order);
-  //     }
-  //     if (Tracker.nonreactive(() => this.limit.get()) !== (custom.limit || this.data.table.pageLength || 25)) {
-  //       this.limit.set(custom.limit || this.data.table.pageLength || 25);
-  //     }
-  //     if (Tracker.nonreactive(() => this.skip.get()) !== (custom.skip || 0)) {
-  //       this.skip.set(custom.skip || 0);
-  //     }
-  //   });
-  // }
-  // if (!stop && this.data.table.columns) {
-  //   this.selectedColumns.set(this.data.table.columns);
-  // }
-  // else if (!stop) {
-  //   this.selectedColumns.set(getColumns(this.data.columns));
-  // }
+  if (! this.data.hasContext) {
+    let stop = false;
+    if (this.data.custom) {
+      stop = getCustom(this.data.custom, this.data.id, (custom) => {
+        if (custom.columns && custom.columns.length) {
+          const availableColumns = getColumns(this.data.columns);
+          custom.columns = mergeRequiredColumns(custom.columns, availableColumns);
+        }
+        const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
+        this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columnsToUse.map(c => c.id || c.data)));
+        this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
+        const oldOrder = Tracker.nonreactive(() => this.order.get());
+        // debugger
+        if (custom.order && EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
+          this.order.set(custom.order);
+        }
+        if (Tracker.nonreactive(() => this.limit.get()) !== (custom.limit || this.data.table.pageLength || 25)) {
+          this.limit.set(custom.limit || this.data.table.pageLength || 25);
+        }
+        if (Tracker.nonreactive(() => this.skip.get()) !== (custom.skip || 0)) {
+          this.skip.set(custom.skip || 0);
+        }
+      });
+    }
+    if (!stop && this.data.table.columns) {
+      this.selectedColumns.set(this.data.table.columns);
+    }
+    else if (!stop) {
+      this.selectedColumns.set(getColumns(this.data.columns));
+    }
+  }
 });
 
 Template.CustomizableTable.helpers({
@@ -162,134 +164,98 @@ Template.CustomizableTable.helpers({
 
 
 Template.CustomizableTable.events({
-  /********************************************************************
-  *                                                                   *
-  *   TO BE REMOVED                                                   *
-  *     Could not find where these events are triggered.              *
-  *                                                                   *
-  *********************************************************************/
-  
-  // "click a.clear-fields"(e, templInstance) {
-  //   console.log("click a.clear-fields")
-  //   e.preventDefault();
-  //   templInstance.selectedColumns.set(templInstance.data.table ? templInstance.data.table.columns : getColumns(templInstance.data.columns));
-  //   templInstance.advancedFilter.set(undefined);
-  //   templInstance.order.set(undefined);
-  // },
-  // "click a.clear-filters"(e, templInstance) {
-  //   console.log("click a.clear-filters")
-  //   e.preventDefault();
-  //   const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
-  //   tableTemplateInstance.advancedSearch.set({});
-  //   changed(templInstance.data.custom, templInstance.data.id, { newColumns: templInstance.selectedColumns.get(), unset: "all" });
-  //   tableTemplateInstance.query.dep.changed();
-  // },
-  // "click a.manage-fields"(e, templInstance) {
-  //   e.preventDefault();
-  //   const manageFieldsOptions = _.extend({
-  //     availableColumns: getColumns(templInstance.data.columns),
-  //     selectedColumns: templInstance.selectedColumns.get(),
-  //     tableData: templInstance.data,
-  //     changeCallback(column, add) {
-  //       let unsetField = false;
-  //       const columns = templInstance.selectedColumns.get();
-  //       if (add) {
-  //         columns.push(column);
-  //       }
-  //       else {
-  //         const actualColumn = columns.find((col) => {
-  //           if (column.id) {
-  //             return column.id === col.id;
-  //           }
-  //           return column.data === col.data;
-  //         });
-  //         if (!actualColumn) {
-  //           return;
-  //         }
-  //         const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
-  //         const search = tableTemplateInstance.advancedSearch.get();
-  //         if (actualColumn.sortField || actualColumn.sortableField) {
-  //           delete search[actualColumn.sortableField];
-  //           delete search[actualColumn.sortField];
-  //           unsetField = actualColumn.sortField || actualColumn.sortableField;
-  //         }
-  //         else {
-  //           unsetField = actualColumn.data;
-  //           delete search[actualColumn.data];
-  //         }
-  //         tableTemplateInstance.advancedSearch.set(search);
-  //         tableTemplateInstance.query.dep.changed();
-  //         columns.splice(columns.indexOf(actualColumn), 1);
-  //       }
-  //       changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns, unset: unsetField });
-  //       templInstance.selectedColumns.set(columns);
-  //       manageFieldsOptions.selectedColumns = columns;
+  "click a.manage-fields"(e, templInstance) {
+    e.preventDefault();
+    const manageFieldsOptions = _.extend({
+      availableColumns: getColumns(templInstance.data.columns),
+      selectedColumns: templInstance.selectedColumns.get(),
+      tableData: templInstance.data,
+      changeCallback(column, add) {
+        let unsetField = false;
+        const columns = templInstance.selectedColumns.get();
+        if (add) {
+          columns.push(column);
+        }
+        else {
+          const actualColumn = columns.find((col) => {
+            if (column.id) {
+              return column.id === col.id;
+            }
+            return column.data === col.data;
+          });
+          if (!actualColumn) {
+            return;
+          }
+          const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
+          const search = tableTemplateInstance.advancedSearch.get();
+          if (actualColumn.sortField || actualColumn.sortableField) {
+            delete search[actualColumn.sortableField];
+            delete search[actualColumn.sortField];
+            unsetField = actualColumn.sortField || actualColumn.sortableField;
+          }
+          else {
+            unsetField = actualColumn.data;
+            delete search[actualColumn.data];
+          }
+          tableTemplateInstance.advancedSearch.set(search);
+          tableTemplateInstance.query.dep.changed();
+          columns.splice(columns.indexOf(actualColumn), 1);
+        }
+        changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns, unset: unsetField });
+        templInstance.selectedColumns.set(columns);
+        manageFieldsOptions.selectedColumns = columns;
 
-  //       $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageFieldsOptions);
-  //     }
-  //   }, templInstance.data.manageFieldsOptions || {});
-  //   if (manageFieldsOptions.edit) {
-  //     manageFieldsOptions.edit.addedCallback = (columnSpec) => {
-  //       if (!_.isFunction(templInstance.data.columns)) {
-  //         templInstance.data.columns.push(columnSpec);
-  //       }
-  //       manageFieldsOptions.changeCallback(columnSpec, true);
-  //     };
-  //     manageFieldsOptions.edit.editedCallback = (columnSpec, prevColumnSpec) => {
-  //       if (!_.isFunction(templInstance.data.columns)) {
-  //         const realColumn = templInstance.data.columns.find(c => (columnSpec.id ? c.id === columnSpec.id : c.data === columnSpec.data));
-  //         templInstance.data.columns.splice(templInstance.data.columns.indexOf(realColumn), 1, columnSpec);
-  //       }
-  //       const columns = templInstance.$("table").dataTable().api().context[0].aoColumns;
-  //       const actualColumn = columns.find(c => (columnSpec.id ? c.id === columnSpec.id : c.data === columnSpec.data));
-  //       if (actualColumn) {
-  //         if (actualColumn.nTh) {
-  //           actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.split(actualColumn.title).join(columnSpec.title);
-  //         }
-  //         actualColumn.title = columnSpec.label || columnSpec.title;
-  //         if (actualColumn.filterModal && actualColumn.filterModal.field) {
-  //           actualColumn.filterModal.field.label = actualColumn.title;
+        $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageFieldsOptions);
+      }
+    }, templInstance.data.manageFieldsOptions || {});
+    if (manageFieldsOptions.edit) {
+      manageFieldsOptions.edit.addedCallback = (columnSpec) => {
+        if (!_.isFunction(templInstance.data.columns)) {
+          templInstance.data.columns.push(columnSpec);
+        }
+        manageFieldsOptions.changeCallback(columnSpec, true);
+      };
+      manageFieldsOptions.edit.editedCallback = (columnSpec, prevColumnSpec) => {
+        if (!_.isFunction(templInstance.data.columns)) {
+          const realColumn = templInstance.data.columns.find(c => (columnSpec.id ? c.id === columnSpec.id : c.data === columnSpec.data));
+          templInstance.data.columns.splice(templInstance.data.columns.indexOf(realColumn), 1, columnSpec);
+        }
+        const columns = templInstance.$("table").dataTable().api().context[0].aoColumns;
+        const actualColumn = columns.find(c => (columnSpec.id ? c.id === columnSpec.id : c.data === columnSpec.data));
+        if (actualColumn) {
+          if (actualColumn.nTh) {
+            actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.split(actualColumn.title).join(columnSpec.title);
+          }
+          actualColumn.title = columnSpec.label || columnSpec.title;
+          if (actualColumn.filterModal && actualColumn.filterModal.field) {
+            actualColumn.filterModal.field.label = actualColumn.title;
 
-  //           if (actualColumn.filterModal.field.edit && actualColumn.filterModal.field.edit.spec) {
-  //             actualColumn.filterModal.field.edit.spec.label = actualColumn.title;
-  //           }
-  //         }
-  //       }
-  //     };
-  //   }
-  //   const bounds = getPosition(e.currentTarget);
-  //   const div = $("#dynamic-table-manage-fields-modal").length ? $("#dynamic-table-manage-fields-modal") : $("<div>");
-  //   div.attr("id", "dynamic-table-manage-fields-modal")
-  //   .html("")
-  //   .css("position", "absolute")
-  //   .css("top", bounds.top + $(e.currentTarget).height())
-  //   .css("left", bounds.left)
-  //   if (div[0].__blazeTemplate) {
-  //     Blaze.remove(div[0].__blazeTemplate);
-  //   }
-  //   div[0].__blazeTemplate = Blaze.renderWithData(
-  //     Template.dynamicTableManageFieldsModal,
-  //     manageFieldsOptions,
-  //     div[0]
-  //   );
-  //   document.body.appendChild(div[0]);
-  //   const tooFar = (bounds.left + div.width()) - $(window).width();
-  //   if (tooFar > 0) {
-  //     div.css("left", (bounds.left - (tooFar + 5)) + "px");
-  //   }
-  // },
-  // "click a.add-column"(e, templInstance) {
-  //   console.log("click a.add-column")
-  //   e.preventDefault();
-  //   const columns = templInstance.selectedColumns.get();
-  //   const columnData = $(e.currentTarget).data("column");
-  //   const column = _.findWhere(columns, { data: columnData });
-  //   if (column) {
-  //     columns.splice(columns.indexOf(column), 1);
-  //   }
-  //   else {
-  //     columns.push(_.findWhere(getColumns(templInstance.data.columns), { data: columnData }));
-  //   }
-  //   templInstance.selectedColumns.set(columns);
-  // }
+            if (actualColumn.filterModal.field.edit && actualColumn.filterModal.field.edit.spec) {
+              actualColumn.filterModal.field.edit.spec.label = actualColumn.title;
+            }
+          }
+        }
+      };
+    }
+    const bounds = getPosition(e.currentTarget);
+    const div = $("#dynamic-table-manage-fields-modal").length ? $("#dynamic-table-manage-fields-modal") : $("<div>");
+    div.attr("id", "dynamic-table-manage-fields-modal")
+    .html("")
+    .css("position", "absolute")
+    .css("top", bounds.top + $(e.currentTarget).height())
+    .css("left", bounds.left)
+    if (div[0].__blazeTemplate) {
+      Blaze.remove(div[0].__blazeTemplate);
+    }
+    div[0].__blazeTemplate = Blaze.renderWithData(
+      Template.dynamicTableManageFieldsModal,
+      manageFieldsOptions,
+      div[0]
+    );
+    document.body.appendChild(div[0]);
+    const tooFar = (bounds.left + div.width()) - $(window).width();
+    if (tooFar > 0) {
+      div.css("left", (bounds.left - (tooFar + 5)) + "px");
+    }
+  }
 });

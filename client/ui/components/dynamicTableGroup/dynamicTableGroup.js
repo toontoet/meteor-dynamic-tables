@@ -416,6 +416,7 @@ Template.dynamicTableGroup.helpers({
       {},
       this.customTableSpec,
       {
+        hasContext: true,
         selector: newSelector,
         id: tableId,
         aspects: Template.instance().nestedOrder.get(tableId) || Template.instance().aspects.get(),

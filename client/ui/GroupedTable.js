@@ -138,6 +138,7 @@ Template.GroupedTable.helpers({
       {},
       this,
       {
+        hasContext: true,
         aspects: Template.instance().aspects.get(),
         selectedColumns: Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id }))
       }
