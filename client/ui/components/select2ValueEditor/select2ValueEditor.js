@@ -166,6 +166,18 @@ Template.dynamicTableSelect2ValueEditor.helpers({
 });
 
 Template.dynamicTableSelect2ValueEditor.events({
+  "select2:select"(e, templInstance) {
+    if (templInstance.data.maintainSelectedOrder) {
+      let elem = e.target;
+      let id = e.params.data.id;
+      let $elem = $(elem);
+      let chosenOption = $elem.find('[value='+id.replace(".","")+']');
+      chosenOption.detach();
+      $(e.target).append(chosenOption);
+      $(e.target).trigger("change");
+      templInstance.data.editCallback($elem.find(":selected"));
+    }
+  },
   "select2:close select"(e, templInstance) {
     const target = e.currentTarget;
     if (templInstance.waiting) {
@@ -182,6 +194,11 @@ Template.dynamicTableSelect2ValueEditor.events({
   },
   "change"(e, templInstance) {
     const target = e.currentTarget;
+    if (templInstance.data.maintainSelectedOrder) {
+      let elem = e.target;
+      let $elem = $(elem);
+      templInstance.data.editCallback($elem.find(":selected"));
+    }
     if (typeof templInstance.data.triggerEditOnChange !== "undefined"
       && !templInstance.data.triggerEditOnChange
       && typeof templInstance.data.trackOptions !== "undefined"
