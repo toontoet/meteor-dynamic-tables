@@ -125,8 +125,7 @@ function doExport(extraOptions) {
     skip: queryOptions.skip || 0,
     limit: queryOptions.limit,
     sort: queryOptions.sort,
-    columns: this.columns,
-    allAvailableForExport: table.allAvailableForExport
+    columns: this.columns
   }, _.isObject(extraOptions) ? extraOptions : {}));
 }
 
