@@ -8,13 +8,20 @@ import { BlazeComponent } from "meteor/znewsham:blaze-component";
 
 export class ManageColumnsForm extends BlazeComponent {
   static HelperMap() {
+    return [
+      "select2",
+      "selectedIfEquals",
+      "checkedIfTrue",
+      "isDynamicFieldForm",
+      "types",
+      "selectedType"
+    ];
+  }
+
+  static EventMap() {
     return {
-      select2: "select2",
-      selectedIfEquals: "selectedIfEquals",
-      checkedIfTrue: "checkedIfTrue",
-      isDynamicFieldForm: "isDynamicFieldForm",
-      types: "types"
-    }
+      "change .dynamic-table-manage-fields-edit-type": "changeType"
+    };
   }
 
   isDynamicFieldForm() {
@@ -32,6 +39,10 @@ export class ManageColumnsForm extends BlazeComponent {
 
   checkedIfTrue(val) {
     return val || val === 0 ? { checked: "checked" } : {};
+  }
+
+  selectedType() {
+    return this.get("selectedType");
   }
 
   types() {
@@ -63,6 +74,20 @@ export class ManageColumnsForm extends BlazeComponent {
         this.$(".dynamic-table-manage-fields-edit-group").val(data.editableField.groupName).trigger("change");
       }
     }
+  }
+
+  init() {
+    const data = this.nonReactiveData();
+    if (data.editableField && data.editableField.type) {
+      const type = this.types().find(t => t.value === data.editableField.type);
+      this.set("selectedType", type);
+    }
+  }
+
+  changeType(e) {
+    const value = $(e.currentTarget).val();
+    const type = this.types().find(t => t.value === value);
+    this.set("selectedType", type);
   }
 }
 
