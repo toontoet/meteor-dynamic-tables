@@ -216,12 +216,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
             const defaultColumns = JSON.parse(JSON.stringify(this.data.customTableSpec.columns().filter(c => c.default).map(c => ({ data: c.data, id: c.id }))));
             this.nestedColumns.set(nestedTableId, defaultColumns);
           }
-          /**********************************************************
-          * FIX ME!                                                 *
-          *   Need to find a way to identify if custom is received  *
-          *   from nested table or parent/root                      *
-          ***********************************************************/
-          if (! custom.tableId) {
+          if (! custom.root) {
             if (custom.groupChainFields) {
               this.nestedGrouping.set(nestedTableId, custom.groupChainFields);
             }
