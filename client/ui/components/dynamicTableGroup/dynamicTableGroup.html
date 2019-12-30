@@ -1,5 +1,5 @@
 <template name="dynamicTableGroup">
-  <div class="dynamic-table-group">
+  <div class="dynamic-table-group" id="{{myid}}">
     {{#if waitingAndLoading}}
       <div class="dynamic-table-loading-group">
         {{#if showLoadingMessage}}
@@ -9,7 +9,10 @@
           {{{loading.message}}}
         {{/if}}
         {{#if loading.tmpl}}
-          {{>Template.dynamic template=loading.tmpl data=loading.tmplContext}}
+          {{> Template.dynamic
+            template=loading.tmpl
+            data=loading.tmplContext
+          }}
         {{/if}}
       </div>
     {{/if}}
@@ -17,13 +20,50 @@
       <div class="dynamic-table-panel" style="{{#unless shouldDisplaySection value}}display: none;{{/unless}}">
         <div class="dynamic-table-header" data-index="{{@index}}" data-table-id="{{value._id}}">
           {{#if showPrefix}}{{currentGroupLabel}}: {{/if}}{{value.label}} {{#if hasCount value}}({{count value}}){{/if}}
+          <div class="pull-right">
+            {{#if advancedControl "ordering"}}
+              <span class="aspects dynamic-table-manage-controller {{#if ordered (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
+                <i class="fa fa-sort"></i>
+              </span>
+            {{/if}}
+            {{#if advancedControl "columning"}}
+              <span class="columns dynamic-table-manage-controller" data-table-id="{{tableId value}}">
+                <i class="fa fa-eye-slash"></i>
+              </span>
+            {{/if}}
+            {{#if advancedControl "grouping"}}
+              <span class="groups dynamic-table-manage-controller {{#if grouped (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
+                <i class="fa fa-th-list"></i>
+              </span>
+            {{/if}}
+          </div>
         </div>
         <div class="dynamic-table-content" style="{{#if shouldDisplayContent value._id}}display: block;{{/if}}">
           {{#if shouldDisplayTable value._id}}
-            {{#if lastLevel}}
-              {{> CustomizableTable (table value (newSelector value selector))}}
+            {{#if hasGrouping (tableId value)}}
+              {{> dynamicTableGroup
+                forceRefresh=forceRefresh
+                showPrefix=showPrefix
+                noGroups=noGroups
+                loading=loading
+                expandAll=expandAll
+                lazy=lazy
+                customTableSpec=customTableSpec
+                groupableFields=groupableFields
+                advanced=advanced
+
+                tableIdSuffixChain=(tableIdSuffixChain value)
+                selector=(newSelector value selector)
+                tableId=(tableId value)
+
+                groupChain=(groupChain (tableId value))
+                aspects=(aspects (tableId value))
+                columns=(columns (tableId value))
+              }}
             {{else}}
-              {{> dynamicTableGroup forceRefresh=forceRefresh showPrefix=showPrefix noGroups=noGroups loading=loading customTableSpec=customTableSpec expandAll=expandAll lazy=lazy groupChain=groupChain index=nextIndex tableIdSuffixChain=(tableIdSuffixChain value) selector=(newSelector value selector)}}
+              {{> CustomizableTable
+                (table value (newSelector value selector))
+              }}
             {{/if}}
           {{/if}}
         </div>

@@ -1,20 +1,23 @@
 <template name="CustomizableTable">
   {{#if readyToRender}}
     <div style="position: relative;">
-      {{#if columns}}
-        <a class="manage-fields" href="#"><i class="fa fa-eye-slash"></i> Hide/Show Columns</a>
+      {{#if op hasContext "!==" true}}
+        {{#if columns}}
+          <a class="manage-fields" href="#"><i class="fa fa-eye-slash"></i> Hide/Show Columns</a>
+        {{/if}}
       {{/if}}
       {{> DynamicTable 
-      	forceRefresh=forceRefresh
-				id=id table=buildTable
-				class=class
-				selector=selector
-				removeColumn=removeColumn
-				style=style
-				modifyFilterCallback=modifyFilterCallback
-				advancedFilter=advancedFilter
-				allColumns=allColumns
-			}}
+        forceRefresh=forceRefresh
+        id=id
+        table=buildTable
+        class=class
+        selector=selector
+        removeColumn=removeColumn
+        style=style
+        modifyFilterCallback=modifyFilterCallback
+        advancedFilter=advancedFilter
+        allColumns=allColumns
+      }}
     </div>
   {{/if}}
 </template>

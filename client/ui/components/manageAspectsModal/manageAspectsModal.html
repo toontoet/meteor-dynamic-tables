@@ -1,0 +1,39 @@
+<template name="dynamicTableManageAspectsModal">
+  <style>
+    .btn.order.active {
+      color: #3599cc;
+    }
+  </style>
+  <div class="dynamic-table-manage-aspects">
+    {{#each aspect in aspects}}
+      <div>
+        <label for="dynamic-table-manage-aspect-label-{{@index}}">
+          {{#if @index}}
+            <i class="fa fa-times remove-aspect" data-index="{{@index}}" style="margin-left: 5px"></i> then by
+          {{else}}
+            Sort by
+          {{/if}}
+        </label>
+
+        <select id="dynamic-table-manage-aspect-label-{{@index}}" data-index="{{@index}}">
+          <option value="">Select a Column</option>
+          {{#each group in groups}}
+            <optgroup label="{{group.title}}">
+              {{#each field in group.columns}}
+                <option value="{{field.data}}" {{selected field aspect}}>{{label field}}</option>
+              {{/each}}
+            </optgroup>
+          {{/each}}
+          {{#each field in ungroupedColumns}}
+            <option value="{{field.data}}" {{selected field aspect}}>{{label field}}</option>
+          {{/each}}
+        </select>
+        <button id="btn-asc-{{@index}}" data-index="{{@index}}" class="btn order asc {{activeOrder 'asc' @index}}">A-Z</button>
+        <button id="btn-desc-{{@index}}" data-index="{{@index}}" class="btn order desc {{activeOrder 'desc' @index}}">Z-A</button>
+      </div>
+    {{/each}}
+    <div style="width: 100%">
+      <span class="add-aspect"><i class="fa fa-plus"></i> Select another ctitirea to sort by</span>
+    </div>
+  </div>
+</template>

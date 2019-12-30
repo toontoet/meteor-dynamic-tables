@@ -11,6 +11,79 @@ function filterColumns(columns, selectedColumnDataOrIds) {
   }));
 }
 
+Template.CustomizableTable.onCreated(function onCreated() {
+  this.advancedFilter = new ReactiveVar();
+  this.limit = new ReactiveVar(this.data.table.pageLength || 25);
+  this.skip = new ReactiveVar(0);
+  this.fnReorderCallback = () => {
+    const columns = this.$("table").dataTable().api().context[0].aoColumns;
+    const newColumns = _.sortBy(this.selectedColumns.get(), c1 => columns.indexOf(_.find(columns, c2 => (c2.id ? c2.id === c1.id : c2.data === c1.data))));
+    this.selectedColumns.set(newColumns);
+    changed(this.data.custom, this.data.id, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
+  };
+  this.order = new ReactiveVar(this.data.aspects)
+  const columns = this.data.selectedColumns || this.data.table.columns || getColumns(this.data.columns);
+  this.selectedColumns = new ReactiveVar(filterColumns(getColumns(this.data.columns), columns.map(c => c.id || c.data)));
+
+  this.autorun(() => {
+    const data = Template.currentData();
+    // refreshes table when order has been changed
+    if (JSON.stringify(Tracker.nonreactive(() => this.order.get())) !== JSON.stringify(data.aspects)) {
+      this.order.set(data.aspects);
+      const tableTemplateInstance = Blaze.getView(this.$("table")[0]).templateInstance();
+      const query = Tracker.nonreactive(() => tableTemplateInstance.query.get());
+
+      // transforms order - [{}, {}] into one object with all keys and values
+      const sortifyOrder = (order, sort = {}) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
+      const newSorts = sortifyOrder(data.aspects.map(a => ({ [a.data || a.id]: a.order === "asc" ? 1 : -1 })));
+      query.options.sort = newSorts;
+      tableTemplateInstance.query.dep.changed();
+    }
+
+    // refreshes table when columns has been changed
+    const currentColumns = Tracker.nonreactive(() => this.selectedColumns.get()).map(c => ({ data: c.data, id: c.id }));
+    const newColumns = (data.selectedColumns || data.table.columns || getColumns(data.columns)).map(c => ({ data: c.data, id: c.id }));
+    if (JSON.stringify(currentColumns) !== JSON.stringify(newColumns)) {
+      const tableTemplateInstance = Blaze.getView(this.$("table")[0]).templateInstance();
+      const columns = filterColumns(getColumns(data.columns), newColumns.map(c => c.id || c.data));
+      this.selectedColumns.set(columns);
+      tableTemplateInstance.columns = columns;
+      tableTemplateInstance.query.dep.changed();
+    }
+  });
+
+  if (! this.data.hasContext) {
+    let stop = false;
+    if (this.data.custom) {
+      stop = getCustom(this.data.custom, this.data.id, (custom) => {
+        if (custom.columns && custom.columns.length) {
+          const availableColumns = getColumns(this.data.columns);
+          custom.columns = mergeRequiredColumns(custom.columns, availableColumns);
+        }
+        const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
+        this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columnsToUse.map(c => c.id || c.data)));
+        this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
+        const oldOrder = Tracker.nonreactive(() => this.order.get());
+        // debugger
+        if (custom.order && EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
+          this.order.set(custom.order);
+        }
+        if (Tracker.nonreactive(() => this.limit.get()) !== (custom.limit || this.data.table.pageLength || 25)) {
+          this.limit.set(custom.limit || this.data.table.pageLength || 25);
+        }
+        if (Tracker.nonreactive(() => this.skip.get()) !== (custom.skip || 0)) {
+          this.skip.set(custom.skip || 0);
+        }
+      });
+    }
+    if (!stop && this.data.table.columns) {
+      this.selectedColumns.set(this.data.table.columns);
+    }
+    else if (!stop) {
+      this.selectedColumns.set(getColumns(this.data.columns));
+    }
+  }
+});
 
 Template.CustomizableTable.helpers({
   removeColumn() {
@@ -91,19 +164,6 @@ Template.CustomizableTable.helpers({
 
 
 Template.CustomizableTable.events({
-  "click a.clear-fields"(e, templInstance) {
-    e.preventDefault();
-    templInstance.selectedColumns.set(templInstance.data.table ? templInstance.data.table.columns : getColumns(templInstance.data.columns));
-    templInstance.advancedFilter.set(undefined);
-    templInstance.order.set(undefined);
-  },
-  "click a.clear-filters"(e, templInstance) {
-    e.preventDefault();
-    const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
-    tableTemplateInstance.advancedSearch.set({});
-    changed(templInstance.data.custom, templInstance.data.id, { newColumns: templInstance.selectedColumns.get(), unset: "all" });
-    tableTemplateInstance.query.dep.changed();
-  },
   "click a.manage-fields"(e, templInstance) {
     e.preventDefault();
     const manageFieldsOptions = _.extend({
@@ -197,61 +257,5 @@ Template.CustomizableTable.events({
     if (tooFar > 0) {
       div.css("left", (bounds.left - (tooFar + 5)) + "px");
     }
-  },
-  "click a.add-column"(e, templInstance) {
-    e.preventDefault();
-    const columns = templInstance.selectedColumns.get();
-    const columnData = $(e.currentTarget).data("column");
-    const column = _.findWhere(columns, { data: columnData });
-    if (column) {
-      columns.splice(columns.indexOf(column), 1);
-    }
-    else {
-      columns.push(_.findWhere(getColumns(templInstance.data.columns), { data: columnData }));
-    }
-    templInstance.selectedColumns.set(columns);
-  }
-});
-
-
-Template.CustomizableTable.onCreated(function onCreated() {
-  this.selectedColumns = new ReactiveVar([]);
-  this.order = new ReactiveVar();
-  this.advancedFilter = new ReactiveVar();
-  this.limit = new ReactiveVar(this.data.table.pageLength || 25);
-  this.skip = new ReactiveVar(0);
-  this.fnReorderCallback = () => {
-    const columns = this.$("table").dataTable().api().context[0].aoColumns;
-    const newColumns = _.sortBy(this.selectedColumns.get(), c1 => columns.indexOf(_.find(columns, c2 => (c2.id ? c2.id === c1.id : c2.data === c1.data))));
-    this.selectedColumns.set(newColumns);
-    changed(this.data.custom, this.data.id, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
-  };
-  let stop = false;
-  if (this.data.custom) {
-    stop = getCustom(this.data.custom, this.data.id, (custom) => {
-      if (custom.columns && custom.columns.length) {
-        const availableColumns = getColumns(this.data.columns);
-        custom.columns = mergeRequiredColumns(custom.columns, availableColumns);
-      }
-      const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
-      this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columnsToUse.map(c => c.id || c.data)));
-      this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
-      const oldOrder = Tracker.nonreactive(() => this.order.get());
-      if (EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
-        this.order.set(custom.order);
-      }
-      if (Tracker.nonreactive(() => this.limit.get()) !== (custom.limit || this.data.table.pageLength || 25)) {
-        this.limit.set(custom.limit || this.data.table.pageLength || 25);
-      }
-      if (Tracker.nonreactive(() => this.skip.get()) !== (custom.skip || 0)) {
-        this.skip.set(custom.skip || 0);
-      }
-    });
-  }
-  if (!stop && this.data.table.columns) {
-    this.selectedColumns.set(this.data.table.columns);
-  }
-  else if (!stop) {
-    this.selectedColumns.set(getColumns(this.data.columns));
   }
 });
