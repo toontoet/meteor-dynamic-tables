@@ -390,6 +390,7 @@ The export functionality allows multiple CSV rows to be output per data row, and
 | onComplete | Function | A callback in the case of success, called with `(csvText, fileName)` | Optional |
 | beforeRender | Function | A callback called prior to the export modal displaying, you can subscribe to anything from here | Optional |
 | fields | [[ExportFieldSpec](#markdown-header-exportfieldspec)/String] | An array of fields that should be exported, this could be more or less fields than provided by the table | The table columns |
+| allAvailableForExport | Boolean | Whether all rows can be exported at once, useful for very large collections. If set to false the export will default to visible rows. If true, an export of all rows will enforce a sort by _id. | true |
 
 ### ExportFieldSpec
 
