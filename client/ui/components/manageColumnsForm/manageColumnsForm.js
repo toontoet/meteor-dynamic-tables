@@ -14,7 +14,8 @@ export class ManageColumnsForm extends BlazeComponent {
       "checkedIfTrue",
       "isDynamicFieldForm",
       "types",
-      "selectedType"
+      "selectedType",
+      "configContext"
     ];
   }
 
@@ -22,6 +23,13 @@ export class ManageColumnsForm extends BlazeComponent {
     return {
       "change .dynamic-table-manage-fields-edit-type": "changeType"
     };
+  }
+
+  configContext(selectedType, context) {
+    if (context.manageFieldsEditContext.configContext) {
+      return context.manageFieldsEditContext.configContext(selectedType, context);
+    }
+    return context;
   }
 
   isDynamicFieldForm() {

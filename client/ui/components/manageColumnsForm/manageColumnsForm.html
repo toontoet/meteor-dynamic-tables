@@ -26,10 +26,10 @@
           {{/each}}
         </select>
       </label>
-      {{#if selectedType.configTemplate}}
-        {{> Template.dynamic template=selectedType.configTemplate}}
-      {{/if}}
     </div>
+    {{#if selectedType.configTemplate}}
+      {{> Template.dynamic template=selectedType.configTemplate data=(configContext selectedType this)}}
+    {{/if}}
     <div class="dynamic-table-manage-fields-edit-row">
       <label class="short">Allow multiple values? <input type="checkbox" class="dynamic-table-manage-fields-edit-isArray" {{checkedIfTrue editableField.isArray}} /></label>
     </div>
