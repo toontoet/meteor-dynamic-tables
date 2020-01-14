@@ -34,7 +34,7 @@
             <div class="dynamic-table-manage-fields-group-header">
               {{group.title}}
             </div>
-            <ul class="display-table-manage-fields-group-hidden">
+            <ul class="display-table-manage-fields-group-ul display-table-manage-fields-group-hidden">
               {{#each column in group.columns}}
                 <li data-id="{{column.id}}" data-data="{{column.data}}">
                   <i class="fa fa-toggle-{{#if selected column}}on{{else}}off{{/if}} {{#if required column}}required{{/if}}"></i> {{title column}}
@@ -44,7 +44,7 @@
             </ul>
           </div>
         {{/each}}
-        <ul class="dynamic-table-manage-fields-ungrouped">
+        <ul class="display-table-manage-fields-group-ul dynamic-table-manage-fields-ungrouped">
           {{#each column in ungroupedColumns}}
             <li data-id="{{column.id}}" data-data="{{column.data}}">
               <i class="fa fa-toggle-{{#if selected column}}on{{else}}off{{/if}} {{#if required column}}required{{/if}}"></i> {{title column}}
