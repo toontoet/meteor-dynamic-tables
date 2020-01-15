@@ -16,8 +16,11 @@ div.dynamic-table-manage-aspects select {
   margin-bottom: 0px;
 }
 div.dynamic-table-manage-aspects button {
-  width: 12%;
+  /*to be managed 40px ≈ 12%*/
+  width: 40px;
   margin-bottom: 0px;
+  padding-left: 0;
+  padding-right: 0;
 }
 div.dynamic-table-manage-aspects label {
   width: 20%;
