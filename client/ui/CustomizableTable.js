@@ -22,8 +22,22 @@ Template.CustomizableTable.onCreated(function onCreated() {
     changed(this.data.custom, this.data.id, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
   };
   this.order = new ReactiveVar(this.data.aspects)
-  const columns = this.data.selectedColumns || this.data.table.columns || getColumns(this.data.columns);
-  this.selectedColumns = new ReactiveVar(filterColumns(getColumns(this.data.columns), columns.map(c => c.id || c.data)));
+
+  if (this.data.columns) {
+    // need to be non-empty array
+    const columns = (
+      this.data.selectedColumns && this.data.selectedColumns.length && this.data.selectedColumns ||
+      this.data.table.columns && this.data.table.columns.length && this.data.table.columns ||
+      getColumns(this.data.columns)
+    );
+    this.selectedColumns = new ReactiveVar(filterColumns(getColumns(this.data.columns), columns.map(c => c.id || c.data)));
+  }
+  else if (this.data.table.columns) {
+    this.selectedColumns = new ReactiveVar(this.data.table.columns);
+  }
+  else {
+    this.selectedColumns = new ReactiveVar(getColumns(this.data.columns));
+  }
 
   this.autorun(() => {
     const data = Template.currentData();
@@ -42,7 +56,12 @@ Template.CustomizableTable.onCreated(function onCreated() {
 
     // refreshes table when columns has been changed
     const currentColumns = Tracker.nonreactive(() => this.selectedColumns.get()).map(c => ({ data: c.data, id: c.id }));
-    const newColumns = (data.selectedColumns || data.table.columns || getColumns(data.columns)).map(c => ({ data: c.data, id: c.id }));
+    const newColumns = (
+      data.selectedColumns && data.selectedColumns.length && data.selectedColumns ||
+      data.table.columns && data.table.columns.length && data.table.columns ||
+      getColumns(data.columns)
+    ).map(c => ({ data: c.data, id: c.id }));
+
     if (JSON.stringify(currentColumns) !== JSON.stringify(newColumns)) {
       const tableTemplateInstance = Blaze.getView(this.$("table")[0]).templateInstance();
       const columns = filterColumns(getColumns(data.columns), newColumns.map(c => c.id || c.data));
