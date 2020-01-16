@@ -22,23 +22,67 @@ Template.CustomizableTable.onCreated(function onCreated() {
     changed(this.data.custom, this.data.id, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
   };
   this.order = new ReactiveVar(this.data.aspects)
-
-  if (this.data.columns) {
-    // need to be non-empty array
-    const columns = (
-      this.data.selectedColumns && this.data.selectedColumns.length && this.data.selectedColumns ||
-      this.data.table.columns && this.data.table.columns.length && this.data.table.columns ||
-      getColumns(this.data.columns)
-    );
-    this.selectedColumns = new ReactiveVar(filterColumns(getColumns(this.data.columns), columns.map(c => c.id || c.data)));
-  }
-  else if (this.data.table.columns) {
-    this.selectedColumns = new ReactiveVar(this.data.table.columns);
+  this.selectedColumns = new ReactiveVar([]);
+  // Used when Customizable table used alone without grouped table
+  if (! this.data.hasContext) {
+    // gets custom from the database, sets selected columns
+    let stop = false;
+    if (this.data.custom) {
+      stop = getCustom(this.data.custom, this.data.id, (custom) => {
+        if (custom.columns && custom.columns.length) {
+          const availableColumns = getColumns(this.data.columns);
+          custom.columns = mergeRequiredColumns(custom.columns, availableColumns);
+        }
+        const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
+        this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columnsToUse.map(c => c.id || c.data)));
+        this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
+        const oldOrder = Tracker.nonreactive(() => this.order.get());
+        if (custom.order && EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
+          this.order.set(custom.order);
+        }
+        if (Tracker.nonreactive(() => this.limit.get()) !== (custom.limit || this.data.table.pageLength || 25)) {
+          this.limit.set(custom.limit || this.data.table.pageLength || 25);
+        }
+        if (Tracker.nonreactive(() => this.skip.get()) !== (custom.skip || 0)) {
+          this.skip.set(custom.skip || 0);
+        }
+      });
+    }
+    if (!stop && this.data.table.columns) {
+      this.selectedColumns.set(this.data.table.columns);
+    }
+    else if (!stop) {
+      this.selectedColumns.set(getColumns(this.data.columns));
+    }
   }
   else {
-    this.selectedColumns = new ReactiveVar(getColumns(this.data.columns));
+    if (this.data.columns) {
+      // need to be non-empty array
+      const columns = (
+        this.data.selectedColumns && this.data.selectedColumns.length && this.data.selectedColumns ||
+        this.data.table.columns && this.data.table.columns.length && this.data.table.columns ||
+        getColumns(this.data.columns)
+      );
+      this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columns.map(c => c.id || c.data)));
+    }
+    else if (this.data.table.columns) {
+      this.selectedColumns.set(this.data.table.columns);
+    }
+    else {
+      this.selectedColumns.set(getColumns(this.data.columns));
+    }
+
+    if (this.data.parentTableCustom) {
+      if (Tracker.nonreactive(() => this.limit.get()) !== (this.data.parentTableCustom.limit || this.data.table.pageLength || 25)) {
+        this.limit.set(this.data.parentTableCustom.limit || this.data.table.pageLength || 25);
+      }
+      if (Tracker.nonreactive(() => this.skip.get()) !== (this.data.parentTableCustom.skip || 0)) {
+        this.skip.set(this.data.parentTableCustom.skip || 0);
+      }
+    }
   }
 
+  // autorun triggers when any(order, culumns) of the current data changes
   this.autorun(() => {
     const data = Template.currentData();
     // refreshes table when order has been changed
@@ -70,38 +114,6 @@ Template.CustomizableTable.onCreated(function onCreated() {
       tableTemplateInstance.query.dep.changed();
     }
   });
-
-  if (! this.data.hasContext) {
-    let stop = false;
-    if (this.data.custom) {
-      stop = getCustom(this.data.custom, this.data.id, (custom) => {
-        if (custom.columns && custom.columns.length) {
-          const availableColumns = getColumns(this.data.columns);
-          custom.columns = mergeRequiredColumns(custom.columns, availableColumns);
-        }
-        const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
-        this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columnsToUse.map(c => c.id || c.data)));
-        this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
-        const oldOrder = Tracker.nonreactive(() => this.order.get());
-        // debugger
-        if (custom.order && EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
-          this.order.set(custom.order);
-        }
-        if (Tracker.nonreactive(() => this.limit.get()) !== (custom.limit || this.data.table.pageLength || 25)) {
-          this.limit.set(custom.limit || this.data.table.pageLength || 25);
-        }
-        if (Tracker.nonreactive(() => this.skip.get()) !== (custom.skip || 0)) {
-          this.skip.set(custom.skip || 0);
-        }
-      });
-    }
-    if (!stop && this.data.table.columns) {
-      this.selectedColumns.set(this.data.table.columns);
-    }
-    else if (!stop) {
-      this.selectedColumns.set(getColumns(this.data.columns));
-    }
-  }
 });
 
 Template.CustomizableTable.helpers({

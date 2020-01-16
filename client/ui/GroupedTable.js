@@ -30,6 +30,8 @@ Template.GroupedTable.onCreated(function onCreated() {
     this.search.set(this.$(".dynamic-table-global-search").val());
   }, 1000);
 
+  this.rootCustom = new ReactiveVar({});
+
   const id = new ReactiveVar(this.data.id);
   this.autorun(() => {
     const data = Template.currentData();
@@ -41,6 +43,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.autorun(() => {
     id.get();
     const stop = getCustom(this.data.custom, this.data.id, (custom) => {
+      this.rootCustom.set(custom);
       const columns = custom.columns || this.data.table.columns || this.data.columns().filter(c => c.default);
       this.customColumns.set(_.compact(columns.map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
       if (custom.order) {
@@ -140,9 +143,13 @@ Template.GroupedTable.helpers({
       {
         hasContext: true,
         aspects: Template.instance().aspects.get(),
-        selectedColumns: Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id }))
+        selectedColumns: Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id })),
+        parentTableCustom: Template.instance().rootCustom.get()
       }
     )
+  },
+  rootCustom() {
+    return Template.instance().rootCustom.get();
   }
 });
 

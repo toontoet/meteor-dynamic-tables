@@ -115,7 +115,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.values = new ReactiveVar([]);
   this.groupInfo = getGroupedInfoCollection(this.data.customTableSpec.table.collection._connection);
   this.distinctValues = getDistinctValuesCollection(this.data.customTableSpec.table.collection._connection);
-  this.custom = new ReactiveVar();
+  this.custom = new ReactiveVar(this.data.custom);
 
   this.grouping = this.data.groupableFields.find(gf => gf.field === _.first(this.data.groupChain)); // the critirea which current group was grouped by
   this.groupChain = new ReactiveVar(_.rest(this.data.groupChain)); // inherited groupchain excluding current grouping
@@ -125,6 +125,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.nestedGrouping = new ReactiveDict(); // set of groupchains for nested tables
   this.nestedOrder = new ReactiveDict();    // set of orders for nested tables
   this.nestedColumns = new ReactiveDict();  // set of columns for nested tables
+  // needed for passing number of page and number of records per page
+  this.nestedCustoms = new ReactiveDict();  // set of custom table specs for nested tables
 
   // reactivity to refresh tables when goups/aspects/columns are changed
   const groupChain = new ReactiveVar(this.data.groupChain);
@@ -149,9 +151,9 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   *   dynamicTableGroup gets custom of each nested table/group.   *
   *   We can just pass it to the kid.                             *
   *****************************************************************/
-  getCustom(this.data.customTableSpec.custom, this.data.tableId, (custom) => {
-    this.custom.set(custom);
-  });
+  // getCustom(this.data.customTableSpec.custom, this.data.tableId, (custom) => {
+  //   this.custom.set(custom);
+  // });
 
   const distinctValuesSub = new ReactiveVar();
 
@@ -208,7 +210,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       values.forEach(value => {
         const nestedTableId = data.tableId + getTableIdSuffix.call(this, value);
         getCustom(data.customTableSpec.custom, nestedTableId, (custom) => {
-          // const columns = custom.columns || this.customTableSpec.table.columns || this.customTableSpec.columns().filter(c => c.default);
+          this.nestedCustoms.set(nestedTableId, custom);
           if (custom.columns) {
             this.nestedColumns.set(nestedTableId, custom.columns);
           }
@@ -415,7 +417,8 @@ Template.dynamicTableGroup.helpers({
         selector: newSelector,
         id: tableId,
         aspects: Template.instance().nestedOrder.get(tableId) || Template.instance().aspects.get(),
-        selectedColumns: Template.instance().nestedColumns.get(tableId) || Template.instance().columns.get()
+        selectedColumns: Template.instance().nestedColumns.get(tableId) || Template.instance().columns.get(),
+        parentTableCustom: Template.instance().nestedCustoms.get(tableId) || this.custom
       }
     );
   },
@@ -490,6 +493,9 @@ Template.dynamicTableGroup.helpers({
     const nestedColumns = Template.instance().nestedColumns.get(tableId);
     const ownColumns = Template.instance().columns.get();
     return nestedColumns || ownColumns;
+  },
+  custom(tableId) {
+    return Template.instance().nestedCustoms.get(tableId) || this.custom;
   }
 });
 
