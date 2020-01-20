@@ -175,7 +175,7 @@ Template.CustomizableTable.helpers({
       const columns = dataTable.api().context[0].aoColumns;
       const order = JSON.parse(JSON.stringify(newOrder.map(o => ({
         id: columns[o[0]].id,
-        data: columns[o[0]].data,
+        data: columns[o[0]].sortableField || columns[o[0]].data,
         order: o[1]
       }))));
       if (!EJSON.equals(order, Tracker.nonreactive(() => tmplInstance.order.get()))) {
