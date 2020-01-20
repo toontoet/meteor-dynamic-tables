@@ -83,10 +83,13 @@ Template.CustomizableTable.onCreated(function onCreated() {
   }
 
   // autorun triggers when any(order, culumns) of the current data changes
-  this.autorun(() => {
+  this.autorun((comp) => {
     const data = Template.currentData();
+    if (comp.firstRun) {
+      return;
+    }
     // refreshes table when order has been changed
-    if (JSON.stringify(Tracker.nonreactive(() => this.order.get())) !== JSON.stringify(data.aspects)) {
+    if (JSON.stringify(Tracker.nonreactive(() => this.order.get())) !== JSON.stringify(data.aspects) && data.aspects) {
       this.order.set(data.aspects);
       const tableTemplateInstance = Blaze.getView(this.$("table")[0]).templateInstance();
       const query = Tracker.nonreactive(() => tableTemplateInstance.query.get());

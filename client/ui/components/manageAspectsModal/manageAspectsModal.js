@@ -25,6 +25,9 @@ Template.dynamicTableManageAspectsModal.helpers({
     return aspects.length ? aspects : [{ order: "asc" }];
   },
   selected(field, selectedField) {
+    if (! selectedField.data) {
+      return {};
+    }
     const fParts = field.data.split(".");
     const sfParts = selectedField.data.split(".");
     return fParts.every(fp => sfParts.includes(fp)) ? { selected: "selected" } : {};
