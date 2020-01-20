@@ -90,11 +90,17 @@ Template.CustomizableTable.onCreated(function onCreated() {
       this.order.set(data.aspects);
       const tableTemplateInstance = Blaze.getView(this.$("table")[0]).templateInstance();
       const query = Tracker.nonreactive(() => tableTemplateInstance.query.get());
-
       // transforms order - [{}, {}] into one object with all keys and values
       const sortifyOrder = (order, sort = {}) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
-      const newSorts = sortifyOrder(data.aspects.map(a => ({ [a.data || a.id]: a.order === "asc" ? 1 : -1 })));
+      const newSorts = sortifyOrder(data.aspects.map(a => ({ [a.data || a.id]: a.order === "asc" ? 1 : -1 }))); // sort which we can store and query database
+      const dataTableSort = data.aspects.map(s => {                                                             // sort which DataTable would understand
+        const index = _.findIndex(tableTemplateInstance.columns, c => c.sortableField || c.data === s.data);
+        const order = [index, s.order];
+        order._idx = index;
+        return order;
+      });
       query.options.sort = newSorts;
+      tableTemplateInstance.$tableElement.DataTable().order(dataTableSort)
       tableTemplateInstance.query.dep.changed();
     }
 
