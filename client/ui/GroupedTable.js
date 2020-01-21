@@ -30,7 +30,7 @@ Template.GroupedTable.onCreated(function onCreated() {
     this.search.set(this.$(".dynamic-table-global-search").val());
   }, 1000);
 
-  this.rootCustom = new ReactiveVar({});
+  this.rootCustom = new ReactiveVar({}); // needed to pass limit/page number to the table
 
   const id = new ReactiveVar(this.data.id);
   this.autorun(() => {
@@ -141,7 +141,7 @@ Template.GroupedTable.helpers({
       {},
       this,
       {
-        hasContext: true,
+        hasContext: true, // letting customizableTable know that it will pass custom table spec data
         aspects: Template.instance().aspects.get(),
         selectedColumns: Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id })),
         parentTableCustom: Template.instance().rootCustom.get()

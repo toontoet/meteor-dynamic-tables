@@ -5,12 +5,7 @@ import { Random } from "meteor/random";
 
 Template.dynamicTableManageAspectsModal.onCreated(function onCreated() {
   this.newColumns = new ReactiveVar([]);
-  const sorts = JSON.parse(JSON.stringify(this.data.aspects || [])).map(sort => {
-    const { sortableField, data } = _.find(this.data.availableColumns, c => c.data.split(".").every(cd => sort.data.split(".").includes(cd)));
-    sort.data = sortableField || data;
-    return sort;
-  });
-  this.aspects = new ReactiveVar(sorts);
+  this.aspects = new ReactiveVar(this.data.aspects);
 });
 
 Template.dynamicTableManageAspectsModal.onRendered(function onRendered() {
@@ -33,9 +28,7 @@ Template.dynamicTableManageAspectsModal.helpers({
     if (! selectedField.data) {
       return {};
     }
-    const sortableField = field.sortableField === selectedField.data;
-    const data = field.data === selectedField.data;
-    return sortableField || data ? { selected: "selected" } : {};
+    return field.data === selectedField.data ? { selected: "selected" } : {};
   },
   availableColumns() {
     const availableColumns = Template.instance().data.availableColumns;
@@ -92,7 +85,7 @@ Template.dynamicTableManageAspectsModal.events({
     const data = target.val();
     if (data) {
       const column = _.find(this.availableColumns, c => c.data === data);
-      aspects[index].data = column.sortableField || column.data;
+      aspects[index].data = column.data;
       aspects[index].id = column.id; // not sure if id is needed
     }
     else {
