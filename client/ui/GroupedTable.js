@@ -150,6 +150,9 @@ Template.GroupedTable.helpers({
   },
   rootCustom() {
     return Template.instance().rootCustom.get();
+  },
+  orderCheckFn() {
+    return this.orderCheckFn;
   }
 });
 
@@ -179,15 +182,18 @@ Template.GroupedTable.events({
     createModal(e.currentTarget, modalMeta, templInstance);
   },
   "click span.grouped-table-manage-controller.aspects"(e, templInstance) {
+    const availableColumns = getColumns(this.columns).filter(c => c.sortable !== false);
     const modalMeta = {
       template: Template.dynamicTableManageAspectsModal,
       id: "dynamic-table-manage-aspects-modal",
       options: {
-        availableColumns: getColumns(this.columns).filter(c => c.sortable !== false),
+        availableColumns,
         aspects: templInstance.aspects.get(),
         changeCallback(aspects) {
-          templInstance.aspects.set(aspects);
-          changed(templInstance.data.custom, templInstance.data.id, { newOrder: aspects });
+          if (templInstance.data.orderCheckFn(aspects, availableColumns)) {
+            templInstance.aspects.set(aspects);
+            changed(templInstance.data.custom, templInstance.data.id, { newOrder: aspects });
+          };
         }
       }
     };

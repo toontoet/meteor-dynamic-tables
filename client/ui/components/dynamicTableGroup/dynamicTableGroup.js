@@ -496,6 +496,9 @@ Template.dynamicTableGroup.helpers({
   },
   custom(tableId) {
     return Template.instance().nestedCustoms.get(tableId) || this.custom;
+  },
+  orderCheckFn() {
+    return this.orderCheckFn;
   }
 });
 
@@ -539,21 +542,24 @@ Template.dynamicTableGroup.events({
   "click .dynamic-table-manage-controller.aspects"(e, templInstance) {
     const target = e.currentTarget;
     const tableId = $(target).attr("data-table-id");
-    let order = templInstance.nestedOrder.get(tableId) || templInstance.data.aspects;
+    const order = templInstance.nestedOrder.get(tableId) || templInstance.data.aspects;
+    const availableColumns = getColumns(templInstance.data.customTableSpec.columns).filter(c => c.sortable !== false);
     const modalMeta = {
       template: Template.dynamicTableManageAspectsModal,
       id: "dynamic-table-manage-aspects-modal",
       options: {
-        availableColumns: getColumns(templInstance.data.customTableSpec.columns).filter(c => c.sortable !== false),
+        availableColumns,
         aspects: order,
         changeCallback(aspects) {
-          if (aspects.length) {
-            templInstance.nestedOrder.set(tableId, aspects);
+          if (templInstance.data.orderCheckFn(aspects, availableColumns)) {
+            if (aspects.length) {
+              templInstance.nestedOrder.set(tableId, aspects);
+            }
+            else {
+              templInstance.nestedOrder.delete(tableId);
+            }
+            changed(templInstance.data.customTableSpec.custom, tableId, { newOrder: aspects });
           }
-          else {
-            templInstance.nestedOrder.delete(tableId);
-          }
-          changed(templInstance.data.customTableSpec.custom, tableId, { newOrder: aspects });
         }
       }
     };

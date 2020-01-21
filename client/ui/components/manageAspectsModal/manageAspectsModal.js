@@ -11,7 +11,7 @@ Template.dynamicTableManageAspectsModal.onCreated(function onCreated() {
 Template.dynamicTableManageAspectsModal.onRendered(function onRendered() {
   this.updateOrder = (newAspects) => {
     this.newColumns.set([]);
-    this.aspects.set(JSON.parse(JSON.stringify(newAspects)));
+    this.aspects.set(newAspects);
     this.data.changeCallback(newAspects);
   };
 });
@@ -60,7 +60,7 @@ Template.dynamicTableManageAspectsModal.helpers({
 Template.dynamicTableManageAspectsModal.events({
   "click .btn.order"(e, templInstance) {
     const target = $(e.currentTarget);
-    const aspects = templInstance.aspects.get();
+    const aspects = JSON.parse(JSON.stringify(templInstance.aspects.get()));
     const index = target.data("index");
     if (target.hasClass("active")) {
       return;
@@ -77,7 +77,7 @@ Template.dynamicTableManageAspectsModal.events({
   "change select"(e, templInstance) {
     const target = $(e.currentTarget);
     const index = target.data("index");
-    const aspects = templInstance.aspects.get();
+    const aspects = JSON.parse(JSON.stringify(templInstance.aspects.get()));
     if (! aspects[index]) {
       aspects[index] = { order: "asc" };
     }

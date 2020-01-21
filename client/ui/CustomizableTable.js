@@ -56,6 +56,9 @@ Template.CustomizableTable.onCreated(function onCreated() {
     }
   }
   else {
+    // NOTE:
+    // This code does same what code above, just retrieves data from context(dynamicTableGroup / GroupedTable)
+    // It is needed to make order/columns/grouping reactive.
     if (this.data.columns) {
       // need to be non-empty array
       const columns = (
@@ -96,12 +99,12 @@ Template.CustomizableTable.onCreated(function onCreated() {
       // transforms order - [{}, {}] into one object with all keys and values
       const sortifyOrder = (order, sort = {}) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
       const newSorts = sortifyOrder(data.aspects.map(a => ({ [a.data || a.id]: a.order === "asc" ? 1 : -1 }))); // sort which we can store and query database
-      const dataTableSort = data.aspects.map(s => {                                                             // sort which DataTable would understand
-        const index = _.findIndex(tableTemplateInstance.columns, c => c.sortableField || c.data === s.data);
+      const dataTableSort = data.aspects.map(s => { // sort which DataTable would understand
+        const index = _.findIndex(tableTemplateInstance.columns, c => c.data === s.data);
         const order = [index, s.order];
         order._idx = index;
         return order;
-      });
+      }).filter(o => o[0] + 1); // filters all columns which we don't display
       query.options.sort = newSorts;
       tableTemplateInstance.$tableElement.DataTable().order(dataTableSort)
       tableTemplateInstance.query.dep.changed();
