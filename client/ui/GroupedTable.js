@@ -7,6 +7,33 @@ import "./components/manageFieldsModal/manageFieldsModal.js";
 import "./advancedSearchModal.js";
 import { getColumns, getPosition, changed, getCustom, createModal} from "../inlineSave.js";
 
+function getRootSelector(currentSelector, search, advancedSearch, templInstance) {
+  const selector = _.extend({}, currentSelector)
+  const data = templInstance.data;
+  let searchSelector;
+  // finding search selector
+  if (search) {
+    const searchVal = { $regex: search, $options: "i" };
+    searchSelector = { $or: [] };
+    const columns = _.unique(templInstance.customColumns.get().length ? templInstance.customColumns.get() : getColumns(data.columns || data.table.columns), c => c.data + c.id + c.search);
+    columns.filter(c => c.searchable !== false).forEach((column) => {
+      if (column.search) {
+        let res = column.search(_.extend({}, searchVal, { $options: column.searchOptions }));
+        if (!_.isArray(res)) {
+          res = [res];
+        }
+        searchSelector.$or.push(...res);
+      }
+      else if (column.data) {
+        searchSelector.$or.push({ [column.data]: _.extend({}, searchVal, { $options: column.searchOptions }) });
+      }
+    });
+  }
+
+  const $and = [selector, searchSelector, advancedSearch].filter(s => s && _.keys(s).length);
+  return $and.length > 1 ? { $and } : $and[0] || {};
+}
+
 Template.GroupedTable.onRendered(function onRendered() {
   if (this.data.customGroupButtonSelector) {
     this.autorun(() => {
@@ -83,33 +110,11 @@ Template.GroupedTable.onDestroyed(function onDestroyed() {
 });
 Template.GroupedTable.helpers({
   selector() {
-    const data = Template.instance().data;
-    const selector = _.extend({}, data.selector);
-    const search = Template.instance().search.get();
-    const advancedSearch = Template.instance().advancedSearch.get();
-    let searchSelector;
-    if (search) {
-      const searchVal = { $regex: search, $options: "i" };
-      searchSelector = { $or: [] };
-      const columns = _.unique(Template.instance().customColumns.get().length ? Template.instance().customColumns.get() : getColumns(data.columns || data.table.columns), c => c.data + c.id + c.search);
-      columns.filter(c => c.searchable !== false).forEach((column) => {
-        if (column.search) {
-          let res = column.search(_.extend({}, searchVal, { $options: column.searchOptions }));
-          if (!_.isArray(res)) {
-            res = [res];
-          }
-          searchSelector.$or.push(...res);
-        }
-        else if (column.data) {
-          searchSelector.$or.push({ [column.data]: _.extend({}, searchVal, { $options: column.searchOptions }) });
-        }
-      });
-    }
-    if (selector && Object.keys(selector).length && searchSelector) {
-      return { $and: [selector, searchSelector] };
-    }
-    const finalSelector = searchSelector || selector
-    return _.keys(advancedSearch).length ? { $and: [finalSelector, advancedSearch] } : finalSelector;
+    const templInstance = Template.instance();
+    const search = templInstance.search.get();
+    const advancedSearch =  templInstance.advancedSearch.get();
+    const selector = getRootSelector(this.selector, search, advancedSearch, templInstance);
+    return selector;
   },
   expandAll() {
     if (this.expandAll !== undefined) {
@@ -145,17 +150,21 @@ Template.GroupedTable.helpers({
     return Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id }));
   },
   table() {
+    const templInstance = Template.instance();
+    const search = templInstance.search.get();
+    const advancedSearch =  templInstance.advancedSearch.get();
+    const selector = getRootSelector(this.selector, search, advancedSearch, templInstance);
     return _.extend(
       {},
       this,
       {
-        selector: Template.instance().advancedSearch.get(),
+        selector,
         hasContext: true, // letting customizableTable know that it will pass custom table spec data
-        aspects: Template.instance().aspects.get(),
-        selectedColumns: Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id })),
-        parentTableCustom: Template.instance().rootCustom.get()
+        aspects: templInstance.aspects.get(),
+        selectedColumns: templInstance.customColumns.get().map(c => ({ data: c.data, id: c.id })),
+        parentTableCustom: templInstance.rootCustom.get()
       }
-    )
+    );
   },
   rootCustom() {
     return Template.instance().rootCustom.get();
