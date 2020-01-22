@@ -7,6 +7,7 @@ import { changed, getCustom, getColumns, getValue, createModal } from "../../../
 import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "../manageAspectsModal/manageAspectsModal.js";
 import "../manageFieldsModal/manageFieldsModal.js";
+import "../../advancedSearchModal.js";
 
 /**
  * selectorToId - description
@@ -125,6 +126,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.nestedGrouping = new ReactiveDict(); // set of groupchains for nested tables
   this.nestedOrder = new ReactiveDict();    // set of orders for nested tables
   this.nestedColumns = new ReactiveDict();  // set of columns for nested tables
+  this.advancedSearch = new ReactiveDict(); // set of advancedSearches for each group
   // needed for passing number of page and number of records per page
   this.nestedCustoms = new ReactiveDict();  // set of custom table specs for nested tables
 
@@ -388,6 +390,8 @@ Template.dynamicTableGroup.helpers({
     return !this.lazy || Template.instance().stickyEnabled.get(valueId);
   },
   newSelector(value, currentSelector) {
+    const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
+    const advancedSearch = Template.instance().advancedSearch.get(tableId) || {};
     const current = Template.instance().grouping;
     const selector = _.extend({}, currentSelector);
     if (value.selector) {
@@ -405,7 +409,7 @@ Template.dynamicTableGroup.helpers({
     else {
       selector[current.field] = value.query;
     }
-    return selector;
+    return _.keys(advancedSearch).length ? { $and: [selector, advancedSearch] } : selector;
   },
   table(value, newSelector) {
     const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
@@ -483,6 +487,10 @@ Template.dynamicTableGroup.helpers({
   },
   ordered(tableId) {
     return Template.instance().nestedOrder.get(tableId);
+  },
+  hasAdvancedSearch(tableId) {
+    const advancedSearch = Template.instance().advancedSearch.get(tableId);
+    return advancedSearch && _.keys(advancedSearch).length;
   },
   aspects(tableId) {
     const nestedOrder = Template.instance().nestedOrder.get(tableId);
@@ -659,5 +667,21 @@ Template.dynamicTableGroup.events({
     };
 
     createModal(target, modalMeta,templInstance);
+  },
+  "click .dynamic-table-manage-controller.advanced-search"(e, templInstance) {
+    const target = e.currentTarget;
+    const tableId = $(target).attr("data-table-id");
+    const advancedSearch = templInstance.advancedSearch.get(tableId) || {};
+    const options = this.customTableSpec.table;
+    Modal.show("dynamicTableAdvancedSearchModal", {
+      beforeRender: options.advancedSearch.beforeRender,
+      collection: options.advancedSearch.collection || options.collection,
+      fields: options.advancedSearch.fields || _.compact(options.columns.map(column => column.data).filter(d => d !== "_id")),
+      columns: options.columns,
+      callback: options.advancedSearch.callback || ((search) => {
+        templInstance.advancedSearch.set(tableId, search);
+      }),
+      search: advancedSearch
+    });
   }
 });

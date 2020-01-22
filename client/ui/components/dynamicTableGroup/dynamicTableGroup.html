@@ -21,6 +21,11 @@
         <div class="dynamic-table-header" data-index="{{@index}}" data-table-id="{{value._id}}">
           {{#if showPrefix}}{{currentGroupLabel}}: {{/if}}{{value.label}} {{#if hasCount value}}({{count value}}){{/if}}
           <div class="pull-right">
+            {{#if advancedControl "searching"}}
+              <span class="advanced-search dynamic-table-manage-controller {{#if hasAdvancedSearch (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
+                <i class="fa fa-search"></i>
+              </span>
+            {{/if}}
             {{#if advancedControl "ordering"}}
               <span class="aspects dynamic-table-manage-controller {{#if ordered (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
                 <i class="fa fa-sort"></i>
