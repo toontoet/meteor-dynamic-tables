@@ -517,7 +517,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       serverSide: true,
       initComplete() {
         const table = templateInstance.data.table;
-        if (table.advancedSearch) {
+        if (table.advancedSearch && !table.advancedSearch.isHidden) {
           const advancedSearchButton = currentData.table.advancedSearch.buttonHtml ? $(currentData.table.advancedSearch.buttonHtml) : $("<buton>").addClass("advanced-search-button")
           .addClass("btn btn-default")
           .html("<i class='fa fa-search'></i>")

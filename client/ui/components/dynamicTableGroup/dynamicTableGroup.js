@@ -464,6 +464,10 @@ Template.dynamicTableGroup.helpers({
     return tableId;
   },
   advancedControl(option) {
+    if (! this.advanced[option]) {
+      return false;
+    }
+
     if (Template.instance().groupChain.get().length) {
       return this.advanced[option].branch
     }
