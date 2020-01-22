@@ -14,6 +14,12 @@
       {{/if}}
     </div>
     <div class="pull-right">
+      {{log advanced}}
+      {{#if advanced.searching.root}}
+        <span class="advanced-search grouped-table-manage-controller {{#if advancedSearch}} active {{/if}}">
+          <i class="fa fa-search"></i> Advanced Search
+        </span>
+      {{/if}}
       {{#if advanced.ordering.root}}
         <span class="aspects grouped-table-manage-controller {{#if aspects}} active {{/if}}">
           <i class="fa fa-sort"></i> Sort

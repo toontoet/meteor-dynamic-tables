@@ -4,6 +4,7 @@ import "./GroupedTable.html";
 import "./components/manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "./components/manageAspectsModal/manageAspectsModal.js";
 import "./components/manageFieldsModal/manageFieldsModal.js";
+import "./advancedSearchModal.js";
 import { getColumns, getPosition, changed, getCustom, createModal} from "../inlineSave.js";
 
 Template.GroupedTable.onRendered(function onRendered() {
@@ -29,6 +30,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());
   }, 1000);
+  this.advancedSearch = new ReactiveVar({});
 
   this.rootCustom = new ReactiveVar({}); // needed to pass limit/page number to the table
 
@@ -84,6 +86,7 @@ Template.GroupedTable.helpers({
     const data = Template.instance().data;
     const selector = _.extend({}, data.selector);
     const search = Template.instance().search.get();
+    const advancedSearch = Template.instance().advancedSearch.get();
     let searchSelector;
     if (search) {
       const searchVal = { $regex: search, $options: "i" };
@@ -105,7 +108,8 @@ Template.GroupedTable.helpers({
     if (selector && Object.keys(selector).length && searchSelector) {
       return { $and: [selector, searchSelector] };
     }
-    return searchSelector || selector;
+    const finalSelector = searchSelector || selector
+    return _.keys(advancedSearch).length ? { $and: [finalSelector, advancedSearch] } : finalSelector;
   },
   expandAll() {
     if (this.expandAll !== undefined) {
@@ -133,6 +137,10 @@ Template.GroupedTable.helpers({
   aspects() {
     return Template.instance().aspects.get();
   },
+  advancedSearch() {
+    const advancedSearch = Template.instance().advancedSearch.get();
+    return advancedSearch && _.keys(advancedSearch).length;
+  },
   columns() {
     return Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id }));
   },
@@ -141,6 +149,7 @@ Template.GroupedTable.helpers({
       {},
       this,
       {
+        selector: Template.instance().advancedSearch.get(),
         hasContext: true, // letting customizableTable know that it will pass custom table spec data
         aspects: Template.instance().aspects.get(),
         selectedColumns: Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id })),
@@ -284,5 +293,19 @@ Template.GroupedTable.events({
     };
 
     createModal(e.currentTarget, modalMeta, templInstance);
+  },
+  "click .grouped-table-manage-controller.advanced-search"(e, templInstance) {
+    const advancedSearch = templInstance.advancedSearch.get();
+    const options = this.table;
+    Modal.show("dynamicTableAdvancedSearchModal", {
+      beforeRender: options.advancedSearch.beforeRender,
+      collection: options.advancedSearch.collection || options.collection,
+      fields: options.advancedSearch.fields || _.compact(options.columns.map(column => column.data).filter(d => d !== "_id")),
+      columns: options.columns,
+      callback: options.advancedSearch.callback || ((search) => {
+        templInstance.advancedSearch.set(search);
+      }),
+      search: advancedSearch
+    });
   }
 });
