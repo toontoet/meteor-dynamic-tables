@@ -37,12 +37,6 @@
     </div>
   </div>
   {{#if aGroupChain}}
-<<<<<<< HEAD
-=======
-    {{#if searching}}
-      <input type="text" placeholder="Search..." class="dynamic-table-global-search" />
-    {{/if}}
->>>>>>> master
     {{> dynamicTableGroup
       forceRefresh=forceRefresh
       showPrefix=showPrefix
@@ -51,7 +45,6 @@
       expandAll=expandAll
       lazy=lazy
       customTableSpec=customTableSpec
-<<<<<<< HEAD
       groupableFields=groupableFields
       advanced=advanced
       selector=selector
@@ -64,11 +57,6 @@
       custom=rootCustom
 
       orderCheckFn=orderCheckFn
-=======
-      groupChain=aGroupChain
-      index=0
-      selector=selector
->>>>>>> master
     }}
   {{else}}
     {{> CustomizableTable
