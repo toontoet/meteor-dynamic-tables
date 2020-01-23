@@ -20,14 +20,14 @@ Template.dynamicTableDateValueEditor.onRendered(function() {
         datePickerFn = $.fn.datepicker.bind(input);
       }
     }
-    catch (e) { 
+    catch (e) {
       console.warn("Bootstrap datepicker is not found. The program will use the builtin/available datepicker insted. Some functionality limmitaion are expected");
     }
   }
 
   const defaultDateFormat = "mm/dd/yyyy";
   const dateFormat = this.data.options.dateFormat || defaultDateFormat;
-  // if bootstrap datepicker is not imported into the project 
+  // if bootstrap datepicker is not imported into the project
   // it will use jquery datepicker syntax
   const datePickerRet = datePickerFn({
     multidate: isMultiple,// will be ignored for jquery
@@ -36,7 +36,7 @@ Template.dynamicTableDateValueEditor.onRendered(function() {
       input.trigger("needToUpdate");
     }
   });
-  // if bootstrap date picker was imported 
+  // if bootstrap date picker was imported
   if (datePickerRet.on) {
     datePickerRet.on("changeDate", function(e) {
       if (! isMultiple) {
@@ -52,7 +52,10 @@ Template.dynamicTableDateValueEditor.onRendered(function() {
 Template.dynamicTableDateValueEditor.helpers({
   date() {
     return Template.instance().data.value;
-  }
+  },
+  inputClass() {
+    return this.id !== undefined ? this.id : "";
+  },
 });
 
 Template.dynamicTableDateValueEditor.events({
@@ -60,7 +63,7 @@ Template.dynamicTableDateValueEditor.events({
     const input = $(e.target);
     const defaultMomentDateFormat = "MM/DD/YY";
     const momentDateFormat = Template.instance().data.options.dateFormat ? Template.instance().options.data.dateFormat.toUpperCase().replace("YYYY", "YY") : defaultMomentDateFormat;
-    // moment validation AND regex 2 digit/2 digit/4 digit OR empty input so date can be erased 
+    // moment validation AND regex 2 digit/2 digit/4 digit OR empty input so date can be erased
     if (moment(input.val(), momentDateFormat).isValid() && /^(\d{2}\/\d{2}\/\d{4},?)+$/.test(input.val()) || input.val() === "") {
       input.removeClass("date-invalid");
       if (templInstance.data.saveOnEnter !== false) {

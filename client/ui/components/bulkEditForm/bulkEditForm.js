@@ -118,12 +118,13 @@ Template.dynamicTableBulkEditForm.onCreated(function onCreated() {
   this.editableCols = columns.filter(col => !!col.editTmpl).map(col => col.data);
   this.editableRowData = new ReactiveVar(getEditableRowData(tableData.table.collection, documentIds, allEditableCols));
   this.fields = allEditableCols;
+  const publication = this.bulkEditOptions.publication || tableData.table.publication;
 
   const self = this;
   this.autorun(() => {
     const additionalCols = self.additionalCols.get();
     const subsFields = additionalCols.map(f => ({ [f]: 1 })).reduce((acc, val) => Object.assign(acc, val), {});
-    const handle = self.subscribe(tableData.table.publication, { _id: { $in: documentIds } }, { fields: subsFields });
+    const handle = self.subscribe(publication, { _id: { $in: documentIds } }, { fields: subsFields });
     this.autorun(() => {
       const isReady = handle.ready();
       if (isReady) {

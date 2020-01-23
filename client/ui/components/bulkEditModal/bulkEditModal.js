@@ -30,8 +30,8 @@ Template.bulkEditModal.events({
     const documentIds = Template.currentData().documentIds;
     const columns = tableData.table.columns ? tableData.table.columns : [];
     const editableCols = columns.filter(col => !!col.editTmpl).map(col => col.data);
-    const collection = tableData.table.collection;
     const bulkEditOptions = tableData.table.bulkEditOptions;
+    const collection = bulkEditOptions.collection || tableData.table.collection;
     const additionalCols = Template.dynamicTableBulkEditForm.additionalCols;
     const allColumns = tableData.allColumns || columns;
 
@@ -41,7 +41,7 @@ Template.bulkEditModal.events({
     const updatedEntries = [];
     const skippedEntries = [];
     const failedEntries = [];
-    const documentsToUpdate = collection ? collection.find({ _id: { $in: documentIds } }, { fields: { _id: true } }) : [];
+    const documentsToUpdate = collection ? collection.find({ _id: { $in: documentIds } }, { /* we want all the fields to pass whole doc in edit call back */ }) : [];
     const modifier = fields.reduce((memo, field) => {
       const editRowData = {
         doc: {},
@@ -99,7 +99,7 @@ Template.bulkEditModal.events({
       promise = new Promise((resolve, reject) => {
         Meteor.call(
           bulkUpdateMethod,
-          tableData.table.collection._name,
+          collection._name,
           documentsToUpdate.map(d => d._id),
           modifier.$set,
           _.object(_.keys(modifier.extra), _.values(modifier.extra).map(v => v && v.map(o => ({ selected: o.selected, text: o.text, search: o.search, id: o.id })))),

@@ -367,6 +367,18 @@ editTmplContext(rowData) {
 }
 ```
 
+### BulkEditSpec
+
+The bulk edit functionality allows update multiple rows with common value(s)
+
+| Field | Type | Description | Default |
+| - | - | - | - |
+| publication | String | The name of the publication to use for bulk edit form, if not provided table `publication` field is used | Optional |
+| collection | String | The name of the collection to use for bulk edit form, if not provided table `collection` field is used | Optional |
+| updateMethod | String | Meteor method name | Optional |
+| onSuccess | Function | This function is triggered, if bulk edit is completed without throwing any error | Optional |
+| onError | Function | This function is triggered, if bulk edit throws any error | Optional |
+
 ### ExportSpec
 
 The export functionality allows multiple CSV rows to be output per data row, and in theory multiple columns per column - this allows clean exporting of mongo documents containing arrays
@@ -378,6 +390,7 @@ The export functionality allows multiple CSV rows to be output per data row, and
 | onComplete | Function | A callback in the case of success, called with `(csvText, fileName)` | Optional |
 | beforeRender | Function | A callback called prior to the export modal displaying, you can subscribe to anything from here | Optional |
 | fields | [[ExportFieldSpec](#markdown-header-exportfieldspec)/String] | An array of fields that should be exported, this could be more or less fields than provided by the table | The table columns |
+| allAvailableForExport | Boolean | Whether all rows can be exported at once, useful for very large collections. If set to false the export will default to visible rows. If true, an export of all rows will enforce a sort by _id. | true |
 
 ### ExportFieldSpec
 

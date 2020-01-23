@@ -93,6 +93,12 @@ function CSVLineFromDocument(doc, exportOptions, columns, fieldNames, selector) 
 }
 
 Template.dynamicTableExportModal.helpers({
+  allAvailable() {
+      if (typeof Template.instance().data.export.allAvailableForExport !== "undefined") {
+        return Template.instance().data.export.allAvailableForExport;
+      }
+      return true;
+  },
   isEven(index) {
     return index % 2 === 0;
   },
@@ -154,7 +160,6 @@ Template.dynamicTableExportModal.events({
     const templateInstance = Template.instance();
     const data = templateInstance.data;
     const selector = { $and: [data.selector, data.advancedSearch || {}] };
-
     const fieldNames = $("#dynamicTableExportModalselected-fields").val();
     let fetchFieldNames = _.union(fieldNames, data.extraFields);
     fetchFieldNames = fetchFieldNames.filter(field => !field.includes(".") || !fetchFieldNames.includes(field.split(".")[0]));
@@ -166,27 +171,26 @@ Template.dynamicTableExportModal.events({
       if (limit === "current") {
         limit = data.limit;
         options.skip = data.skip;
+        options.sort =  data.sort;  // If only returning visible records then use current sort by name
       }
       else if (limit === "selected") {
         selector.$and.push({ _id: { $in: data.selectedIds } });
         limit = false;
       }
       else {
+        options.sort = {"_id": 1}; // If not just returning visible but all, enforce sort by id
         limit = parseInt(limit, 10);
       }
       if (limit) {
         options.limit = limit;
       }
+    } else {
+      options.sort = {"_id": 1}; // If not just returning visible but all, enforce sort by id
     }
-    let sort = templateInstance.$(".sort").val();
-    if (sort) {
-      if (sort === "current") {
-        sort = data.sort;
-      }
-      else {
-        sort = { [sort]: 1 };
-      }
-      options.sort = sort;
+    if (templateInstance.data.export.allAvailableForExport === false) {
+      options.limit = data.limit;
+      options.skip = data.skip;
+      options.sort =  data.sort;  // If only returning visible records then use current sort by name
     }
     const sub = templateInstance.subscribe(
       "__dynamicTableResults",
