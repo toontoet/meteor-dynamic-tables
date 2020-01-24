@@ -121,7 +121,8 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
       }
     });
     select.val(val);
-    select.trigger("change", { initial: true });
+    // This caused the select to pop open on render even if this.data.openSelect2Immediately was false
+    //select.trigger("change", { initial: true });
     if (this.data.openSelect2Immediately !== false) {
       select.select2("open");
     }
@@ -166,6 +167,19 @@ Template.dynamicTableSelect2ValueEditor.helpers({
 });
 
 Template.dynamicTableSelect2ValueEditor.events({
+  "select2:select"(e, templInstance) {
+    console.log(templInstance);
+    if (templInstance.data.maintainSelectedOrder) {
+      let elem = e.target;
+      let id = e.params.data.id;
+      let $elem = $(elem);
+      let chosenOption = $elem.find('[value='+id.replace(".","")+']');
+      chosenOption.detach();
+      $(e.target).append(chosenOption);
+      $(e.target).trigger("change");
+      templInstance.data.editCallback($elem.find(":selected"));
+    }
+  },
   "select2:close select"(e, templInstance) {
     const target = e.currentTarget;
     if (templInstance.waiting) {
@@ -182,6 +196,11 @@ Template.dynamicTableSelect2ValueEditor.events({
   },
   "change"(e, templInstance) {
     const target = e.currentTarget;
+    if (templInstance.data.maintainSelectedOrder) {
+      let elem = e.target;
+      let $elem = $(elem);
+      templInstance.data.editCallback($elem.find(":selected"));
+    }
     if (typeof templInstance.data.triggerEditOnChange !== "undefined"
       && !templInstance.data.triggerEditOnChange
       && typeof templInstance.data.trackOptions !== "undefined"
