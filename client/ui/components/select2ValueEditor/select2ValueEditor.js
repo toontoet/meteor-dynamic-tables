@@ -121,7 +121,8 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
       }
     });
     select.val(val);
-    select.trigger("change", { initial: true });
+    // This caused the select to pop open on render even if this.data.openSelect2Immediately was false
+    //select.trigger("change", { initial: true });
     if (this.data.openSelect2Immediately !== false) {
       select.select2("open");
     }
@@ -167,6 +168,7 @@ Template.dynamicTableSelect2ValueEditor.helpers({
 
 Template.dynamicTableSelect2ValueEditor.events({
   "select2:select"(e, templInstance) {
+    console.log(templInstance);
     if (templInstance.data.maintainSelectedOrder) {
       let elem = e.target;
       let id = e.params.data.id;
