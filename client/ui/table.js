@@ -517,7 +517,7 @@ Template.DynamicTable.onRendered(function onRendered() {
       serverSide: true,
       initComplete() {
         const table = templateInstance.data.table;
-        if (table.advancedSearch && !table.advancedSearch.isHidden) {
+        if (table.advancedSearch && table.advancedSearch.isHidden !== true) {
           const advancedSearchButton = currentData.table.advancedSearch.buttonHtml ? $(currentData.table.advancedSearch.buttonHtml) : $("<buton>").addClass("advanced-search-button")
           .addClass("btn btn-default")
           .html("<i class='fa fa-search'></i>")
@@ -582,6 +582,9 @@ Template.DynamicTable.onRendered(function onRendered() {
             const titleFunction = columns[index] && columns[index].titleFn;
             if (typeof titleFunction === "function") {
               headerCell.innerHTML = titleFunction();
+            }
+            else {
+              headerCell.innerHTML = `<span>${headerCell.innerText}</span>`;
             }
           }
         });
