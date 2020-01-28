@@ -74,8 +74,21 @@ Template.dynamicTableSelect2ValueEditor.onCreated(function onCreated() {
 });
 
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
+  //console.log(Template.instance());
+//  console.log(Template.instance().$("select").data("select2"));
+  // if (this.placeholder.id === 'placeholderTag') {
+  //   this.placeholder.options.forEach((option) => {
+  //     let id = Template.currentData().presetIds[option];
+  //     console.log(id);
+  //
+  //   })
+  // }
+
   let options = this.data.options;
   const val = this.data.value || getValue(this.data.doc, this.data.column.data) || [];
+  console.log(val);
+  console.log(Template.instance());
+
   const origOptions = options;
   let promise = Promise.resolve(options);
   if (_.isFunction(options)) {
@@ -92,36 +105,36 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     console.log(asyncOptions);
     const select = this.$("select");
     function select2CopyClasses(data, container) {
-      console.log("LOOKING FOR STYLE");
-      console.log(data);
-    if (data.element) {
-      console.log('inside if');
-      console.log(container);
-      console.log(data.element);
-      if (data.element.children) {
-        return data.text;
-        console.log(data.element.children);
-        let num = data.element.children.length;
-
-        console.log(`NUM: ${num}`);
-      //    $(data.element.children).css('color', 'red');
-        // for (let i = 0; i < num; i++) {
-        //   console.log(data.element.children[i]);
-        //   //$(data.element.children[i]).removeClass();
-        //   //$(data.element.children[i]).addClass('tagStyle');
-        //     //data.element.children[i].classList.add('tagStyle');
-        //
-        // }
-      // data.element.children.forEach((optionChild) => {
-      //   $(optionChild).addClass(data.class);
-      //
-      // });
-    }
-
-    //  console.log($(data.element).attr("class"));
-        $(container).addClass(data.class);//$(data.element).attr("class"));
-
-    }
+    //   console.log("LOOKING FOR STYLE");
+    //   console.log(data);
+    // if (data.element) {
+    //   console.log('inside if');
+    //   console.log(container);
+    //   console.log(data.element);
+    //   if (data.element.children) {
+    //     return data.text;
+    //     console.log(data.element.children);
+    //     let num = data.element.children.length;
+    //
+    //     console.log(`NUM: ${num}`);
+    //   //    $(data.element.children).css('color', 'red');
+    //     // for (let i = 0; i < num; i++) {
+    //     //   console.log(data.element.children[i]);
+    //     //   //$(data.element.children[i]).removeClass();
+    //     //   //$(data.element.children[i]).addClass('tagStyle');
+    //     //     //data.element.children[i].classList.add('tagStyle');
+    //     //
+    //     // }
+    //   // data.element.children.forEach((optionChild) => {
+    //   //   $(optionChild).addClass(data.class);
+    //   //
+    //   // });
+    // }
+    //
+    // //  console.log($(data.element).attr("class"));
+    //     $(container).addClass(data.class);//$(data.element).attr("class"));
+    //
+    // }
 
     return $(`<option class="${data.class}" >${data.text}</option>`);
     //return data.text;
@@ -163,7 +176,7 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     select.val(val);
 
     // This caused the select to pop open on render even if this.data.openSelect2Immediately was false
-    //select.trigger("change", { initial: true });
+    select.trigger("change", { initial: true });
     if (this.data.openSelect2Immediately !== false) {
       select.select2("open");
     }
@@ -211,6 +224,7 @@ Template.dynamicTableSelect2ValueEditor.events({
   "select2:select"(e, templInstance) {
 
     if (templInstance.data.maintainSelectedOrder) {
+      console.log(e);
       let elem = e.target;
       let id = e.params.data.id;
       let $elem = $(elem);
@@ -234,6 +248,8 @@ Template.dynamicTableSelect2ValueEditor.events({
       //
       // } else {
         chosenOption.detach();
+        console.log("chosenOption");
+        console.log(chosenOption);
         $(e.target).append(chosenOption);
         $(e.target).trigger("change");
         templInstance.data.editCallback($elem.find(":selected"));
@@ -255,6 +271,7 @@ Template.dynamicTableSelect2ValueEditor.events({
     }
   },
   "change"(e, templInstance) {
+    console.log("CHANGE CALLED");
     const target = e.currentTarget;
     if (templInstance.data.maintainSelectedOrder) {
       let elem = e.target;
