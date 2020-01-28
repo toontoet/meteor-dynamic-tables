@@ -106,7 +106,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
         return order;
       }).filter(o => o[0] + 1); // filters all columns which we don't display
       query.options.sort = newSorts;
-      tableTemplateInstance.$tableElement.DataTable().order(dataTableSort)
+      tableTemplateInstance.$tableElement.DataTable().order(dataTableSort).draw()
       tableTemplateInstance.query.dep.changed();
     }
 
