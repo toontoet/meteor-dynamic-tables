@@ -890,9 +890,11 @@ Template.DynamicTable.onCreated(function onCreated() {
       }
       oldFnColReorder.apply(this, args);
       // swaps columns in template. Needed for customizableTable to know how to order
+      console.log("REORDERED: ", self.columns.map(c => c.title));
       const col = _.extend({}, self.columns[args[1]]);
       self.columns[args[1]] = _.extend({}, self.columns[args[2]]);
       self.columns[args[2]] = col;
+      console.log("INTO: ", self.columns.map(c => c.title));
     };
   }
   this.loaded = new ReactiveVar(true);

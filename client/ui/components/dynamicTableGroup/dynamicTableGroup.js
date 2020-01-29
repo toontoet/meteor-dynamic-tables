@@ -147,16 +147,6 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     }
   });
 
-  /****************************************************************
-  * TODO:                                                         *
-  *   To be removed. GroupedTable gets root custom and            *
-  *   dynamicTableGroup gets custom of each nested table/group.   *
-  *   We can just pass it to the kid.                             *
-  *****************************************************************/
-  // getCustom(this.data.customTableSpec.custom, this.data.tableId, (custom) => {
-  //   this.custom.set(custom);
-  // });
-
   const distinctValuesSub = new ReactiveVar();
 
   // triggers when context data sets
