@@ -41,13 +41,6 @@ Template.dynamicTableHeaderCell.helpers({
   },
   columnTitle() {
     return Template.instance().columnTitle.get() || "";
-  },
-  orderClass() {
-    const order = _.findWhere(this.dataTable.api().order(), { 0: this.columnIndex });
-    if (order) {
-      return "active " + order[1];
-    }
-    return "";
   }
 });
 Template.dynamicTableHeaderCell.events({
