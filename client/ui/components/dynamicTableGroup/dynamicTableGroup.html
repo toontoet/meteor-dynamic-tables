@@ -27,7 +27,7 @@
               </span>
             {{/if}}
             {{#if advancedControl "ordering"}}
-              <span class="aspects dynamic-table-manage-controller {{#if ordered (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
+              <span class="orders dynamic-table-manage-controller {{#if ordered (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
                 <i class="fa fa-sort"></i>
               </span>
             {{/if}}
@@ -62,7 +62,7 @@
                 tableId=(tableId value)
 
                 groupChain=(groupChain (tableId value))
-                aspects=(aspects (tableId value))
+                orders=(orders (tableId value))
                 columns=(columns (tableId value))
 
                 custom=custom

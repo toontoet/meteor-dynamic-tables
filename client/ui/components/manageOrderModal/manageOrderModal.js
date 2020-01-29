@@ -1,28 +1,28 @@
-import "./manageAspectsModal.css";
-import "./manageAspectsModal.html";
+import "./manageOrderModal.css";
+import "./manageOrderModal.html";
 
 import { Random } from "meteor/random";
 
-Template.dynamicTableManageAspectsModal.onCreated(function onCreated() {
+Template.dynamicTableManageOrderModal.onCreated(function onCreated() {
   this.newColumns = new ReactiveVar([]);
-  this.aspects = new ReactiveVar(this.data.aspects);
+  this.order = new ReactiveVar(this.data.order);
 });
 
-Template.dynamicTableManageAspectsModal.onRendered(function onRendered() {
-  this.updateOrder = (newAspects) => {
+Template.dynamicTableManageOrderModal.onRendered(function onRendered() {
+  this.updateOrder = (newOrder) => {
     this.newColumns.set([]);
-    this.aspects.set(newAspects);
-    this.data.changeCallback(newAspects);
+    this.order.set(newOrder);
+    this.data.changeCallback(newOrder);
   };
 });
 
-Template.dynamicTableManageAspectsModal.helpers({
+Template.dynamicTableManageOrderModal.helpers({
   label(field) {
     return field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title;
   },
-  aspects() {
-    const aspects = [].concat(Template.instance().aspects.get(), Template.instance().newColumns.get());
-    return aspects.length ? aspects : [{ order: "asc" }];
+  orders() {
+    const orders = [].concat(Template.instance().order.get(), Template.instance().newColumns.get());
+    return orders.length ? orders : [{ order: "asc" }];
   },
   selected(field, selectedField) {
     if (! selectedField.data) {
@@ -49,66 +49,66 @@ Template.dynamicTableManageAspectsModal.helpers({
     return _.sortBy(groups.undefined || [], field => field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title);
   },
   activeOrder(order, index) {
-    const aspect = Template.instance().aspects.get()[index];
-    if (! aspect) {
+    const currentOrder = Template.instance().order.get()[index];
+    if (! order) {
       return "nah";
     }
-    return aspect.order === order ? "active" : "nah";
+    return currentOrder.order === order ? "active" : "nah";
   }
 });
 
-Template.dynamicTableManageAspectsModal.events({
+Template.dynamicTableManageOrderModal.events({
   "click .btn.order"(e, templInstance) {
     const target = $(e.currentTarget);
-    const aspects = JSON.parse(JSON.stringify(templInstance.aspects.get()));
+    const order = JSON.parse(JSON.stringify(templInstance.order.get()));
     const index = target.data("index");
     if (target.hasClass("active")) {
       return;
     }
 
-    if (! aspects[index]) {
+    if (! order[index]) {
       Notifications.error("No Value Selected", "Select column before sorting by it.", { timeout: 8000 });
       return;
     }
 
-    aspects[index].order = target.hasClass("asc") ? "asc" : "desc";
-    templInstance.updateOrder(aspects);
+    order[index].order = target.hasClass("asc") ? "asc" : "desc";
+    templInstance.updateOrder(order);
   },
   "change select"(e, templInstance) {
     const target = $(e.currentTarget);
     const index = target.data("index");
-    const aspects = JSON.parse(JSON.stringify(templInstance.aspects.get()));
-    if (! aspects[index]) {
-      aspects[index] = { order: "asc" };
+    const order = JSON.parse(JSON.stringify(templInstance.order.get()));
+    if (! order[index]) {
+      order[index] = { order: "asc" };
     }
 
     const data = target.val();
     if (data) {
       const column = _.find(this.availableColumns, c => c.data === data);
-      aspects[index].data = column.data;
-      aspects[index].id = column.id; // not sure if id is needed
+      order[index].data = column.data;
+      order[index].id = column.id; // not sure if id is needed
     }
     else {
-      aspects.splice(index, 1);
+      order.splice(index, 1);
     }
 
-    templInstance.updateOrder(aspects);
+    templInstance.updateOrder(order);
   },
-  "click .add-aspect"(e, templInstance) {
+  "click .add-order"(e, templInstance) {
     templInstance.newColumns.get().push({ data: Random.id() });
     templInstance.newColumns.dep.changed();
   },
-  "click .remove-aspect"(e, templInstance) {
+  "click .remove-order"(e, templInstance) {
     const target = $(e.currentTarget);
     const index = target.data("index");
-    const aspects = templInstance.aspects.get();
-    if (index >= aspects.length) {
-      templInstance.newColumns.get().splice(index - aspects.length, 1);
+    const order = templInstance.order.get();
+    if (index >= order.length) {
+      templInstance.newColumns.get().splice(index - order.length, 1);
       templInstance.newColumns.dep.changed();
     }
     else {
-      aspects.splice(index, 1);
-      templInstance.updateOrder(aspects);
+      order.splice(index, 1);
+      templInstance.updateOrder(order);
     }
   }
 });

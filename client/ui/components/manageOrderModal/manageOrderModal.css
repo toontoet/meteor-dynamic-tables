@@ -1,4 +1,4 @@
-div.dynamic-table-manage-aspects {
+div.dynamic-table-manage-order {
   width: 350px;
   background-color: #fff;
   border: 1px solid #999;
@@ -7,22 +7,22 @@ div.dynamic-table-manage-aspects {
   overflow-y: auto;
   padding: 10px;
 }
-div.dynamic-table-manage-aspects>div {
+div.dynamic-table-manage-order>div {
   clear: both;
   width: 100%;
 }
-div.dynamic-table-manage-aspects select {
+div.dynamic-table-manage-order select {
   width: 50%;
   margin-bottom: 0px;
 }
-div.dynamic-table-manage-aspects button {
+div.dynamic-table-manage-order button {
   /*to be managed 40px ≈ 12%*/
   width: 40px;
   margin-bottom: 0px;
   padding-left: 0;
   padding-right: 0;
 }
-div.dynamic-table-manage-aspects label {
+div.dynamic-table-manage-order label {
   width: 20%;
   display: inline-block;
   vertical-align: middle;
@@ -30,7 +30,7 @@ div.dynamic-table-manage-aspects label {
   margin-bottom: 0px;
 }
 
-div.dynamic-table-manage-aspects .add-group {
+div.dynamic-table-manage-order .add-group {
   margin-top: 10px;
   display: block;
   color: #0088cc;

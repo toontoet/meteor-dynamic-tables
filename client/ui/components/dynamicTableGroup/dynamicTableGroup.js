@@ -5,7 +5,7 @@ import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../
 import { changed, getCustom, getColumns, getValue, createModal } from "../../../inlineSave.js";
 
 import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
-import "../manageAspectsModal/manageAspectsModal.js";
+import "../manageOrderModal/manageOrderModal.js";
 import "../manageFieldsModal/manageFieldsModal.js";
 import "../../advancedSearchModal.js";
 
@@ -120,7 +120,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
 
   this.grouping = this.data.groupableFields.find(gf => gf.field === _.first(this.data.groupChain)); // the critirea which current group was grouped by
   this.groupChain = new ReactiveVar(_.rest(this.data.groupChain)); // inherited groupchain excluding current grouping
-  this.aspects = new ReactiveVar(this.data.aspects); // current ordering
+  this.orders = new ReactiveVar(this.data.orders); // current ordering
   this.columns = new ReactiveVar(this.data.columns); // current columns
 
   this.nestedGrouping = new ReactiveDict(); // set of groupchains for nested tables
@@ -130,15 +130,15 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   // needed for passing number of page and number of records per page
   this.nestedCustoms = new ReactiveDict();  // set of custom table specs for nested tables
 
-  // reactivity to refresh tables when goups/aspects/columns are changed
+  // reactivity to refresh tables when goups/orders/columns are changed
   const groupChain = new ReactiveVar(this.data.groupChain);
   this.autorun(() => {
     const data = Template.currentData();
     if (JSON.stringify(Tracker.nonreactive(() => this.columns.get())) !== JSON.stringify(data.columns)) {
       this.columns.set(data.columns);
     }
-    if (JSON.stringify(Tracker.nonreactive(() => this.aspects.get())) !== JSON.stringify(data.aspects)) {
-      this.aspects.set(data.aspects);
+    if (JSON.stringify(Tracker.nonreactive(() => this.orders.get())) !== JSON.stringify(data.orders)) {
+      this.orders.set(data.orders);
     }
     if (JSON.stringify(Tracker.nonreactive(() => groupChain.get())) !== JSON.stringify(data.groupChain)) {
       groupChain.set(data.groupChain);
@@ -420,7 +420,7 @@ Template.dynamicTableGroup.helpers({
         hasContext: true,
         selector: newSelector,
         id: tableId,
-        aspects: Template.instance().nestedOrder.get(tableId) || Template.instance().aspects.get(),
+        orders: Template.instance().nestedOrder.get(tableId) || Template.instance().orders.get(),
         selectedColumns: Template.instance().nestedColumns.get(tableId) || Template.instance().columns.get(),
         parentTableCustom: Template.instance().nestedCustoms.get(tableId) || this.custom
       }
@@ -431,7 +431,7 @@ Template.dynamicTableGroup.helpers({
   },
   currentGroupValues() {
     const templInstance = Template.instance();
-    const order = templInstance.aspects.get()[0] || {};
+    const order = templInstance.orders.get()[0] || {};
     const grouping = templInstance.grouping;
     const values = templInstance.values.get();
     if (grouping.field === order.data || grouping.valuesField === order.data && values.length) {
@@ -495,9 +495,9 @@ Template.dynamicTableGroup.helpers({
     const advancedSearch = Template.instance().advancedSearch.get(tableId);
     return advancedSearch && _.keys(advancedSearch).length;
   },
-  aspects(tableId) {
+  orders(tableId) {
     const nestedOrder = Template.instance().nestedOrder.get(tableId);
-    const ownOrder = Template.instance().aspects.get();
+    const ownOrder = Template.instance().orders.get();
     return nestedOrder || ownOrder;
   },
   columns(tableId) {
@@ -550,26 +550,26 @@ Template.dynamicTableGroup.events({
     }
     changed(templInstance.data.customTableSpec.custom, tableId, { changeOpenGroups: { [tableId]: open } });
   },
-  "click .dynamic-table-manage-controller.aspects"(e, templInstance) {
+  "click .dynamic-table-manage-controller.orders"(e, templInstance) {
     const target = e.currentTarget;
     const tableId = $(target).attr("data-table-id");
-    const order = templInstance.nestedOrder.get(tableId) || templInstance.data.aspects;
+    const order = templInstance.nestedOrder.get(tableId) || templInstance.data.orders;
     const availableColumns = getColumns(templInstance.data.customTableSpec.columns).filter(c => c.sortable !== false);
     const modalMeta = {
-      template: Template.dynamicTableManageAspectsModal,
-      id: "dynamic-table-manage-aspects-modal",
+      template: Template.dynamicTableManageOrderModal,
+      id: "dynamic-table-manage-orders-modal",
       options: {
         availableColumns,
-        aspects: order,
-        changeCallback(aspects) {
-          if (templInstance.data.orderCheckFn(aspects, availableColumns)) {
-            if (aspects.length) {
-              templInstance.nestedOrder.set(tableId, aspects);
+        order: order,
+        changeCallback(orders) {
+          if (templInstance.data.orderCheckFn(orders, availableColumns)) {
+            if (orders.length) {
+              templInstance.nestedOrder.set(tableId, orders);
             }
             else {
               templInstance.nestedOrder.delete(tableId);
             }
-            changed(templInstance.data.customTableSpec.custom, tableId, { newOrder: aspects });
+            changed(templInstance.data.customTableSpec.custom, tableId, { newOrder: orders });
           }
         }
       }

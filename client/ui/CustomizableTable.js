@@ -21,7 +21,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
     this.selectedColumns.set(newColumns);
     changed(this.data.custom, this.data.id, { newColumns: columns.map(col => ({ data: col.data, id: col.id })) });
   };
-  this.order = new ReactiveVar(this.data.aspects)
+  this.order = new ReactiveVar(this.data.orders)
   this.selectedColumns = new ReactiveVar([]);
   // Used when Customizable table used alone without grouped table
   if (! this.data.hasContext) {
@@ -92,14 +92,14 @@ Template.CustomizableTable.onCreated(function onCreated() {
       return;
     }
     // refreshes table when order has been changed
-    if (JSON.stringify(Tracker.nonreactive(() => this.order.get())) !== JSON.stringify(data.aspects) && data.aspects) {
-      this.order.set(data.aspects);
+    if (JSON.stringify(Tracker.nonreactive(() => this.order.get())) !== JSON.stringify(data.orders) && data.orders) {
+      this.order.set(data.orders);
       const tableTemplateInstance = Blaze.getView(this.$("table")[0]).templateInstance();
       const query = Tracker.nonreactive(() => tableTemplateInstance.query.get());
       // transforms order - [{}, {}] into one object with all keys and values
       const sortifyOrder = (order, sort = {}) => order.length ? sortifyOrder(_.rest(order), _.extend(sort, _.first(order))) : sort;
-      const newSorts = sortifyOrder(data.aspects.map(a => ({ [a.data || a.id]: a.order === "asc" ? 1 : -1 }))); // sort which we can store and query database
-      const dataTableSort = data.aspects.map(s => { // sort which DataTable would understand
+      const newSorts = sortifyOrder(data.orders.map(a => ({ [a.data || a.id]: a.order === "asc" ? 1 : -1 }))); // sort which we can store and query database
+      const dataTableSort = data.orders.map(s => { // sort which DataTable would understand
         const index = _.findIndex(tableTemplateInstance.columns, c => c.data === s.data);
         const order = [index, s.order];
         order._idx = index;

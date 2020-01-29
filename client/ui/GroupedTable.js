@@ -2,7 +2,7 @@ import "./components/dynamicTableGroup/dynamicTableGroup.js";
 import "./GroupedTable.html";
 
 import "./components/manageGroupFieldsModal/manageGroupFieldsModal.js";
-import "./components/manageAspectsModal/manageAspectsModal.js";
+import "./components/manageOrderModal/manageOrderModal.js";
 import "./components/manageFieldsModal/manageFieldsModal.js";
 import "./advancedSearchModal.js";
 import { getColumns, getPosition, changed, getCustom, createModal} from "../inlineSave.js";
@@ -53,7 +53,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.search = new ReactiveVar();
   this.customColumns = new ReactiveVar([]);
   this.groupChain = new ReactiveVar(this.data.defaultGrouping || []);
-  this.aspects = new ReactiveVar(this.data.defaultOrder || []);
+  this.orders = new ReactiveVar(this.data.defaultOrder || []);
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());
   }, 1000);
@@ -76,7 +76,7 @@ Template.GroupedTable.onCreated(function onCreated() {
       const columns = custom.columns || this.data.table.columns || this.data.columns().filter(c => c.default);
       this.customColumns.set(_.compact(columns.map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
       if (custom.order) {
-        this.aspects.set(custom.order);
+        this.orders.set(custom.order);
       }
       if (custom.groupChainFields) {
         this.groupChain.set(custom.groupChainFields);
@@ -89,7 +89,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   });
 
   this.documentMouseDown = (e) => {
-    const modalIds = ["dynamic-table-manage-aspects-modal", "dynamic-table-manage-group-fields-modal", "dynamic-table-manage-fields-modal"];
+    const modalIds = ["dynamic-table-manage-orders-modal", "dynamic-table-manage-group-fields-modal", "dynamic-table-manage-fields-modal"];
     modalIds.forEach(id => {
       const manageGroupFieldsWrapper = $(`#${id}`)[0];
       if (manageGroupFieldsWrapper) {
@@ -139,8 +139,8 @@ Template.GroupedTable.helpers({
     // see line :34 ; maybe need to be changed
     return Template.instance().data.id;
   },
-  aspects() {
-    return Template.instance().aspects.get();
+  orders() {
+    return Template.instance().orders.get();
   },
   advancedSearch() {
     const advancedSearch = Template.instance().advancedSearch.get();
@@ -160,7 +160,7 @@ Template.GroupedTable.helpers({
       {
         selector,
         hasContext: true, // letting customizableTable know that it will pass custom table spec data
-        aspects: templInstance.aspects.get(),
+        orders: templInstance.orders.get(),
         selectedColumns: templInstance.customColumns.get().map(c => ({ data: c.data, id: c.id })),
         parentTableCustom: templInstance.rootCustom.get()
       }
@@ -199,18 +199,18 @@ Template.GroupedTable.events({
     }
     createModal(e.currentTarget, modalMeta, templInstance);
   },
-  "click span.grouped-table-manage-controller.aspects"(e, templInstance) {
+  "click span.grouped-table-manage-controller.orders"(e, templInstance) {
     const availableColumns = getColumns(this.columns).filter(c => c.sortable !== false);
     const modalMeta = {
-      template: Template.dynamicTableManageAspectsModal,
-      id: "dynamic-table-manage-aspects-modal",
+      template: Template.dynamicTableManageOrderModal,
+      id: "dynamic-table-manage-orders-modal",
       options: {
         availableColumns,
-        aspects: templInstance.aspects.get(),
-        changeCallback(aspects) {
-          if (templInstance.data.orderCheckFn(aspects, availableColumns)) {
-            templInstance.aspects.set(aspects);
-            changed(templInstance.data.custom, templInstance.data.id, { newOrder: aspects });
+        order: templInstance.orders.get(),
+        changeCallback(orders) {
+          if (templInstance.data.orderCheckFn(orders, availableColumns)) {
+            templInstance.orders.set(orders);
+            changed(templInstance.data.custom, templInstance.data.id, { newOrder: orders });
           };
         }
       }
