@@ -7,15 +7,16 @@ import "./components/manageFieldsModal/manageFieldsModal.js";
 import "./advancedSearchModal.js";
 import { getColumns, getPosition, changed, getCustom, createModal} from "../inlineSave.js";
 
-function getRootSelector(currentSelector, search, advancedSearch, templInstance) {
+/** @this = template instance */
+function getRootSelector(currentSelector, search, advancedSearch) {
   const selector = _.extend({}, currentSelector)
-  const data = templInstance.data;
+  const data = this.data;
   let searchSelector;
   // finding search selector
   if (search) {
     const searchVal = { $regex: search, $options: "i" };
     searchSelector = { $or: [] };
-    const columns = _.unique(templInstance.customColumns.get().length ? templInstance.customColumns.get() : getColumns(data.columns || data.table.columns), c => c.data + c.id + c.search);
+    const columns = _.unique(this.customColumns.get().length ? this.customColumns.get() : getColumns(data.columns || data.table.columns), c => c.data + c.id + c.search);
     columns.filter(c => c.searchable !== false).forEach((column) => {
       if (column.search) {
         let res = column.search(_.extend({}, searchVal, { $options: column.searchOptions }));
@@ -113,7 +114,7 @@ Template.GroupedTable.helpers({
     const templInstance = Template.instance();
     const search = templInstance.search.get();
     const advancedSearch =  templInstance.advancedSearch.get();
-    const selector = getRootSelector(this.selector, search, advancedSearch, templInstance);
+    const selector = getRootSelector.call(templInstance, this.selector, search, advancedSearch);
     return selector;
   },
   expandAll() {
@@ -153,7 +154,7 @@ Template.GroupedTable.helpers({
     const templInstance = Template.instance();
     const search = templInstance.search.get();
     const advancedSearch =  templInstance.advancedSearch.get();
-    const selector = getRootSelector(this.selector, search, advancedSearch, templInstance);
+    const selector = getRootSelector.call(templInstance, this.selector, search, advancedSearch);
     return _.extend(
       {},
       this,
