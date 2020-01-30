@@ -30,6 +30,7 @@ function handler(e) {
   if (nextField.inProgress) {
     return;
   }
+
   let $select = $(e.currentTarget).closest("td").find(".dynamicTableSelect2ValueEditor");
   if (!$select.length) {
     const possibles = _.toArray($(".select2-container"));
@@ -71,8 +72,12 @@ Template.dynamicTableSelect2ValueEditor.onCreated(function onCreated() {
 });
 
 Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
+
   let options = this.data.options;
   const val = this.data.value || getValue(this.data.doc, this.data.column.data) || [];
+
+  let templInstance = Template.instance();
+
   const origOptions = options;
   let promise = Promise.resolve(options);
   if (_.isFunction(options)) {
@@ -87,11 +92,15 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   }
   promise.then((asyncOptions) => {
     const select = this.$("select");
+    function select2CopyClasses(data, container) {
+      return $(`<option class="${data.class}" >${data.text}</option>`);
+    }
     select.select2({
       minimumInputLength: this.data.minimumInputLength !== undefined ? this.data.minimumInputLength : (_.isArray(options) ? 0 : 1),
       language: {
         inputTooShort: () => this.data.emptyInputMessage || "Start Typing..."
       },
+      templateResult: select2CopyClasses,
       multiple: !!this.data.multiple,
       triggerEditOnChange: !!this.data.triggerEditOnChange || true,
       allowClear: true,
@@ -120,9 +129,24 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
         text: this.data.placeholder || "Add Tags"
       }
     });
-    select.val(val);
-    // This caused the select to pop open on render even if this.data.openSelect2Immediately was false
-    //select.trigger("change", { initial: true });
+      select.val(_.uniq(val));
+      select.trigger("change", { initial: true });
+
+      if (this.data.maintainSelectedOrder) {
+          _.uniq(val).forEach((value, index) => {
+          let elem = templInstance.firstNode.children;
+          let id = value.replace(" ", "");
+          let $elem = $(elem);
+          let chosenOption = $elem.find('[value='+id+']');
+          $(chosenOption).prop('selected', true);
+          chosenOption.detach();
+          $(elem).append(chosenOption);
+          $(elem).trigger("change");
+          templInstance.data.editCallback($elem.find(":selected"));
+        });
+          select.trigger("change");
+      }
+
     if (this.data.openSelect2Immediately !== false) {
       select.select2("open");
     }
@@ -167,17 +191,36 @@ Template.dynamicTableSelect2ValueEditor.helpers({
 });
 
 Template.dynamicTableSelect2ValueEditor.events({
+  "select2:unselecting"(e, templInstance) {
+    if (templInstance.data.maintainSelectedOrder) {
+      let elem = e.target;
+      let $elem = $(elem);
+      $.each($elem.find(":selected"), function () {
+        if ($(this).val() === e.params.args.data.id) {
+          // NOTE: This prevents duplicate pills/tags appearing
+          $(this).remove();
+        }
+      });
+      $(e.target).trigger("change");
+    }
+  },
   "select2:select"(e, templInstance) {
-    console.log(templInstance);
     if (templInstance.data.maintainSelectedOrder) {
       let elem = e.target;
       let id = e.params.data.id;
       let $elem = $(elem);
-      let chosenOption = $elem.find('[value='+id.replace(".","")+']');
+      let chosenOption = $elem.find('[value='+id.replace(".","").replace(" ", "")+']');
       chosenOption.detach();
       $(e.target).append(chosenOption);
+      let nameCounter = {};
+      $.each($elem.find(":selected"), function () {
+        nameCounter[$(this).val()] = (nameCounter[$(this).val()] || 0) + 1;
+        if (nameCounter[$(this).val()] > 1) {
+          //$(this).prop('selected', false); // NOTE: This prevents duplicate pills/tags appearing
+          $(this).remove();
+        }
+      });
       $(e.target).trigger("change");
-      templInstance.data.editCallback($elem.find(":selected"));
     }
   },
   "select2:close select"(e, templInstance) {
