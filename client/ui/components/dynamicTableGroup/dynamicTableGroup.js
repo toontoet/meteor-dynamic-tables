@@ -130,6 +130,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   // needed for passing number of page and number of records per page
   this.nestedCustoms = new ReactiveDict();  // set of custom table specs for nested tables
 
+  this.highlitedColumns = new ReactiveDict();
+
   // reactivity to refresh tables when goups/orders/columns are changed
   const groupChain = new ReactiveVar(this.data.groupChain);
   this.autorun(() => {
@@ -205,6 +207,9 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           this.nestedCustoms.set(nestedTableId, custom);
           if (custom.columns) {
             this.nestedColumns.set(nestedTableId, custom.columns);
+            if (custom.root !== true) {
+              this.highlitedColumns.set(nestedTableId, true);
+            }
           }
           else if (! this.data.columns) {
             const defaultColumns = JSON.parse(JSON.stringify(this.data.customTableSpec.columns().filter(c => c.default).map(c => ({ data: c.data, id: c.id }))));
@@ -480,6 +485,9 @@ Template.dynamicTableGroup.helpers({
   },
   ordered(tableId) {
     return Template.instance().nestedOrder.get(tableId);
+  },
+  columned(tableId) {
+    return Template.instance().highlitedColumns.get(tableId);
   },
   hasAdvancedSearch(tableId) {
     const advancedSearch = Template.instance().advancedSearch.get(tableId);
