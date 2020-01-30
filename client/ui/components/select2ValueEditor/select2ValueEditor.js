@@ -30,7 +30,7 @@ function handler(e) {
   if (nextField.inProgress) {
     return;
   }
-  console.log("handler");
+
   let $select = $(e.currentTarget).closest("td").find(".dynamicTableSelect2ValueEditor");
   if (!$select.length) {
     const possibles = _.toArray($(".select2-container"));
@@ -91,12 +91,10 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     });
   }
   promise.then((asyncOptions) => {
-    console.log(asyncOptions);
     const select = this.$("select");
     function select2CopyClasses(data, container) {
-    return $(`<option class="${data.class}" >${data.text}</option>`);
-    //return data.text;
-}
+      return $(`<option class="${data.class}" >${data.text}</option>`);
+    }
     select.select2({
       minimumInputLength: this.data.minimumInputLength !== undefined ? this.data.minimumInputLength : (_.isArray(options) ? 0 : 1),
       language: {
@@ -135,12 +133,12 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
       select.trigger("change", { initial: true });
 
       if (this.data.maintainSelectedOrder) {
-        console.log("RERENDER");
-        _.uniq(val).forEach((value, index) => {
+          _.uniq(val).forEach((value, index) => {
           let elem = templInstance.firstNode.children;
-          let id = value;
+          let id = value.replace(" ", "");
           let $elem = $(elem);
           let chosenOption = $elem.find('[value='+id+']');
+          $(chosenOption).prop('selected', true);
           chosenOption.detach();
           $(elem).append(chosenOption);
           $(elem).trigger("change");
@@ -195,13 +193,11 @@ Template.dynamicTableSelect2ValueEditor.helpers({
 Template.dynamicTableSelect2ValueEditor.events({
   "select2:unselecting"(e, templInstance) {
     if (templInstance.data.maintainSelectedOrder) {
-      console.log(e.params.args.data);
       let elem = e.target;
       let $elem = $(elem);
       $.each($elem.find(":selected"), function () {
-      console.log($(this).val());
         if ($(this).val() === e.params.args.data.id) {
-          //$(this).prop('selected', false); // NOTE: This prevents duplicate pills/tags appearing
+          // NOTE: This prevents duplicate pills/tags appearing
           $(this).remove();
         }
       });
@@ -213,7 +209,7 @@ Template.dynamicTableSelect2ValueEditor.events({
       let elem = e.target;
       let id = e.params.data.id;
       let $elem = $(elem);
-      let chosenOption = $elem.find('[value='+id.replace(".","")+']');
+      let chosenOption = $elem.find('[value='+id.replace(".","").replace(" ", "")+']');
       chosenOption.detach();
       $(e.target).append(chosenOption);
       let nameCounter = {};
@@ -242,13 +238,10 @@ Template.dynamicTableSelect2ValueEditor.events({
     }
   },
   "change"(e, templInstance) {
-    console.log("change called");
     const target = e.currentTarget;
     if (templInstance.data.maintainSelectedOrder) {
       let elem = e.target;
       let $elem = $(elem);
-      console.log(elem);
-      console.log($elem.find(":selected"));
       templInstance.data.editCallback($elem.find(":selected"));
     }
     if (typeof templInstance.data.triggerEditOnChange !== "undefined"
