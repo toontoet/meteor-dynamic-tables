@@ -128,20 +128,37 @@ Template.CustomizableTable.events({
           }
           const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
           const search = tableTemplateInstance.advancedSearch.get();
-          if (actualColumn.sortField || actualColumn.sortableField) {
-            delete search[actualColumn.sortableField];
-            delete search[actualColumn.sortField];
-            unsetField = actualColumn.sortField || actualColumn.sortableField;
+          const checkSearch = function () {
+            if (actualColumn.sortField || actualColumn.sortableField) {
+              delete search[actualColumn.sortableField];
+              delete search[actualColumn.sortField];
+              unsetField = actualColumn.sortField || actualColumn.sortableField;
+            }
+            else {
+              unsetField = actualColumn.data;
+              delete search[actualColumn.data];
+            }
+            tableTemplateInstance.advancedSearch.set(search);
+            tableTemplateInstance.query.dep.changed();
           }
-          else {
-            unsetField = actualColumn.data;
-            delete search[actualColumn.data];
-          }
-          tableTemplateInstance.advancedSearch.set(search);
-          tableTemplateInstance.query.dep.changed();
-          columns.splice(columns.indexOf(actualColumn), 1);
+          let custom = getCustom(templInstance.data.custom, templInstance.data.id, (custom) => {
+            if (!custom.filter) {
+              checkSearch();
+              columns.splice(columns.indexOf(actualColumn), 1);
+              changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns, unset: unsetField });
+            }
+            else {
+              if (custom.filter.includes(column.data)) {
+                console.error("You cannot hide a column you are filtering on!");
+              } else {
+                checkSearch();
+                columns.splice(columns.indexOf(actualColumn), 1);
+                changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns, unset: unsetField });
+              }
+            }
+          });
         }
-        changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns, unset: unsetField });
+
         templInstance.selectedColumns.set(columns);
         manageFieldsOptions.selectedColumns = columns;
 
