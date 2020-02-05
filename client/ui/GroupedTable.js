@@ -53,7 +53,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.customTableSpec = this.data;
   this.search = new ReactiveVar();
   this.customColumns = new ReactiveVar([]);
-  this.groupChain = new ReactiveVar(this.data.defaultGrouping || []);
+  this.groupChain = new ReactiveVar(this.data.groupChain || []);
   this.orders = new ReactiveVar(this.data.defaultOrder || []);
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());
@@ -172,6 +172,13 @@ Template.GroupedTable.helpers({
   },
   orderCheckFn() {
     return this.orderCheckFn;
+  },
+  advanced(parameter) {
+    const advanced = this.advanced || {};
+    if (advanced[parameter]) {
+      return advanced[parameter].root;
+    }
+    return false;
   }
 });
 
