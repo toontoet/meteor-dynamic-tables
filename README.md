@@ -4,16 +4,12 @@ Provides more flexible functionality than [Tabular Tables](https://github.com/al
 
 ## New in version 2.0
 
-1. Redis oplog support
-2. Reorder columns
-3. Allow the uesr to add and remove columns
-4. Allow per-column advanced filtering and sorting
-5. Allow arbitrary grouping of records
-6. Save configurations (columns, sort, filter, skip, limit, grouping) on the user object for use later.
-7. Inline editing either using a generic template, or a custom provided one.
-8. More finegrained reactivity to improve render perforamnce
+1. Have unique grouping for each table.
+2. Order groups.
+3. Allow advanced search on nested tables.
+4. Get advanced view which lets having unique specs on any level.
 
-Some of these advanced features require the use of the `CustomizableTable` or `GroupedTable` templates.
+All of the new features are applied to `GroupedTable` template.
 
 ## Installation
 

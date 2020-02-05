@@ -1,3 +1,4 @@
+
 # GroupedTable
 
 This component allows arbitrary grouping of table rows. Each group contains a separate folder where the id of the table is the id of the original table with the cleaned selector for the grouping appended. Each table can be sorted, or filtered separately.
@@ -37,6 +38,42 @@ Use in the same way as [CustomizableTable](./docs/CustomizableTable.md) with a f
   undefined, //Boolean or Object, optional
 }
 ```
+
+`defaultOrder` An array of the names of the default order set to use, e.g., `[{ data: "name", order: "asc" }]`. This value will be overwritten if a custom field is provided.
+
+`orderCheckFn` A function which gets new order and confirms that it is good. Returns bool - confirmation that it is good sort. May be useful if you want to have multi sorting, but to block sorting on parallel arrays.
+
+```js
+orderCheckFn() {
+  // Example of blocking parallel error sort
+  // columnsSpecs are the columns you provided to table
+  return (order, columnSpecs) => {
+    const columnsToOrder = order.map( o => _.findWhere(columnSpecs, { data: o.data }));
+    const arrayNumber = columnsToOrder.filter(c => c.isArray).length
+    if (arrayNumber > 1) {
+      // panic and throw error
+      return false;
+    }
+    return true;
+  }
+},
+```
+
+`advanced` An object which contains metadata what controllers to have in the table.
+Each controller has 3 levels:
+- `root` - to manage table on root level;
+- `branch` - in header of each group to manage only that group and its subgroups
+- `leaf` - same as branch, but does not have subgroups
+```js
+  // NOTE: if don't specify that it is true, it will not be shown
+  advanced: {
+    grouping: { root: true, branch: true, leaf: true },  // to set grouping/subgrouping
+    ordering: { root: true, branch: true, leaf: true },  // to set order
+    columning: { root: true, branch: true, leaf: true }, // to manage columns
+    searching: { root: true, branch: true, leaf: true }  // for advanced search
+  }
+```
+\* when providing `searching: { .. true .. }` you need to provide advanced search function in the table .
 
 ### noGroups Specs
 
