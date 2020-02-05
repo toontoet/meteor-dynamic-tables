@@ -419,7 +419,7 @@ You can shortcut this spec by just defining A string (the fieldName)
 
 | Field | Type | Description | Default |
 | - | - | - | - |
-| isHidden | Bool. If `true`, hides advancedSearch button in table. May be usefull when you use advanced seach in GroupedTable `advanced: { searching { leaf: true } }` | Optional |
+| isHidden | Bool | If `true`, hides advancedSearch button in table. May be usefull when you use advanced seach in GroupedTable `advanced: { searching { leaf: true } }` | Optional |
 | beforeRender | Function | A callback called prior to the export modal displaying, you can subscribe to anything from here | Optional |
 | buttonHtml | String | The HTML of the button to render | `<button class=''>Advanced Search</button>` |
 | fields | [AdvancedSearchFieldSpec](#markdown-header-advancedsearchfieldspec)/String] | The fields to allow searching over, defaults to the fields defined by the columns in the table | Optional |
