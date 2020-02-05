@@ -14,22 +14,22 @@
       {{/if}}
     </div>
     <div class="pull-right">
-      {{#if advanced "searching"}}
+      {{#if advancedControl "searching"}}
         <span class="advanced-search grouped-table-manage-controller {{#if advancedSearch}} active {{/if}}">
           <i class="fa fa-search"></i> Advanced Search
         </span>
       {{/if}}
-      {{#if advanced "ordering"}}
+      {{#if advancedControl "ordering"}}
         <span class="orders grouped-table-manage-controller {{#if orders}} active {{/if}}">
           <i class="fa fa-sort"></i> Sort
         </span>
       {{/if}}
-      {{#if advanced "columning"}}
+      {{#if advancedControl "columning"}}
         <span class="columns grouped-table-manage-controller">
           <i class="fa fa-eye-slash"></i> Hide/Show Columns
         </span>
       {{/if}}
-      {{#if advanced "grouping"}}
+      {{#if advancedControl "grouping"}}
         <span class="groups grouped-table-manage-controller {{#if aGroupChain}} active {{/if}}">
           <i class="fa fa-th-list"></i> Group
         </span>

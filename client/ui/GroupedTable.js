@@ -173,7 +173,7 @@ Template.GroupedTable.helpers({
   orderCheckFn() {
     return this.orderCheckFn;
   },
-  advanced(parameter) {
+  advancedControl(parameter) {
     const advanced = this.advanced || {};
     if (advanced[parameter]) {
       return advanced[parameter].root;
