@@ -138,9 +138,9 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
           let id = value.replace(" ", "");
           let $elem = $(elem);
           let chosenOption = $elem.find('[value='+id+']');
-          $(chosenOption).prop('selected', true);
+          $($(chosenOption).first()).prop('selected', true);
           chosenOption.detach();
-          $(elem).append(chosenOption);
+          $(elem).append($(chosenOption).first());
           $(elem).trigger("change");
           templInstance.data.editCallback($elem.find(":selected"));
         });
