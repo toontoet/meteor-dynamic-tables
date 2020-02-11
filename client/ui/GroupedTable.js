@@ -194,7 +194,7 @@ Template.GroupedTable.events({
   "keyup .dynamic-table-global-search"(e, templInstance) {
     templInstance.searchFn();
   },
-  "click span.grouped-table-manage-controller.groups"(e, templInstance, extra) {
+  "click span.grouped-table-manage-controller.groups"(e, templInstance, extra = {}) {
     // extra is needed for backward compatibility; to be removed in 2.0 release
     const modalMeta = {
       template: Template.dynamicTableManageGroupFieldsModal,
