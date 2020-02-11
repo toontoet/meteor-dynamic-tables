@@ -30,7 +30,8 @@
         </span>
       {{/if}}
       {{#if advancedControl "grouping"}}
-        <span class="groups grouped-table-manage-controller {{#if aGroupChain}} active {{/if}}">
+        <!-- manage-group-fields needed for compatibility support only; to be removed in 2.0 release -->
+        <span class="groups grouped-table-manage-controller manage-group-fields {{#if aGroupChain}} active {{/if}}">
           <i class="fa fa-th-list"></i> Group
         </span>
       {{/if}}

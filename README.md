@@ -2,7 +2,7 @@
 
 Provides more flexible functionality than [Tabular Tables](https://github.com/aldeed/meteor-tabular) at the cost of more configuration.
 
-## New in version 2.0
+## New in version 1.8.0
 
 1. Have unique grouping for each table.
 2. Order groups.

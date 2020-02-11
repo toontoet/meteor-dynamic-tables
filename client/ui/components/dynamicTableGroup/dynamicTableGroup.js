@@ -458,7 +458,7 @@ Template.dynamicTableGroup.helpers({
     return tableId;
   },
   advancedControl(option) {
-    if (! this.advanced[option]) {
+    if (! this.advanced || !this.advanced[option]) {
       return false;
     }
 

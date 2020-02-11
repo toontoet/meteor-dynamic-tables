@@ -174,7 +174,9 @@ Template.GroupedTable.helpers({
     return this.orderCheckFn;
   },
   advancedControl(parameter) {
-    const advanced = this.advanced || {};
+    const advanced = this.advanced || {
+      grouping: { root: true } // needed for backward compatibility; to be removed in 2.0 release
+    };
     if (advanced[parameter]) {
       return advanced[parameter].root;
     }
@@ -192,7 +194,8 @@ Template.GroupedTable.events({
   "keyup .dynamic-table-global-search"(e, templInstance) {
     templInstance.searchFn();
   },
-  "click span.grouped-table-manage-controller.groups"(e, templInstance) {
+  "click span.grouped-table-manage-controller.groups"(e, templInstance, extra) {
+    // extra is needed for backward compatibility; to be removed in 2.0 release
     const modalMeta = {
       template: Template.dynamicTableManageGroupFieldsModal,
       id: "dynamic-table-manage-group-fields-modal",
@@ -205,7 +208,7 @@ Template.GroupedTable.events({
         }
       }
     }
-    createModal(e.currentTarget, modalMeta, templInstance);
+    createModal(extra.target || e.currentTarget, modalMeta, templInstance);
   },
   "click span.grouped-table-manage-controller.orders"(e, templInstance) {
     const availableColumns = getColumns(this.columns).filter(c => c.sortable !== false);
