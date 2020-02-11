@@ -65,6 +65,12 @@ Template.dynamicTableManageFieldsModal.events({
     if (isEdit) {
       templInstance.editableField.set(null);
     }
+    _.toArray(templInstance.$(".dynamic-table-edit-extra")).forEach((elem) => {
+      const $elem = $(elem);
+      if ($elem.attr("data-param")) {
+        newFieldSpec.extra[$elem.attr("data-para")] = $elem.val();
+      }
+    });
     templInstance.data.edit.callback(e, templInstance, isEdit)
     .then((newColumnSpec) => {
       templInstance.$(".btn-dynamic-table-save").removeAttr("disabled");
