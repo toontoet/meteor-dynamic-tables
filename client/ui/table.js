@@ -937,6 +937,7 @@ Template.DynamicTable.onCreated(function onCreated() {
       if (tdorh) { // NOTE: data-column-index is only added when colReorder is used
         index = _.toArray(this.$("thead>tr")[0].children).indexOf(tdorh);
       }
+      this.filterModalCallback(index, [], "$in", undefined, false);
       this.$("thead").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.$("tbody>tr").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.dataTable.api().context[0].aoColumns.splice(index, 1);

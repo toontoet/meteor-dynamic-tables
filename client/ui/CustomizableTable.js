@@ -147,13 +147,18 @@ Template.CustomizableTable.helpers({
     return (newFilter, newOrder, columns) => {
       if (columns) {
         const currentColumns = templInstance.selectedColumns.get();
-        columns.filter(col => col.id).forEach((col) => {
+        for (let col of columns.filter(col => col.id)) {
           const oldColumn = _.findWhere(currentColumns, { id: col.id });
+          if (! oldColumn) {
+            // means that column was removed and so filter should be
+            changed(templInstance.data.custom, templInstance.data.id, { newFilter });
+            return
+          }
           if (oldColumn.data !== col.data) {
             oldColumn.data = col.data;
             templInstance.selectedColumns.dep.changed();
           }
-        });
+        }
       }
       changed(templInstance.data.custom, templInstance.data.id, { newColumns: Tracker.nonreactive(() => templInstance.selectedColumns.get()), newFilter, newOrder });
     };
@@ -240,7 +245,6 @@ Template.CustomizableTable.events({
           unsetField = actualColumn.data;
           delete search[actualColumn.data];
         }
-        tableTemplateInstance.filterModalCallback(columns.indexOf(actualColumn), [], "$in", undefined, false);
         tableTemplateInstance.advancedSearch.set(search);
         tableTemplateInstance.query.dep.changed();
         columns.splice(columns.indexOf(actualColumn), 1);
