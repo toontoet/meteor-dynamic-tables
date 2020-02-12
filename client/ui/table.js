@@ -891,6 +891,7 @@ Template.DynamicTable.onCreated(function onCreated() {
       oldFnColReorder.apply(this, args);
     };
   }
+  this.filterModalCallback = filterModalCallback.bind(self);
   this.loaded = new ReactiveVar(true);
   this.sub = new ReactiveVar(null);
   this.selector = new ReactiveVar({});

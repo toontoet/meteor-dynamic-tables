@@ -227,30 +227,32 @@ Template.CustomizableTable.events({
             return column.data === col.data;
           });
           if (!actualColumn) {
-            return;
-          }
-          const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
-          const search = tableTemplateInstance.advancedSearch.get();
-          if (actualColumn.sortField || actualColumn.sortableField) {
-            delete search[actualColumn.sortableField];
-            delete search[actualColumn.sortField];
-            unsetField = actualColumn.sortField || actualColumn.sortableField;
-          }
-          else {
-            unsetField = actualColumn.data;
-            delete search[actualColumn.data];
-          }
-          tableTemplateInstance.advancedSearch.set(search);
-          tableTemplateInstance.query.dep.changed();
-          columns.splice(columns.indexOf(actualColumn), 1);
+          return;
         }
-        changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns, unset: unsetField });
-        templInstance.selectedColumns.set(columns);
-        manageFieldsOptions.selectedColumns = columns;
-
-        $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageFieldsOptions);
+        const tableTemplateInstance = Blaze.getView(templInstance.$("table")[0]).templateInstance();
+        const search = tableTemplateInstance.advancedSearch.get();
+        if (actualColumn.sortField || actualColumn.sortableField) {
+          delete search[actualColumn.sortableField];
+          delete search[actualColumn.sortField];
+          unsetField = actualColumn.sortField || actualColumn.sortableField;
+        }
+        else {
+          unsetField = actualColumn.data;
+          delete search[actualColumn.data];
+        }
+        tableTemplateInstance.filterModalCallback(columns.indexOf(actualColumn), [], "$in", undefined, false);
+        tableTemplateInstance.advancedSearch.set(search);
+        tableTemplateInstance.query.dep.changed();
+        columns.splice(columns.indexOf(actualColumn), 1);
       }
-    }, templInstance.data.manageFieldsOptions || {});
+
+      changed(templInstance.data.custom, templInstance.data.id, { newColumns: columns, unset: unsetField });
+      templInstance.selectedColumns.set(columns);
+      manageFieldsOptions.selectedColumns = columns;
+
+      $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageFieldsOptions);
+    }
+  }, templInstance.data.manageFieldsOptions || {});
     if (manageFieldsOptions.edit) {
       manageFieldsOptions.edit.addedCallback = (columnSpec) => {
         if (!_.isFunction(templInstance.data.columns)) {
