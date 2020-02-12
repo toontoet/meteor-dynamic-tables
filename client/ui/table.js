@@ -971,7 +971,7 @@ Template.DynamicTable.onCreated(function onCreated() {
       self.tableId.set(currentData.id);
       oldColumns = currentData.table.columns.slice(0);
     }
-    else if (Tracker.nonreactive(() => self._columns.get().length) !== currentData.table.columns.length) {
+    else if (! EJSON.equals(Tracker.nonreactive(() => self._columns.get()), currentData.table.columns)) {
       if (!oldColumns) {
         oldColumns = currentData.table.columns;
       }
