@@ -49,7 +49,7 @@ Template.dynamicTableManageOrderModal.helpers({
     return _.sortBy(groups.undefined || [], field => field.label || field.manageGroupFieldsTitle || field.manageFieldsTitle || field.title);
   },
   activeOrder(order, index) {
-    const currentOrder = Template.instance().order.get()[index];
+    const currentOrder = Template.instance().order.get()[index] || {};
     if (! order) {
       return "nah";
     }
