@@ -859,13 +859,29 @@ Template.DynamicTable.onRendered(function onRendered() {
         return;
       }
 
-      // NOTE: if we have all the fields we need to sort on, we dont need to use the non-oplog observe call on the server, but we have to sort client side.
-      const hasSortableFields = (!this.sorting && currentData.table.sort) || _.keys(queryOptions.fields || {}).length === 0 || _.intersection(_.keys(queryOptions.fields || {}), _.keys(queryOptions.sort || {})).length === _.keys(queryOptions.sort || {}).length;
-      ajaxCallback({
-        data: hasSortableFields ? docs : _.sortBy(docs, row => tableInfo._ids.indexOf(row._id)),
-        recordsFiltered: tableInfo.recordsFiltered,
-        recordsTotal: tableInfo.recordsTotal
-      });
+      // NOTE: we do not want to redraw table if we have sort which is applied to a columns which was not fetched yet.
+      const sortKeys = _.keys(queryOptions.sort || {});
+      const fieldsToSort = _.compact(sortKeys.map(sk => _.findWhere(currentData.table.columns, { data: sk })));
+      if (sortKeys.length === fieldsToSort.length) {
+        // NOTE: if we have all the fields we need to sort on, we dont need to use the non-oplog observe call on the server, but we have to sort client side.
+        let hasSortableFields = false;
+        if (!this.sorting && currentData.table.sort) {
+          hasSortableFields = true;
+        }
+        if (_.keys(queryOptions.fields || {}).length === 0) {
+          hasSortableFields = true;
+        }
+        const intersection = _.intersection(_.keys(queryOptions.fields || {}), sortKeys);
+        if (intersection.legnth === sortKeys.length) {
+          hasSortableFields = true;
+        }
+
+        ajaxCallback({
+          data: hasSortableFields ? docs : _.sortBy(docs, row => tableInfo._ids.indexOf(row._id)),
+          recordsFiltered: tableInfo.recordsFiltered,
+          recordsTotal: tableInfo.recordsTotal
+        });
+      }
       if (this.sorting && currentData.table.sortable) {
         currentData.table.sortable.stop();
       }
