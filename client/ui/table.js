@@ -956,6 +956,22 @@ Template.DynamicTable.onCreated(function onCreated() {
       this.filterModalCallback(index, [], "$in", undefined, false);
       this.$("thead").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.$("tbody>tr").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
+      // HACK: the worst part of this file starts here. Making sure we can sort after removeing columns
+      for (let i = index; i < this.dataTable.api().context[0].aoColumns.length; i++) {
+        // updating idx amd aDataSort of every columns which goes after removed column
+        const idx = i - 1;
+        const settings = this.dataTable.api().settings()[0];
+        const header = this.$("thead").find(`td:nth-child(${i}),th:nth-child(${i})`);
+        header.attr("data-column-index", `${idx}`);
+        this.dataTable.api().context[0].aoColumns[i].idx = idx;
+        this.dataTable.api().context[0].aoColumns[i].aDataSort = [idx];
+        this.dataTable.oApi._fnSortAttachListener(settings, header, idx); // adding new event listener to the cell, so we can sort
+      }
+      this.dataTable.api().context[0].aaSorting.forEach(aasort => {
+        if (aasort[0] > index) {
+          aasort[0] -= 1;
+        }
+      });
       this.dataTable.api().context[0].aoColumns.splice(index, 1);
       this.dataTable.api().context[0].aoData[0].anCells.splice(index, 1);
       this.blaze = {};
