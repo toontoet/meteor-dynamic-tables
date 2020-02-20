@@ -5,7 +5,7 @@ import { Random } from "meteor/random";
 
 Template.dynamicTableManageOrderModal.onCreated(function onCreated() {
   this.newColumns = new ReactiveVar([]);
-  this.order = new ReactiveVar(this.data.order);
+  this.order = new ReactiveVar(JSON.parse(JSON.stringify(this.data.order)));
 });
 
 Template.dynamicTableManageOrderModal.onRendered(function onRendered() {
