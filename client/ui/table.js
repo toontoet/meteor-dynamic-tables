@@ -957,14 +957,20 @@ Template.DynamicTable.onCreated(function onCreated() {
       this.$("thead").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       this.$("tbody>tr").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
       // HACK: the worst part of this file starts here. Making sure we can sort after removeing columns
-      for (let i = index; i < this.dataTable.api().context[0].aoColumns.length; i++) {
-        // updating idx amd aDataSort of every columns which goes after removed column
+      for (let i = index + 1; i < this.dataTable.api().context[0].aoColumns.length; i++) {
+        // updating idx and aDataSort of every columns which goes after removed column
         const idx = i - 1;
         const settings = this.dataTable.api().settings()[0];
         const header = this.$("thead").find(`td:nth-child(${i}),th:nth-child(${i})`);
         header.attr("data-column-index", `${idx}`);
         this.dataTable.api().context[0].aoColumns[i].idx = idx;
         this.dataTable.api().context[0].aoColumns[i].aDataSort = [idx];
+        // unbinding old event listeners
+        const events = jQuery._data(header[0], "events");
+        for (let eventType of ["click", "keypress", "selectstart"]) {
+          const tounbind = events[eventType].filter(e => e.namespace === "DT");
+          header.unbind(eventType, tounbind.handler);
+        }
         this.dataTable.oApi._fnSortAttachListener(settings, header, idx); // adding new event listener to the cell, so we can sort
       }
       this.dataTable.api().context[0].aaSorting.forEach(aasort => {
