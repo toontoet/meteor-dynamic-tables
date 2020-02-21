@@ -5,9 +5,10 @@ Provides more flexible functionality than [Tabular Tables](https://github.com/al
 ## New in version 1.8.0
 
 1. Have unique grouping for each table.
-2. Order groups.
+2. Use order modal to order records and groups.
 3. Allow advanced search on nested tables.
 4. Get advanced view which lets having unique specs on any level.
+5. Bug fixes.
 
 All of the new features are applied to `GroupedTable` template.
 
