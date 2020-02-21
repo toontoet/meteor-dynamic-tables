@@ -254,6 +254,15 @@ Template.dynamicTableFilterModal.events({
       templInstance.fieldType.set(fieldType);
       templInstance.fieldLabel.set(newFieldSpec.label);
       templInstance.editing.set(false);
+      if (!newFieldSpec.extra) {
+        newFieldSpec.extra = {};
+      }
+      _.toArray(templInstance.$(".dynamic-table-edit-extra")).forEach((elem) => {
+        const $elem = $(elem);
+        if ($elem.attr("data-param")) {
+          newFieldSpec.extra[$elem.attr("data-para")] = $elem.val();
+        }
+      });
       templInstance.data.editFieldCallback(newFieldSpec);
     })
     .catch((err) => {
