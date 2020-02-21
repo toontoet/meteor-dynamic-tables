@@ -55,6 +55,7 @@ function handler(e) {
   }
   const tmplInstance = Blaze.getView($select[0]).templateInstance();
   if (e.keyCode === 9) {
+    debugger
     inlineSave(tmplInstance, $select.val());
     nextField(tmplInstance);
   }
@@ -92,15 +93,15 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   }
   promise.then((asyncOptions) => {
     const select = this.$("select");
-    function select2CopyClasses(data, container) {
-      return $(`<option class="${data.class}" >${data.text}</option>`);
-    }
+    // function select2CopyClasses(data, container) {
+    //   return $(`<option class="${data.class}" >${data.text}</option>`);
+    // }
     select.select2({
       minimumInputLength: this.data.minimumInputLength !== undefined ? this.data.minimumInputLength : (_.isArray(options) ? 0 : 1),
       language: {
         inputTooShort: () => this.data.emptyInputMessage || "Start Typing..."
       },
-      templateResult: select2CopyClasses,
+      // templateResult: select2CopyClasses,
       multiple: !!this.data.multiple,
       triggerEditOnChange: !!this.data.triggerEditOnChange || true,
       allowClear: true,
@@ -132,20 +133,20 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
       select.val(_.uniq(val));
       select.trigger("change", { initial: true });
 
-      if (this.data.maintainSelectedOrder) {
-          _.uniq(val).forEach((value, index) => {
-          let elem = templInstance.firstNode.children;
-          let id = value.replace(" ", "");
-          let $elem = $(elem);
-          let chosenOption = $elem.find('[value='+id+']');
-          $($(chosenOption).first()).prop('selected', true);
-          chosenOption.detach();
-          $(elem).append($(chosenOption).first());
-          $(elem).trigger("change");
-          templInstance.data.editCallback($elem.find(":selected"));
-        });
-          select.trigger("change");
-      }
+      // if (this.data.maintainSelectedOrder) {
+      //     _.uniq(val).forEach((value, index) => {
+      //     let elem = templInstance.firstNode.children;
+      //     let id = value.replace(" ", "");
+      //     let $elem = $(elem);
+      //     let chosenOption = $elem.find('[value='+id+']');
+      //     $($(chosenOption).first()).prop('selected', true);
+      //     chosenOption.detach();
+      //     $(elem).append($(chosenOption).first());
+      //     $(elem).trigger("change");
+      //     templInstance.data.editCallback($elem.find(":selected"));
+      //   });
+      //     select.trigger("change");
+      // }
 
     if (this.data.openSelect2Immediately !== false) {
       select.select2("open");
@@ -159,6 +160,10 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
       try {
         const container = this.$("select").data("select2").$container;
         if (!container.has($(e.target)).length) {
+          // console.log(this.$("select"));
+          // console.log(this.$("select").val());
+          // console.log(this.$("select").data("select2").data());
+          // debugger
           inlineSave(this, this.$("select").val(), this.$("select").data("select2").data());
         }
       }
@@ -191,38 +196,38 @@ Template.dynamicTableSelect2ValueEditor.helpers({
 });
 
 Template.dynamicTableSelect2ValueEditor.events({
-  "select2:unselecting"(e, templInstance) {
-    if (templInstance.data.maintainSelectedOrder) {
-      let elem = e.target;
-      let $elem = $(elem);
-      $.each($elem.find(":selected"), function () {
-        if ($(this).val() === e.params.args.data.id) {
-          // NOTE: This prevents duplicate pills/tags appearing
-          $(this).remove();
-        }
-      });
-      $(e.target).trigger("change");
-    }
-  },
-  "select2:select"(e, templInstance) {
-    if (templInstance.data.maintainSelectedOrder) {
-      let elem = e.target;
-      let id = e.params.data.id;
-      let $elem = $(elem);
-      let chosenOption = $elem.find('[value='+id.replace(".","").replace(" ", "")+']');
-      chosenOption.detach();
-      $(e.target).append(chosenOption);
-      let nameCounter = {};
-      $.each($elem.find(":selected"), function () {
-        nameCounter[$(this).val()] = (nameCounter[$(this).val()] || 0) + 1;
-        if (nameCounter[$(this).val()] > 1) {
-          //$(this).prop('selected', false); // NOTE: This prevents duplicate pills/tags appearing
-          $(this).remove();
-        }
-      });
-      $(e.target).trigger("change");
-    }
-  },
+  // "select2:unselecting"(e, templInstance) {
+  //   if (templInstance.data.maintainSelectedOrder) {
+  //     let elem = e.target;
+  //     let $elem = $(elem);
+  //     $.each($elem.find(":selected"), function () {
+  //       if ($(this).val() === e.params.args.data.id) {
+  //         // NOTE: This prevents duplicate pills/tags appearing
+  //         $(this).remove();
+  //       }
+  //     });
+  //     $(e.target).trigger("change");
+  //   }
+  // },
+  // "select2:select"(e, templInstance) {
+  //   if (templInstance.data.maintainSelectedOrder) {
+  //     let elem = e.target;
+  //     let id = e.params.data.id;
+  //     let $elem = $(elem);
+  //     let chosenOption = $elem.find('[value='+id.replace(".","").replace(" ", "")+']');
+  //     chosenOption.detach();
+  //     $(e.target).append(chosenOption);
+  //     let nameCounter = {};
+  //     $.each($elem.find(":selected"), function () {
+  //       nameCounter[$(this).val()] = (nameCounter[$(this).val()] || 0) + 1;
+  //       if (nameCounter[$(this).val()] > 1) {
+  //         //$(this).prop('selected', false); // NOTE: This prevents duplicate pills/tags appearing
+  //         $(this).remove();
+  //       }
+  //     });
+  //     $(e.target).trigger("change");
+  //   }
+  // },
   "select2:close select"(e, templInstance) {
     const target = e.currentTarget;
     if (templInstance.waiting) {
@@ -232,24 +237,30 @@ Template.dynamicTableSelect2ValueEditor.events({
       const data = templInstance.$("select").data("select2").data();
       templInstance.waiting = setTimeout(() => {
         if (!templInstance.data.multiple) {
-          inlineSave(templInstance, $(target).val(), data);
+          console.log("DONE WAITING")
+          console.log($(target));
+          console.log($(target).val());
+          //debugger
+          // inlineSave(templInstance, $(target).val(), data);
+          inlineSave(templInstance, "<div>Sentence one. Sentence two. Sentence three.</div>", data);
         }
       }, 100);
     }
   },
   "change"(e, templInstance) {
     const target = e.currentTarget;
-    if (templInstance.data.maintainSelectedOrder) {
-      let elem = e.target;
-      let $elem = $(elem);
-      templInstance.data.editCallback($elem.find(":selected"));
-    }
+    // if (templInstance.data.maintainSelectedOrder) {
+    //   let elem = e.target;
+    //   let $elem = $(elem);
+    //   templInstance.data.editCallback($elem.find(":selected"));
+    // }
     if (typeof templInstance.data.triggerEditOnChange !== "undefined"
       && !templInstance.data.triggerEditOnChange
       && typeof templInstance.data.trackOptions !== "undefined"
       && templInstance.data.trackOptions
     ) {
       templInstance.data.docId = templInstance.data.doc.id;
+      debugger
       inlineSave(templInstance, $(target).val(), templInstance.$("select").data("select2").data());
     }
   }
