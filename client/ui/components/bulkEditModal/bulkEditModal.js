@@ -50,7 +50,7 @@ Template.bulkEditModal.events({
       };
       const editTemplateData = field.editTmplContext ? field.editTmplContext(editRowData) : editRowData;
       const { fieldValue, extra, placeholder } = getFieldValue(templateInstance, field);
-      if (!fieldValue || (!fieldValue.length && placeholder === "Multiple Values")) {
+      if ((!fieldValue || !fieldValue.length) && placeholder === "Multiple Values") {
         return memo;
       }
       memo.fields[field.data] = field;
