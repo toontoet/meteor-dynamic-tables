@@ -52,7 +52,9 @@ Template.dynamicTableHeaderCell.events({
     const column = columns.find(c => (templInstance.data.column.id ? c.id === templInstance.data.column.id : c.data === templInstance.data.column.data));
     const columnOrder = _.find(order, col => col[0] === column.idx);
     const fieldName = (templInstance.data.column.filterModal.field && templInstance.data.column.filterModal.field.name) || templInstance.data.column.data;
-    const columnSearch = EJSON.fromJSONValue(templInstance.data.advancedSearch[fieldName]);
+    const searchObject = templInstance.data.advancedSearch;
+    const columnSearch = EJSON.fromJSONValue(searchObject.$and && searchObject.$and.length >= 1 ?
+      searchObject.$and[0][fieldName] : searchObject[fieldName]);
     let selectedOptions;
     let operator = "$in";
     let searchValue;
@@ -109,6 +111,8 @@ Template.dynamicTableHeaderCell.events({
         }
         else if (previousSearchObj[`${madeUpField}.$in`]) {
           operator = "$in";
+          // eslint-disable-next-line no-debugger
+          debugger;
           selectedOptions = previousSearchObj[`${madeUpField}.$in`];
         }
         else if (previousSearchObj[`${madeUpField}.$nin`]) {
@@ -191,7 +195,7 @@ Template.dynamicTableHeaderCell.events({
         if (actualColumn) {
           if (actualColumn.nTh && actualColumn.nTh.children.length) {
             Blaze.getView(actualColumn.nTh.children[0]).templateInstance().columnTitle.set(newFieldSpec.label);
-            //actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.replace(new RegExp(actualColumn.title, "g"), newFieldSpec.label);
+            // actualColumn.nTh.innerHTML = actualColumn.nTh.innerHTML.replace(new RegExp(actualColumn.title, "g"), newFieldSpec.label);
           }
           actualColumn.title = newFieldSpec.label;
         }
