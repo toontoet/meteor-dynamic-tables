@@ -36,7 +36,9 @@ Template.dynamicTableHeaderCell.helpers({
       }
       return false;
     }
-    const columnSearch = templInstance.data.advancedSearch[fieldName];
+    const searchObject = templInstance.data.advancedSearch;
+    const columnSearch = EJSON.fromJSONValue(searchObject.$and && searchObject.$and.length >= 1 ?
+      searchObject.$and[0][fieldName] : searchObject[fieldName]);
     return columnSearch;
   },
   columnTitle() {
@@ -111,8 +113,6 @@ Template.dynamicTableHeaderCell.events({
         }
         else if (previousSearchObj[`${madeUpField}.$in`]) {
           operator = "$in";
-          // eslint-disable-next-line no-debugger
-          debugger;
           selectedOptions = previousSearchObj[`${madeUpField}.$in`];
         }
         else if (previousSearchObj[`${madeUpField}.$nin`]) {

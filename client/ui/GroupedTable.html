@@ -14,9 +14,9 @@
       {{/if}}
     </div>
     <div class="pull-right">
-      {{#if advancedControl "searching"}}
-        <span class="advanced-search grouped-table-manage-controller {{#if advancedSearch}} active {{/if}}">
-          <i class="fa fa-search"></i> Advanced Search
+      {{#if advancedControl "filtering"}}
+        <span class="advanced-search grouped-table-manage-controller {{#if filters}} active {{/if}}">
+          <i class="fa fa-filter"></i> Filters
         </span>
       {{/if}}
       {{#if advancedControl "ordering"}}

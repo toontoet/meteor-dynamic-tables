@@ -6,6 +6,7 @@ rules:
   object-shorthand: ["error", "always", {avoidQuotes: false}]
   no-underscore-dangle: ["off"]
   no-continue: ["off"]
+  class-methods-use-this: ["off"]
   import/no-unresolved: ["off"]
   import/no-absolute-path: ["off"]
   import/extensions: ["off"]

@@ -143,9 +143,8 @@ Template.GroupedTable.helpers({
   orders() {
     return Template.instance().orders.get();
   },
-  advancedSearch() {
-    const advancedSearch = Template.instance().advancedSearch.get();
-    return advancedSearch && _.keys(advancedSearch).length;
+  filters() {
+    return true;
   },
   columns() {
     return Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id }));
