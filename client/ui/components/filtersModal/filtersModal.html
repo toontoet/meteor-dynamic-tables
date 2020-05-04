@@ -1,10 +1,10 @@
-<template name="dynamicTableFilterModal">
+<template name="dynamicTableFiltersModal">
   <div class="dynamic-table-filter">
     {{#if field.label}}
       <header class="dynamic-table-filter-header">
-        {{#if curEditing}}Edit{{else}}Filter by{{/if}}: <b>{{field.label}}</b>
+        {{#if editing}}Edit{{else}}Filter by{{/if}}: <b>{{fieldLabel}}</b>
         {{#if field.edit}}
-          {{#unless curEditing}}
+          {{#unless editing}}
             <span class="dynamic-table-filter-edit-btn">
               <i class="fa fa-pencil"></i> Edit
             </span>
@@ -12,29 +12,29 @@
         {{/if}}
       </header>
     {{/if}}
-    {{#if isLoading}}
+    {{#if loading}}
       <div style="position: absolute; top: 0px; bottom: 0px; left: 0px; right: 0px; background-color: #fff; opacity: 0.5;">
 
       </div>
     {{/if}}
-    {{#if curEditing}}
-      {{> manageColumnsForm groupNames=groupNames editableField=curEditableField manageFieldsEditContext=manageFieldsEditContext}}
+    {{#if editing}}
+      {{> manageColumnsForm groupNames=groupNames editableField=editableField manageFieldsEditContext=manageFieldsEditContext}}
     {{else}}
       {{#if sort.enabled}}
         <section class="dynamic-table-filter-sort">
           <label>Sort</label>
           <div>
             {{#if isNumericOrDate}}
-              <button class="btn btn-dynamic-table-sort {{#if checkedIfSortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">0-9</button>
-              <button class="btn btn-dynamic-table-sort {{#if checkedIfSortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">9-0</button>
+              <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">0-9</button>
+              <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">9-0</button>
             {{/if}}
             {{#if isStringOrCustom}}
-              <button class="btn btn-dynamic-table-sort {{#if checkedIfSortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">A-Z</button>
-              <button class="btn btn-dynamic-table-sort {{#if checkedIfSortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">Z-A</button>
+              <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">A-Z</button>
+              <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">Z-A</button>
             {{/if}}
             {{#if isBoolean}}
-              <button class="btn btn-dynamic-table-sort {{#if checkedIfSortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">True</button>
-              <button class="btn btn-dynamic-table-sort {{#if checkedIfSortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">False</button>
+              <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">True</button>
+              <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">False</button>
             {{/if}}
           </div>
           <hr>
@@ -43,7 +43,7 @@
       {{#if filter.enabled}}
         {{#if hasSelectedOptions}}
           <section class="dynamic-table-filter-selected">
-            {{#each option in curSelectedOption}}
+            {{#each option in selectedOptions}}
               <label data-value="{{option.value}}" class="label-dynamic-table-selected">
                 {{option.label}}
                 <i class="fa fa-times"></i>
@@ -61,7 +61,7 @@
               {{/if}}
             {{/if}}
             {{#if isNumber}}
-              <input type="number" class="input-dynamic-table-search" placeholder="Value" value="{{searchValue}}" />
+              <input type="number" class="input-dynamic-table-search" placeholder="Value" value="{{numberValue}}" />
               {{#if filter.operator.enabled}}
                 <i class="fa fa-cog"></i>
               {{/if}}
@@ -89,7 +89,7 @@
         {{/if}}
         {{#unless isBoolean}}
           {{#if filter.operator.enabled}}
-            <section class="dynamic-table-filter-operator" style="{{#unless curShowOperators}}display: none;{{/unless}}">
+            <section class="dynamic-table-filter-operator" style="{{#unless showOperators}}display: none;{{/unless}}">
               <label>Where column</label>
               <select class="select-dynamic-table-operator">
                 {{#if isDate}}
@@ -127,8 +127,8 @@
               Start typing to see your options
             {{/unless}}
             <div class="inner">
-              {{#each option in getOptions}}
-                <label><input class="input-dynamic-table-option" type="checkbox" value="{{option.value}}" {{isSelected option.value}} /> <span class="dynamic-table-option-value">{{option.label}}</span></label>
+              {{#each option in options}}
+                <label><input class="input-dynamic-table-option" type="checkbox" value="{{option.value}}" {{checkedIfSelected option.value}} /> <span class="dynamic-table-option-value">{{option.label}}</span></label>
               {{/each}}
             </div>
           </section>
@@ -136,8 +136,8 @@
       {{/if}}
     {{/if}}
     {{#if hasFooter}}
-      <footer class="dynamic-table-filter-footer" style="{{#if curEditing}}text-align: right; padding: 6px;{{/if}}">
-        {{#if curEditing}}
+      <footer class="dynamic-table-filter-footer" style="{{#if editing}}text-align: right; padding: 6px;{{/if}}">
+        {{#if editing}}
           <button class="btn btn-default btn-dynamic-table-cancel">Cancel</button>
           <button class="btn btn-success btn-dynamic-table-save">Save</button>
         {{else}}
