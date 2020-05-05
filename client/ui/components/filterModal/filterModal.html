@@ -104,13 +104,13 @@
                   {{else}}
                     <option value="$in" {{checkedIfWithValue}}>contains (OR)</option>
                     {{#if hasOptions}}
-                      {{#if isArrayField}}
+                      {{#if curIsArrayField}}
                         <option value="$all" {{checkedIfWithAllValue}}>contains (ALL)</option>
                       {{/if}}
                     {{/if}}
                     <option value="$nin" {{checkedIfWithoutValue}}>does not contain (OR)</option>
                     {{#if hasOptions}}
-                      {{#if isArrayField}}
+                      {{#if curIsArrayField}}
                         <option value="$not$all" {{checkedIfWithoutAllValue}}>does not contain (ALL)</option>
                       {{/if}}
                     {{/if}}

@@ -214,7 +214,7 @@ export class FilterComponent extends BlazeComponent {
       return [];
     }
     const selectedOptions = _.compact(this.selectedOptions.get().map(o =>
-      _.find(options, value => (value instanceof Date ? value.getTime() === new Date(o).getTime() : value === o))));
+      _.find(options, ({ value }) => (value instanceof Date ? value.getTime() === new Date(o).getTime() : value === o))));
     return selectedOptions.map(o => _.extend({ _id: o.value instanceof Date ? o.value.toString() : o.value }, o));
   }
 
