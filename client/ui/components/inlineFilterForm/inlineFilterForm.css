@@ -1,0 +1,15 @@
+div.dynamic-table-filter {
+  width: 250px;
+  background-color: #fff;
+  border: 1px solid #999;
+  box-shadow: 0px 0px 10px 0px #eee ;
+  display: inline-flex;
+}
+
+div.dynamic-table-filter>section.dynamic-table-filter-selected>label.label-dynamic-table-selected {
+  background-color: #00BAE3;
+  border-radius: 3px;
+  cursor: pointer;
+  margin: 2px;
+  padding: 5px;
+}

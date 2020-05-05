@@ -97,7 +97,7 @@ export class FilterComponent extends BlazeComponent {
 
   checkedIfSelected(o) {
     const found = _.find(this.selectedOptions.get(), value =>
-      (value instanceof Date ? new Date(o).getTime() === new Date(value).getTime() : value === o));
+      (value instanceof Date ? new Date(o).getTime() === new Date(value).getTime() : value.toString() === o.toString()));
     return found ? { checked: "checked" } : {};
   }
 
@@ -217,7 +217,7 @@ export class FilterComponent extends BlazeComponent {
       return [];
     }
     const selectedOptions = _.compact(this.selectedOptions.get().map(o =>
-      _.find(options, ({ value }) => (value instanceof Date ? value.getTime() === new Date(o).getTime() : value === o))));
+      _.find(options, ({ label }) => (label instanceof Date ? label.getTime() === new Date(o).getTime() : label === o))));
     return selectedOptions.map(o => _.extend({ _id: o.value instanceof Date ? o.value.toString() : o.value }, o));
   }
 
@@ -281,7 +281,7 @@ export class FilterComponent extends BlazeComponent {
 
   updateSelectedOptions(newOption, checked) {
     const selectedOptions = this.selectedOptions.get();
-    newOption = this.fieldType.get() === Date ? new Date(newOption) : newOption;
+    newOption = this.fieldType.get() === Date ? new Date(newOption) : newOption.toString();
     if (checked) {
       this.selectedOptions.set(_.union(selectedOptions, [newOption]));
     }
@@ -405,12 +405,26 @@ export class FilterComponent extends BlazeComponent {
         data.filter && data.filter.throttle ? data.filter.throttle.options : { leading: false }
       );
 
-      const formatOptions = options => options.map(o => (
-        typeof o === "object" ? o : {
-          label: o,
-          value: o
+      const formatOptions = options => options.map((o) => {
+        if (typeof (o) === "object") {
+          if (o.value && o.label) {
+            return {
+              value: o.value,
+              label: o.label.toString()
+            };
+          }
+          return o;
         }
-      ));
+
+        return {
+          value: o,
+          label: o.toString()
+        };
+      });
+
+      if (data.filter && _.isArray(data.filter.selectedOptions)) {
+        data.filter.selectedOptions = data.filter.selectedOptions.map(x => x.toString());
+      }
 
       if (data.filter && _.isFunction(data.filter.options)) {
         const optionsCallback = (options) => {
@@ -560,7 +574,7 @@ export class FilterComponent extends BlazeComponent {
             operator = "$eq";
           }
 
-          Tracker.nonreactive(() => callback(selectedOptions, operator, direction, false));
+          Tracker.nonreactive(() => callback(selectedOptions.map(option => options.find(item => item.label === option).value), operator, direction, false));
         });
       }
     });
