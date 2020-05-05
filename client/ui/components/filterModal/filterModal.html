@@ -122,8 +122,8 @@
         {{/unless}}
         {{#if hasOptions}}
           <section class="dynamic-table-filter-options">
-            <label>Values{{#if searching}}...{{/if}}</label>
-            {{#unless options.length}}
+            <label>Values{{#if curSearching}}...{{/if}}</label>
+            {{#unless getOptions.length}}
               Start typing to see your options
             {{/unless}}
             <div class="inner">

@@ -22,6 +22,7 @@ export class FilterComponent extends BlazeComponent {
       "getOptions",
       "hasSelectedOptions",
       "hasFilter",
+      "hasFooter",
       "searchEnabled",
       "checkedIfSortDirection",
 
