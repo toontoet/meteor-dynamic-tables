@@ -197,7 +197,7 @@ export class FilterComponent extends BlazeComponent {
     }
 
     const options = this.allOptions.get();
-    return _.isArray(options);
+    return options && options.length;
   }
 
   getOptions() {
@@ -206,7 +206,8 @@ export class FilterComponent extends BlazeComponent {
   }
 
   hasSelectedOptions() {
-    return _.isArray(this.selectedOptions.get());
+    const options = this.selectedOptions.get();
+    return options && options.length;
   }
 
   curSelectedOptions() {
