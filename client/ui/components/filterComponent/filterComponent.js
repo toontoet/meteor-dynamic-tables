@@ -55,32 +55,32 @@ export class FilterComponent extends BlazeComponent {
   }
 
   checkedIfWithValue() {
-    const filter = this.nonReactiveData();
+    const filter = this.nonReactiveData().filter;
     return ["$between", "$in", "$regex"].includes(filter.operator.selected) ? { selected: "selected" } : {};
   }
 
   checkedIfWithAllValue() {
-    const filter = this.nonReactiveData();
+    const filter = this.nonReactiveData().filter;
     return ["$all"].includes(filter.operator.selected) ? { selected: "selected" } : {};
   }
 
   checkedIfGteValue() {
-    const filter = this.nonReactiveData();
+    const filter = this.nonReactiveData().filter;
     return filter.operator.selected === "$gte" ? { selected: "selected" } : {};
   }
 
   checkedIfLteValue() {
-    const filter = this.nonReactiveData();
+    const filter = this.nonReactiveData().filter;
     return filter.operator.selected === "$lte" ? { selected: "selected" } : {};
   }
 
   checkedIfWithoutValue() {
-    const filter = this.nonReactiveData();
+    const filter = this.nonReactiveData().filter;
     return ["$nin"].includes(filter.operator.selected) ? { selected: "selected" } : {};
   }
 
   checkedIfWithoutAllValue() {
-    const filter = this.nonReactiveData();
+    const filter = this.nonReactiveData().filter;
     return ["$not$all"].includes(filter.operator.selected) ? { selected: "selected" } : {};
   }
 
@@ -368,7 +368,6 @@ export class FilterComponent extends BlazeComponent {
       this.editableField.set(data.field && data.field.edit && data.field.edit.spec);
       this.isArrayField.set(false);
       this.fieldLabel.set(data.field && data.field.label);
-      console.log(this.fieldLabel.get());
       this.fieldType.set(data.field && data.field.type);
 
       if (data.field && data.field.type && _.isArray(data.field && data.field.type)) {
@@ -392,9 +391,16 @@ export class FilterComponent extends BlazeComponent {
       this.sortDirection.set(data.sort && data.sort.direction);
       this.asyncOptions.set(false);
       this.operator.set(data.filter &&
-      data.filter &&
-      data.filter.operator &&
-      data.filter.operator.selected);
+        data.filter &&
+        data.filter.operator &&
+        data.filter.operator.selected);
+      this.throttledUpdate = _.throttle(
+        (reactiveVar, val) => {
+          reactiveVar.set(val);
+        },
+        data.filter && data.filter.throttle ? data.filter.throttle.wait : 1000,
+        data.filter && data.filter.throttle ? data.filter.throttle.options : { leading: false }
+      );
 
       const formatOptions = options => options.map(o => (
         typeof o === "object" ? o : {
@@ -420,12 +426,16 @@ export class FilterComponent extends BlazeComponent {
           options.then(asyncOptions => optionsCallback(asyncOptions));
         }
         else if (options) {
-          formatOptions(options);
+          const formattedOptions = formatOptions(options);
+          this.allOptions.set(formattedOptions);
+          this.options.set(formattedOptions);
           this.searching.set(false);
         }
       }
       else if (data.filter && _.isArray(data.filter.options)) {
-        formatOptions(data.filter.options);
+        const formattedOptions = formatOptions(data.filter.options);
+        this.allOptions.set(formattedOptions);
+        this.options.set(formattedOptions);
       }
 
       if (data.filter && data.filter.selectedOptions) {

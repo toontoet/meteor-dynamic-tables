@@ -43,7 +43,7 @@
       {{#if filter.enabled}}
         {{#if hasSelectedOptions}}
           <section class="dynamic-table-filter-selected">
-            {{#each option in curSelectedOption}}
+            {{#each option in curSelectedOptions}}
               <label data-value="{{option.value}}" class="label-dynamic-table-selected">
                 {{option.label}}
                 <i class="fa fa-times"></i>
@@ -128,7 +128,7 @@
             {{/unless}}
             <div class="inner">
               {{#each option in getOptions}}
-                <label><input class="input-dynamic-table-option" type="checkbox" value="{{option.value}}" {{isSelected option.value}} /> <span class="dynamic-table-option-value">{{option.label}}</span></label>
+                <label><input class="input-dynamic-table-option" type="checkbox" value="{{option.value}}" {{checkedIfSelected option.value}} /> <span class="dynamic-table-option-value">{{option.label}}</span></label>
               {{/each}}
             </div>
           </section>
