@@ -183,7 +183,8 @@ export class FilterComponent extends BlazeComponent {
   }
 
   manageFieldsEditContext() {
-    return this.data.field.edit;
+    const data = this.nonReactiveData();
+    return data.field.edit;
   }
 
   isLoading() {

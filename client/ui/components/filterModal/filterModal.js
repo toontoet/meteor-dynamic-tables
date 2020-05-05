@@ -138,7 +138,7 @@ export class FilterModal extends FilterComponent {
               allowClear: true,
               data: _.union(
                 [{ id: "", value: "" }],
-                this.data.groupNames.map(g => ({ id: g, text: g }))
+                this.nonReactiveData().data.groupNames.map(g => ({ id: g, text: g }))
               )
             });
             this.$(".dynamic-table-filter-edit-group").val(this.editableField.get().groupName).trigger("change");
