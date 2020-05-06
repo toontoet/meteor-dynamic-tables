@@ -33,24 +33,12 @@ section.dynamic-table-filter-search>.input-dynamic-table-search {
 .select2-container--default.select2-container--focus .select2-selection--multiple {
   border: 1px solid #cccccc;
   border-radius: 3px;
-  height: 7px;
   width: 100%;
 }
 
 .select2-container--default .select2-selection--multiple {
   border: 1px solid #cccccc;
   height: 7px;
-}
-
-.select2-container--default .select2-search--inline .select2-search__field:focus +  {
-  outline-color: -webkit-focus-ring-color;
-  outline-style: auto;
-  outline-width: 5px;
-  outline: 5px auto -webkit-focus-ring-color;
-  outline-color: -webkit-focus-ring-color;
-  outline-style: auto;
-  outline-width: 5px;
-  outline-offset: 4px;
 }
 
 .select2-container--default .select2-search--inline .select2-search__field {
