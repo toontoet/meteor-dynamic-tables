@@ -1,22 +1,18 @@
-div.dynamic-table-filter {
+div.dynamic-table-filter-inline {
   width: 850px;
   background-color: #fff;
-  box-shadow: 0px 0px 10px 0px #eee ;
   display: inline-flex;
 }
 
 .dynamic-table-filter-action {
   margin: auto;
-  width: 200px;
-  margin-right: 0px;
-  height: 32px;
+  margin-right: 20px;
+  width: 28%;
 }
 
-.input-dynamic-table-search {
+.dynamic-table-filter-search {
   margin: auto;
-  margin-bottom: 0px;
-  height: 32px;
-  width: 560px;
+  width: 100%;
 }
 
 .select2-container--default .select2-selection--multiple .select2-selection__choice{
@@ -30,23 +26,38 @@ div.dynamic-table-filter {
 
 .select2-container--default.select2-container--focus .select2-selection--multiple {
   border: 1px solid #cccccc;
-  border-radius: 3px!important;
+  border-radius: 3px;
+  height: 8px;
+  width: 100%;
 }
 
 div.dynamic-table-filter .select2-selection {
   border: 1px solid #cccccc;
-  border-radius: 3px!important;
+  border-radius: 3px;
+  height: 8px;
+}
+
+.select2-container {
+  width: 100%!important;
+}
+
+.select2-container--default .select2-selection--multiple {
+  border: 1px solid #cccccc;
+  height: 8px;
 }
 
 .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
   color: black;
   float: right;
   font-size: 25px;
+  padding-left: 2px;
 }
 
 .btn-remove {
   padding-left: 20px;
   padding-right: 20px; 
   border: none;
+  outline: 0;
+  width: 2%;
   background: none;
 }
