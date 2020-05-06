@@ -1,15 +1,52 @@
 div.dynamic-table-filter {
-  width: 250px;
+  width: 850px;
   background-color: #fff;
-  border: 1px solid #999;
   box-shadow: 0px 0px 10px 0px #eee ;
   display: inline-flex;
 }
 
-div.dynamic-table-filter>section.dynamic-table-filter-selected>label.label-dynamic-table-selected {
+.dynamic-table-filter-action {
+  margin: auto;
+  width: 200px;
+  margin-right: 0px;
+  height: 32px;
+}
+
+.input-dynamic-table-search {
+  margin: auto;
+  margin-bottom: 0px;
+  height: 32px;
+  width: 560px;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice{
   background-color: #00BAE3;
   border-radius: 3px;
   cursor: pointer;
-  margin: 2px;
-  padding: 5px;
+  padding-right: 1px;
+  padding-left: 5px;
+  border: none;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+  border: 1px solid #cccccc;
+  border-radius: 3px!important;
+}
+
+div.dynamic-table-filter .select2-selection {
+  border: 1px solid #cccccc;
+  border-radius: 3px!important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+  color: black;
+  float: right;
+  font-size: 25px;
+}
+
+.btn-remove {
+  padding-left: 20px;
+  padding-right: 20px; 
+  border: none;
+  background: none;
 }

@@ -98,7 +98,7 @@ export class FilterComponent extends BlazeComponent {
   checkedIfSelected(o) {
     const found = _.find(this.selectedOptions.get(), value =>
       (value instanceof Date ? new Date(o).getTime() === new Date(value).getTime() : value.toString() === o.toString()));
-    return found ? { checked: "checked" } : {};
+    return found ? { checked: "checked", selected: "selected" } : {};
   }
 
   checkedIfSortDirection(sortDirection) {

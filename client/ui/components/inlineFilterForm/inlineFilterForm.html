@@ -7,24 +7,21 @@
     </select>
     <section class="dynamic-table-filter-search">
       {{#if isStringOrCustom}}
-        <input type="text" class="input-dynamic-table-search" placeholder="{{#if hasOptions}}Search values...{{else}}Search...{{/if}}" value="{{filter.search.value}}" />
-
-        {{#if filter.operator.enabled}}
-          <i class="fa fa-cog"></i>
+        {{#if hasOptions}}
+          <select class="input-dynamic-table-search select2" placeholder="Search..." multiple="multiple">
+            {{#each option in getOptions}}
+              <option value="{{option.value}}" {{checkedIfSelected option.value}}>{{option.label}}</option>
+            {{/each}}
+          </select>
+        {{else}}
+          <input type="text" class="input-dynamic-table-search" placeholder="Search..." value="{{filter.search.value}}" />
         {{/if}}
       {{/if}}
       {{#if isNumber}}
         <input type="number" class="input-dynamic-table-search" placeholder="Value" value="{{numberValue}}" />
-        {{#if filter.operator.enabled}}
-          <i class="fa fa-cog"></i>
-        {{/if}}
       {{/if}}
       {{#if isDate}}
-        <!-- <label>Date</label> -->
         <input type="date" class="input-dynamic-table-search" placeholder="Date..." value="{{dateValue}}" />
-        {{#if filter.operator.enabled}}
-          <i class="fa fa-cog"></i>
-        {{/if}}
       {{/if}}
       {{#if isTime}}
         <label>Time</label>
@@ -39,5 +36,8 @@
         </select>
       {{/if}}
     </section>
+    <button class="btn-remove">                      
+        <i class="fa fa-times"></i>
+    </button>
   </div>
 </template>
