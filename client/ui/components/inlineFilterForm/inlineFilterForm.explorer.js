@@ -3,37 +3,6 @@ import "./inlineFilterForm.js";
 
 ComponentCollection.getCollection("dynamic-tables")
 .registerComponent("Inline Filter Form", Template.dynamicTableInlineFilterForm)
-.addCase("with a label", {
-  field: {
-    label: "A Field",
-    type: [String]
-  }
-}, { testSnapshot: true })
-.addCase("Editable field", {
-  field: {
-    label: "A Field",
-    edit: true,
-    type: [String]
-  }
-}, { testSnapshot: true })
-.addCase("with an alphabetical sort", {
-  field: {
-    type: [String]
-  },
-  sort: {
-    enabled: true,
-    direction: 1
-  }
-}, { testSnapshot: true })
-.addCase("with a numeric sort", {
-  field: {
-    type: [Number]
-  },
-  sort: {
-    enabled: true,
-    direction: -1
-  }
-})
 .addCase("with a string filter", {
   field: {
     type: [String]
@@ -62,27 +31,6 @@ ComponentCollection.getCollection("dynamic-tables")
   filter: {
     enabled: true,
     selectedOptions: ["test1", "test2"],
-    options: ["test1", "test2", "test3"]
-  }
-})
-.addCase("with an array of options and a search", {
-  field: {
-    type: String
-  },
-  filter: {
-    search: {
-      enabled: true
-    },
-    enabled: true,
-    options: ["test1", "test2", "test3"]
-  }
-})
-.addCase("with an array of options and NO search", {
-  field: {
-    type: String
-  },
-  filter: {
-    enabled: true,
     options: ["test1", "test2", "test3"]
   }
 })
@@ -117,20 +65,6 @@ ComponentCollection.getCollection("dynamic-tables")
     options(data, search, callback) {
       return Promise.resolve()
       .then(() => ["test1", "test2", "test3"]);
-    }
-  }
-})
-.addCase("an asyncronous options function with search", {
-  field: {
-    type: String
-  },
-  filter: {
-    enabled: true,
-    search: {
-      enabled: true
-    },
-    options(data, search, callback) {
-      setTimeout(() => callback(["test1", "test2", "test3"].filter(a => a.match(new RegExp(search)))), 100);
     }
   }
 })
@@ -209,21 +143,5 @@ ComponentCollection.getCollection("dynamic-tables")
     enabled: true,
     selectedOptions: ["test1", "test2"],
     options: ["test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10"]
-  }
-})
-.addCase("Edit template", {
-  field: {
-    label: "A Field",
-    type: [String],
-    edit: {
-      spec: {
-        label: "A field",
-        isArray: true,
-        type: "string",
-        indexNumber: 3,
-        trackOptions: true
-      },
-      types: ["string", "number", { label: "Date", value: "date" }]
-    }
   }
 });

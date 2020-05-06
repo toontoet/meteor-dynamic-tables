@@ -68,7 +68,9 @@ export class InlineFilterForm extends FilterComponent {
       this.options.get();
       Meteor.defer(() => {
         this.$("select2").select2("destroy");
-        this.$(".select2").select2();
+        this.$(".select2").select2({
+          placeholder: "Search..."
+        });
       });
     });
   }

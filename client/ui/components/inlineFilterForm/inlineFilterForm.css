@@ -15,6 +15,12 @@ div.dynamic-table-filter-inline {
   width: 100%;
 }
 
+section.dynamic-table-filter-search>.input-dynamic-table-search {
+  margin-bottom: 0px;
+  height: 31px;
+  width: 100%
+}
+
 .select2-container--default .select2-selection--multiple .select2-selection__choice{
   background-color: #00BAE3;
   border-radius: 3px;
@@ -27,23 +33,32 @@ div.dynamic-table-filter-inline {
 .select2-container--default.select2-container--focus .select2-selection--multiple {
   border: 1px solid #cccccc;
   border-radius: 3px;
-  height: 8px;
+  height: 7px;
   width: 100%;
-}
-
-div.dynamic-table-filter .select2-selection {
-  border: 1px solid #cccccc;
-  border-radius: 3px;
-  height: 8px;
-}
-
-.select2-container {
-  width: 100%!important;
 }
 
 .select2-container--default .select2-selection--multiple {
   border: 1px solid #cccccc;
-  height: 8px;
+  height: 7px;
+}
+
+.select2-container--default .select2-search--inline .select2-search__field:focus +  {
+  outline-color: -webkit-focus-ring-color;
+  outline-style: auto;
+  outline-width: 5px;
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-color: -webkit-focus-ring-color;
+  outline-style: auto;
+  outline-width: 5px;
+  outline-offset: 4px;
+}
+
+.select2-container--default .select2-search--inline .select2-search__field {
+  width: 100%!important;
+}
+
+.select2-container {
+  width: 100%;
 }
 
 .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
