@@ -206,6 +206,9 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       if (operator === "$not$all") {
         newAdvancedSearchField = { $not: { $all: optionsOrQuery } };
       }
+      else if (operator.indexOf("$exists") !== -1) {
+        newAdvancedSearchField = { $exists: !operator.indexOf("$not") };
+      }
       else {
         newAdvancedSearchField = { [operator]: optionsOrQuery };
       }
@@ -967,13 +970,13 @@ Template.DynamicTable.onCreated(function onCreated() {
         this.dataTable.api().context[0].aoColumns[i].aDataSort = [idx];
         // unbinding old event listeners
         const events = jQuery._data(header[0], "events");
-        for (let eventType of ["click", "keypress", "selectstart"]) {
+        for (const eventType of ["click", "keypress", "selectstart"]) {
           const tounbind = events[eventType].filter(e => e.namespace === "DT");
           header.unbind(eventType, tounbind.handler);
         }
         this.dataTable.oApi._fnSortAttachListener(settings, header, idx); // adding new event listener to the cell, so we can sort
       }
-      this.dataTable.api().context[0].aaSorting.forEach(aasort => {
+      this.dataTable.api().context[0].aaSorting.forEach((aasort) => {
         if (aasort[0] > index) {
           aasort[0] -= 1;
         }
@@ -982,14 +985,15 @@ Template.DynamicTable.onCreated(function onCreated() {
       this.dataTable.api().context[0].aoData[0].anCells.splice(index, 1);
       this.blaze = {};
     }
-    else if (columns.length > oldColumns.length){
+    else if (columns.length > oldColumns.length) {
       Tracker.afterFlush(() => {
         this.tableId.dep.changed();
         if (self.dataTable) {
           self.dataTable.api().ajax.reload();
         }
       });
-    } else if (columns && columns.length) {
+    }
+    else if (columns && columns.length) {
       // fixes looping order after column reorder
       this.columns = columns;
     }
@@ -1010,7 +1014,7 @@ Template.DynamicTable.onCreated(function onCreated() {
       self.tableId.set(currentData.id);
       oldColumns = currentData.table.columns.slice(0);
     }
-    else if (! EJSON.equals(Tracker.nonreactive(() => self._columns.get()), currentData.table.columns)) {
+    else if (!EJSON.equals(Tracker.nonreactive(() => self._columns.get()), currentData.table.columns)) {
       if (!oldColumns) {
         oldColumns = currentData.table.columns;
       }

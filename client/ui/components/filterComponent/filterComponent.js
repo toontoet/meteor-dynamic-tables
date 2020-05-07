@@ -91,7 +91,8 @@ export class FilterComponent extends BlazeComponent {
   }
 
   isSelected(value) {
-    const search = this.nonReactiveData().data.filter.search.value;
+    const data = this.nonReactiveData();
+    const search = data.filter && data.filter.search && data.filter.search.value;
     return value === search ? { selected: "selected" } : {};
   }
 
@@ -159,6 +160,11 @@ export class FilterComponent extends BlazeComponent {
   isBoolean() {
     const fieldType = this.fieldType.get();
     return fieldType === Boolean;
+  }
+
+  searchValue() {
+    const data = this.nonReactiveData();
+    return data.filter && data.filter.search && data.filter.search.value;
   }
 
   dateValue() {
@@ -245,11 +251,6 @@ export class FilterComponent extends BlazeComponent {
     return this.fieldLabel.get();
   }
 
-  searchValue() {
-    const data = this.nonReactiveData();
-    return data.filter && data.filter.search && data.filter.search.value;
-  }
-
   updateSpec(spec) {
     const data = this.nonReactiveData();
     Tracker.nonreactive(() => {
@@ -317,7 +318,7 @@ export class FilterComponent extends BlazeComponent {
 
   searchNumber(rawNumber) {
     try {
-      this.search.set(parseInt(rawNumber, 10));
+      this.search.set(parseInt(rawNumber === "" ? 0 : rawNumber, 10));
     }
     catch (e) {
       console.error(e);
@@ -327,8 +328,8 @@ export class FilterComponent extends BlazeComponent {
 
   searchTime(rawMinutes, rawSeconds) {
     try {
-      const minutes = parseInt(rawMinutes, 10);
-      const seconds = parseInt(rawSeconds, 10);
+      const minutes = parseInt(rawMinutes === "" ? 0 : rawMinutes, 10);
+      const seconds = parseInt(rawSeconds === "" ? 0 : rawSeconds, 10);
       this.search.set((minutes * 60) + seconds);
     }
     catch (e) {
@@ -381,9 +382,9 @@ export class FilterComponent extends BlazeComponent {
       this.currentSpec = new ReactiveDict();
       this.editing.set(false);
       this.showOperators.set(data.filter &&
-      data.filter.operator &&
-      data.filter.operator.selected &&
-      !["$in", "$regex", "$between"].includes(data.filter.operator.selected));
+        data.filter.operator &&
+        data.filter.operator.selected &&
+        !["$in", "$regex", "$between"].includes(data.filter.operator.selected));
 
       this.options.set();
       this.allOptions.set([]);
@@ -573,8 +574,7 @@ export class FilterComponent extends BlazeComponent {
           if (fieldType === Boolean) {
             operator = "$eq";
           }
-
-          Tracker.nonreactive(() => callback(selectedOptions.map(option => options.find(item => item.label === option).value), operator, direction, false));
+          Tracker.nonreactive(() => callback(selectedOptions.map(option => options.find(item => item.label === option || item.value === option).value), operator, direction, false));
         });
       }
     });

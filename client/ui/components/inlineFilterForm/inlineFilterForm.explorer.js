@@ -24,6 +24,36 @@ ComponentCollection.getCollection("dynamic-tables")
     options: ["test1", "test2", "test3"]
   }
 })
+.addCase("with a boolean", {
+  field: {
+    type: Boolean
+  },
+  filter: {
+    enabled: true
+  }
+})
+.addCase("with a time", {
+  field: {
+    type: "time"
+  },
+  filter: {
+    enabled: true,
+    search: {
+      value: 750
+    }
+  }
+})
+.addCase("with a date", {
+  field: {
+    type: Date
+  },
+  filter: {
+    enabled: true,
+    search: {
+      value: new Date("2014-12-12")
+    }
+  }
+})
 .addCase("with an array of options,and some selected", {
   field: {
     type: String

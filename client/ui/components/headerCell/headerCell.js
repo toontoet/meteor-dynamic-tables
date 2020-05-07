@@ -1,5 +1,6 @@
 import "./headerCell.html";
 import "../filterModal/filterModal.js";
+import "../inlineFilterForm/inlineFilterForm.js";
 
 import { EJSON } from "meteor/ejson";
 import { getPosition } from "../../../inlineSave.js";
@@ -239,7 +240,7 @@ Template.dynamicTableHeaderCell.events({
       Blaze.remove(div[0].__blazeTemplate);
     }
     div[0].__blazeTemplate = Blaze.renderWithData(
-      Template.dynamicTableFilterModal,
+      Template.dynamicTableFilterModal/* InlineFilterForm */,
       filterModalOptions,
       div[0]
     );

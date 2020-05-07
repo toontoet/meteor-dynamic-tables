@@ -51,6 +51,23 @@ const actionMapping = [
   }
 ];
 
+const operatorMapping = {
+  "is...": "$all",
+  "is not...": "$not$all",
+  "is any of...": "$in",
+  "is none of...": "$nin",
+  "is empty": "$not$exists",
+  "is not empty": "$exists",
+  "=": "$eq",
+  "≠": "$ne",
+  ">": "$gt",
+  "<": "$lt",
+  "≤": "$lte",
+  "≥": "$gte",
+  "is before...": "$lt",
+  "is after...": "$gt"
+};
+
 export class InlineFilterForm extends FilterComponent {
   static HelperMap() {
     return _.union(FilterComponent.HelperMap(), [
@@ -60,6 +77,8 @@ export class InlineFilterForm extends FilterComponent {
 
   static EventMap() {
     return {
+      "change .input-dynamic-table-search": "handleSearchChange",
+      "change .input-dynamic-table-action": "handleActionChange"
     };
   }
 
@@ -78,7 +97,39 @@ export class InlineFilterForm extends FilterComponent {
   getActions() {
     const fieldType = this.fieldType.get();
     const action = actionMapping.find(value => [].concat(value.type).includes(fieldType));
-    return action ? action.options : [];
+    return action ? action.options.map(option => ({
+      option,
+      value: operatorMapping[option],
+      isSelected: operatorMapping[option] === this.operator.get()
+    })) : [];
+  }
+
+
+  handleSearchChange(e) {
+    const value = $(e.currentTarget).val();
+    const fieldType = this.fieldType.get();
+    if (fieldType === Date || fieldType === "time" || fieldType === Number) {
+      if (fieldType === "time") {
+        const minutes = $(".minutes").val();
+        const seconds = $(".seconds").val();
+        this.doSearch(minutes, seconds);
+      }
+      else {
+        this.doSearch(value);
+      }
+      return;
+    }
+    if (_.isArray(value)) {
+      this.selectedOptions.set(value);
+    }
+    else {
+      this.searching.set(true);
+      this.throttledUpdate(this.search, value);
+    }
+  }
+
+  handleActionChange(e) {
+    this.updateOperator($(e.currentTarget).val());
   }
 }
 BlazeComponent.register(Template.dynamicTableInlineFilterForm, InlineFilterForm);

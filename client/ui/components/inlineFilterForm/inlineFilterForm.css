@@ -4,7 +4,7 @@ div.dynamic-table-filter-inline {
   display: inline-flex;
 }
 
-.dynamic-table-filter-action {
+.input-dynamic-table-action {
   margin: auto;
   margin-right: 20px;
   width: 28%;
@@ -63,4 +63,8 @@ section.dynamic-table-filter-search>.input-dynamic-table-search {
   outline: 0;
   width: 2%;
   background: none;
+}
+
+section.dynamic-table-filter-search>.input-dynamic-table-search.time {
+  width: 49%;
 }

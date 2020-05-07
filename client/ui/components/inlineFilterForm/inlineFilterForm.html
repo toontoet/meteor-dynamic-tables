@@ -1,8 +1,8 @@
 <template name="dynamicTableInlineFilterForm">
   <div class="dynamic-table-filter-inline">
-    <select class="dynamic-table-filter-action">
+    <select class="input-dynamic-table-action">
       {{#each action in getActions}}
-        <option value="{{action}}">{{action}}</option>
+        <option value="{{action.value}}" selected="{{#if action.isSelected}}selected{{/if}}">{{action.option}}</option>
       {{/each}}
     </select>
     <section class="dynamic-table-filter-search">
@@ -10,7 +10,7 @@
         {{#if hasOptions}}
           <select class="input-dynamic-table-search select2" placeholder="Search..." multiple="multiple">
             {{#each option in getOptions}}
-              <option value="{{option.value}}" {{checkedIfSelected option.value}}>{{option.label}}</option>
+              <option value="{{option.label}}" {{checkedIfSelected option.value}}>{{option.label}}</option>
             {{/each}}
           </select>
         {{else}}
@@ -24,9 +24,9 @@
         <input type="date" class="input-dynamic-table-search" placeholder="Date..." value="{{dateValue}}" />
       {{/if}}
       {{#if isTime}}
-        <label>Time</label>
-        <input type="number" class="input-dynamic-table-search" placeholder="Min" value="{{minuteValue}}" style="width: 49%;" />
-        <input type="number" class="input-dynamic-table-search" placeholder="Sec" value="{{secondValue}}" style="width: 49%;" />
+        <input type="number" class="input-dynamic-table-search time minutes" placeholder="Min" value="{{minuteValue}}"/>
+        <span>:</span>
+        <input type="number" class="input-dynamic-table-search time seconds" placeholder="Sec" value="{{secondValue}}"/>
       {{/if}}
       {{#if isBoolean}}
         <select class="input-dynamic-table-search">
