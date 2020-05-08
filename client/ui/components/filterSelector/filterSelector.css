@@ -1,0 +1,4 @@
+.dynamic-table-filter-selector {
+  display: inline-flex;
+  z-index: 9999;
+}

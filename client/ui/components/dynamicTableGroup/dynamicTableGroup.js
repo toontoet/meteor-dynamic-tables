@@ -7,7 +7,7 @@ import { changed, getCustom, getColumns, getValue, createModal } from "../../../
 import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "../manageOrderModal/manageOrderModal.js";
 import "../manageFieldsModal/manageFieldsModal.js";
-import "../../advancedSearchModal.js";
+import "../../components/filterSelector/filterSelector.js";
 
 /**
  * selectorToId - description
@@ -489,9 +489,8 @@ Template.dynamicTableGroup.helpers({
   columned(tableId) {
     return Template.instance().highlitedColumns.get(tableId);
   },
-  hasAdvancedSearch(tableId) {
-    const advancedSearch = Template.instance().advancedSearch.get(tableId);
-    return advancedSearch && _.keys(advancedSearch).length;
+  hasFilters(tableId) {
+    return false;
   },
   orders(tableId) {
     const nestedOrder = Template.instance().nestedOrder.get(tableId);
@@ -669,20 +668,12 @@ Template.dynamicTableGroup.events({
 
     createModal(target, modalMeta,templInstance);
   },
-  "click .dynamic-table-manage-controller.advanced-search"(e, templInstance) {
+  "click .dynamic-table-manage-controller.filters"(e) {
     const target = e.currentTarget;
     const tableId = $(target).attr("data-table-id");
-    const advancedSearch = templInstance.advancedSearch.get(tableId) || {};
     const options = this.customTableSpec.table;
-    Modal.show("dynamicTableAdvancedSearchModal", {
-      beforeRender: options.advancedSearch.beforeRender,
-      collection: options.advancedSearch.collection || options.collection,
-      fields: options.advancedSearch.fields || _.compact(options.columns.map(column => column.data).filter(d => d !== "_id")),
-      columns: options.columns,
-      callback: options.advancedSearch.callback || ((search) => {
-        templInstance.advancedSearch.set(tableId, search);
-      }),
-      search: advancedSearch
+    Modal.show("dynamicTableFilterSelector", {
+      columns: options.columns
     });
   }
 });

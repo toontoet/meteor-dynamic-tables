@@ -1,0 +1,10 @@
+<template name="dynamicTableFilterSelector">
+  <div class="dynamic-table-filter-selector">
+    <select class="input-dynamic-table-column">
+      {{#each column in curColumns}}
+        <option value="{{column.id}}">{{column.title}}</option>
+      {{/each}}
+    </select>
+    {{> dynamicTableInlineFilterForm }}
+  </div>
+</template>

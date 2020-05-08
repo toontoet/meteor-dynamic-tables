@@ -306,25 +306,17 @@ Template.GroupedTable.events({
     }
 
     const modalMeta = {
-      template: Template.dynamicTableManageFieldsModal,
+      template: Template.dynamicTableManageFieldsModal, 
       id: "dynamic-table-manage-fields-modal",
       options: manageColumnsOptions
     };
 
     createModal(e.currentTarget, modalMeta, templInstance);
   },
-  "click .grouped-table-manage-controller.advanced-search"(e, templInstance) {
-    const advancedSearch = templInstance.advancedSearch.get();
+  "click .grouped-table-manage-controller.filters"(e) {
     const options = this.table;
-    Modal.show("dynamicTableAdvancedSearchModal", {
-      beforeRender: options.advancedSearch.beforeRender,
-      collection: options.advancedSearch.collection || options.collection,
-      fields: options.advancedSearch.fields || _.compact(options.columns.map(column => column.data).filter(d => d !== "_id")),
-      columns: options.columns,
-      callback: options.advancedSearch.callback || ((search) => {
-        templInstance.advancedSearch.set(search);
-      }),
-      search: advancedSearch
+    Modal.show("dynamicTableFilterSelector", {
+      columns: options.columns
     });
   }
 });

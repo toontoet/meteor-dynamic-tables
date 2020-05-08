@@ -84,12 +84,21 @@ export class InlineFilterForm extends FilterComponent {
 
   rendered() {
     this.autorun(() => {
-      this.options.get();
+      const options = this.options.get();
       Meteor.defer(() => {
-        this.$("select2").select2("destroy");
-        this.$(".select2").select2({
-          placeholder: "Search..."
-        });
+        if(this.$(".select2").hasClass("select2-hidden-accessible")) {
+          this.$(".select2").select2("destroy");
+        }
+        if(_.isArray(options)) {
+          options.forEach(option => {
+            const selected = this.isSelected(option.value);
+            const newOption = new Option(option.label, option.label, selected, selected);
+            this.$(".select2").append(newOption);
+          });
+          this.$(".select2").select2({
+            placeholder: "Search..."
+          });
+        }
       });
     });
   }
@@ -130,6 +139,7 @@ export class InlineFilterForm extends FilterComponent {
 
   handleActionChange(e) {
     this.updateOperator($(e.currentTarget).val());
+    if(operator.indexOf("$exists") !== -1) {}
   }
 }
 BlazeComponent.register(Template.dynamicTableInlineFilterForm, InlineFilterForm);

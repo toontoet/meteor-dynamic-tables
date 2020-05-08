@@ -97,9 +97,12 @@ export class FilterComponent extends BlazeComponent {
   }
 
   checkedIfSelected(o) {
-    const found = _.find(this.selectedOptions.get(), value =>
+    return this.isSelected(o) ? { checked: "checked", selected: "selected" } : {};
+  }
+
+  isSelected(o) {
+    return _.find(this.selectedOptions.get(), value =>
       (value instanceof Date ? new Date(o).getTime() === new Date(value).getTime() : value.toString() === o.toString()));
-    return found ? { checked: "checked", selected: "selected" } : {};
   }
 
   checkedIfSortDirection(sortDirection) {
@@ -222,8 +225,9 @@ export class FilterComponent extends BlazeComponent {
     if (!options) {
       return [];
     }
-    const selectedOptions = _.compact(this.selectedOptions.get().map(o =>
-      _.find(options, ({ label }) => (label instanceof Date ? label.getTime() === new Date(o).getTime() : label === o))));
+    const compareValues = (a, b) => (a instanceof Date ? a.getTime() === new Date(b).getTime() : a === b);
+    const selectedOptions = _.compact(this.selectedOptions.get().map(o => _.find(options, ({ label, value }) =>
+      compareValues(label, o) || compareValues(value, o))));
     return selectedOptions.map(o => _.extend({ _id: o.value instanceof Date ? o.value.toString() : o.value }, o));
   }
 
@@ -574,6 +578,7 @@ export class FilterComponent extends BlazeComponent {
           if (fieldType === Boolean) {
             operator = "$eq";
           }
+
           Tracker.nonreactive(() => callback(selectedOptions.map(option => options.find(item => item.label === option || item.value === option).value), operator, direction, false));
         });
       }

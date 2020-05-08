@@ -5,7 +5,7 @@ import "./table.html";
 import "./table.css";
 import "./exportModal.js";
 import "./components/filterModal/filterModal.js";
-import "./advancedSearchModal.js";
+import "./components/filterSelector/filterSelector.js";
 import "./components/headerCell/headerCell.js";
 import "./components/rawRender/rawRender.js";
 import "./components/tableCell/tableCell.js";
@@ -44,28 +44,10 @@ function getSelector() {
 /**
   @this Template.instance()
 */
-function doAdvancedSearch(extraOptions) {
+function openFiltersModal(extraOptions) {
   const options = this.data.table;
-  const templateInstance = this;
-  Modal.show("dynamicTableAdvancedSearchModal", _.extend({
-    beforeRender: options.advancedSearch.beforeRender,
-    collection: options.advancedSearch.collection || this.data.table.collection,
-    fields: options.advancedSearch.fields || _.compact(options.columns.map(column => column.data).filter(d => d !== "_id")),
-    columns: options.columns,
-    callback: options.advancedSearch.callback || ((search) => {
-      if (_.keys(search).length) {
-        templateInstance.$(".advanced-search-button").addClass("hasSearch");
-      }
-      else {
-        templateInstance.$(".advanced-search-button").removeClass("hasSearch");
-      }
-      templateInstance.advancedSearch.set(search);
-      const query = templateInstance.query.get();
-      query.options.skip = 0;
-      templateInstance.query.set(query);
-      templateInstance.dataTable.api().page(0).draw(false);
-    }),
-    search: this.advancedSearch.get()
+  Modal.show("dynamicTableFilterSelector", _.extend({
+    columns: options.columns
   }, _.isObject(extraOptions) ? extraOptions : {}));
 }
 
@@ -189,7 +171,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
 
   // NOTE: added .length to ensure correctness when disabling all options (e.g., add diagrams modal)
   // NOTE: added optionsOrQuery !== "" so you can clear the search by deleting text, not just clearing.
-  if ((_.isArray(optionsOrQuery) && optionsOrQuery.length) || (optionsOrQuery !== undefined && optionsOrQuery !== "" && !_.isArray(optionsOrQuery))) {
+  if ((_.isArray(optionsOrQuery) && (optionsOrQuery.length || operator.indexOf("$exists") !== -1)) || (optionsOrQuery !== undefined && optionsOrQuery !== "" && !_.isArray(optionsOrQuery))) {
     let newAdvancedSearchField;
     if (operator === "$between") {
       newAdvancedSearchField = {
@@ -202,12 +184,15 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
         [operator]: optionsOrQuery
       };
     }
-    else if (_.isArray(optionsOrQuery) && optionsOrQuery.length) {
+    else if (_.isArray(optionsOrQuery) && (optionsOrQuery.length || operator.indexOf("$exists") !== -1)) {
       if (operator === "$not$all") {
-        newAdvancedSearchField = { $not: { $all: optionsOrQuery } };
+        newAdvancedSearchField = { $not: { $all: optionsOrQuery}};
       }
       else if (operator.indexOf("$exists") !== -1) {
-        newAdvancedSearchField = { $exists: !operator.indexOf("$not") };
+        newAdvancedSearchField = { $in: [null, []]};
+        if(operator.indexOf("$not") === -1) {
+          newAdvancedSearchField = { $not: newAdvancedSearchField };
+        }
       }
       else {
         newAdvancedSearchField = { [operator]: optionsOrQuery };
@@ -505,8 +490,8 @@ Template.DynamicTable.onRendered(function onRendered() {
 
 
   if (this.data.table.advancedSearch) {
-    this.$tableElement.data("do-advancedSearch", (...args) => {
-      doAdvancedSearch.apply(templateInstance, args);
+    this.$tableElement.data("do-filtering", (...args) => {
+      openFiltersModal.apply(args);
     });
   }
   this.autorun(() => {
@@ -521,9 +506,9 @@ Template.DynamicTable.onRendered(function onRendered() {
       initComplete() {
         const table = templateInstance.data.table;
         if (table.advancedSearch && table.advancedSearch.isHidden !== true) {
-          const advancedSearchButton = currentData.table.advancedSearch.buttonHtml ? $(currentData.table.advancedSearch.buttonHtml) : $("<buton>").addClass("advanced-search-button")
+          const advancedSearchButton = currentData.table.advancedSearch.buttonHtml ? $(currentData.table.advancedSearch.buttonHtml) : $("<buton>").addClass("filters")
           .addClass("btn btn-default")
-          .html("<i class='fa fa-search'></i>")
+          .html("<i class='fa fa-filter'></i>")
           .css("margin-top", "-10px");
           templateInstance.$(".dataTables_filter>label").append(advancedSearchButton);
         }
@@ -1057,8 +1042,8 @@ Template.DynamicTable.onDestroyed(function onDestroyed() {
 });
 
 Template.DynamicTable.events({
-  "click .advanced-search-button"() {
-    doAdvancedSearch.call(Template.instance());
+  "click .filters"() {
+    openFiltersModal.call();
   }
 });
 

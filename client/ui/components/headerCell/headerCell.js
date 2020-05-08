@@ -240,7 +240,7 @@ Template.dynamicTableHeaderCell.events({
       Blaze.remove(div[0].__blazeTemplate);
     }
     div[0].__blazeTemplate = Blaze.renderWithData(
-      Template.dynamicTableFilterModal/* InlineFilterForm */,
+      Template.dynamicTableInlineFilterForm,
       filterModalOptions,
       div[0]
     );

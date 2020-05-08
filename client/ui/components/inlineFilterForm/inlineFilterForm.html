@@ -8,11 +8,7 @@
     <section class="dynamic-table-filter-search">
       {{#if isStringOrCustom}}
         {{#if hasOptions}}
-          <select class="input-dynamic-table-search select2" placeholder="Search..." multiple="multiple">
-            {{#each option in getOptions}}
-              <option value="{{option.label}}" {{checkedIfSelected option.value}}>{{option.label}}</option>
-            {{/each}}
-          </select>
+          <select class="input-dynamic-table-search select2" placeholder="Search..." multiple="multiple"></select>
         {{else}}
           <input type="text" class="input-dynamic-table-search" placeholder="Search..." value="{{filter.search.value}}" />
         {{/if}}
