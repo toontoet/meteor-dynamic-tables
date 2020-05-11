@@ -47,7 +47,8 @@ function getSelector() {
 function openFiltersModal(extraOptions) {
   const options = this.data.table;
   Modal.show("dynamicTableFilterSelector", _.extend({
-    columns: options.columns
+    columns: options.columns,
+    collection: options.collection
   }, _.isObject(extraOptions) ? extraOptions : {}));
 }
 

@@ -71,7 +71,8 @@ const operatorMapping = {
 export class InlineFilterForm extends FilterComponent {
   static HelperMap() {
     return _.union(FilterComponent.HelperMap(), [
-      "getActions"
+      "getActions",
+      "isControlDisabled"
     ]);
   }
 
@@ -86,18 +87,18 @@ export class InlineFilterForm extends FilterComponent {
     this.autorun(() => {
       const options = this.options.get();
       Meteor.defer(() => {
-        if(this.$(".select2").hasClass("select2-hidden-accessible")) {
-          this.$(".select2").select2("destroy");
-        }
-        if(_.isArray(options)) {
-          options.forEach(option => {
-            const selected = this.isSelected(option.value);
-            const newOption = new Option(option.label, option.label, selected, selected);
-            this.$(".select2").append(newOption);
+        const select2Component = this.$(".dynamic-table-select2");
+        this.$(".dynamic-table-select2-section").children("span").remove();
+        if(_.isArray(options)) { 
+          select2Component.select2({
+            placeholder: "Search...",
+            data: this.options.get().map(option => ({
+              text: option.label,
+              id: option.label
+            }))
           });
-          this.$(".select2").select2({
-            placeholder: "Search..."
-          });
+          select2Component.val(options.filter(option => this.isSelected(option.value)).map(option => option.label));
+          select2Component.trigger('change');
         }
       });
     });
@@ -113,6 +114,9 @@ export class InlineFilterForm extends FilterComponent {
     })) : [];
   }
 
+  isControlDisabled() {
+    return this.operator.get().indexOf("$exists") !== -1 ? "disabled" : "";
+  }
 
   handleSearchChange(e) {
     const value = $(e.currentTarget).val();
@@ -138,8 +142,11 @@ export class InlineFilterForm extends FilterComponent {
   }
 
   handleActionChange(e) {
+    const operator = this.operator.get();
     this.updateOperator($(e.currentTarget).val());
-    if(operator.indexOf("$exists") !== -1) {}
+    if(operator.indexOf("$exists") !== -1) {
+      this.selectedOptions.set([]);
+    }
   }
 }
 BlazeComponent.register(Template.dynamicTableInlineFilterForm, InlineFilterForm);

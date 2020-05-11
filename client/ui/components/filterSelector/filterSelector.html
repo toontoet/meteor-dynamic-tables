@@ -2,9 +2,9 @@
   <div class="dynamic-table-filter-selector">
     <select class="input-dynamic-table-column">
       {{#each column in curColumns}}
-        <option value="{{column.id}}">{{column.title}}</option>
+        <option value="{{column.id}}" selected="{{#if column.isSelected}}selected{{/if}}">{{column.title}}</option>
       {{/each}}
     </select>
-    {{> dynamicTableInlineFilterForm }}
+    {{> dynamicTableInlineFilterForm filter=getFilter field=getField}}
   </div>
 </template>

@@ -56,32 +56,32 @@ export class FilterComponent extends BlazeComponent {
   }
 
   checkedIfWithValue() {
-    const filter = this.nonReactiveData().filter;
+    const filter = this.reactiveData().filter;
     return ["$between", "$in", "$regex"].includes(filter.operator.selected) ? { selected: "selected" } : {};
   }
 
   checkedIfWithAllValue() {
-    const filter = this.nonReactiveData().filter;
+    const filter = this.reactiveData().filter;
     return ["$all"].includes(filter.operator.selected) ? { selected: "selected" } : {};
   }
 
   checkedIfGteValue() {
-    const filter = this.nonReactiveData().filter;
+    const filter = this.reactiveData().filter;
     return filter.operator.selected === "$gte" ? { selected: "selected" } : {};
   }
 
   checkedIfLteValue() {
-    const filter = this.nonReactiveData().filter;
+    const filter = this.reactiveData().filter;
     return filter.operator.selected === "$lte" ? { selected: "selected" } : {};
   }
 
   checkedIfWithoutValue() {
-    const filter = this.nonReactiveData().filter;
+    const filter = this.reactiveData().filter;
     return ["$nin"].includes(filter.operator.selected) ? { selected: "selected" } : {};
   }
 
   checkedIfWithoutAllValue() {
-    const filter = this.nonReactiveData().filter;
+    const filter = this.reactiveData().filter;
     return ["$not$all"].includes(filter.operator.selected) ? { selected: "selected" } : {};
   }
 
@@ -91,7 +91,7 @@ export class FilterComponent extends BlazeComponent {
   }
 
   isSelected(value) {
-    const data = this.nonReactiveData();
+    const data = this.reactiveData();
     const search = data.filter && data.filter.search && data.filter.search.value;
     return value === search ? { selected: "selected" } : {};
   }
@@ -110,12 +110,12 @@ export class FilterComponent extends BlazeComponent {
   }
 
   hasFooter() {
-    const filter = this.nonReactiveData().filter;
+    const filter = this.reactiveData().filter;
     return filter && (filter.enabled || !filter.required);
   }
 
   searchEnabled() {
-    const filter = this.nonReactiveData().filter;
+    const filter = this.reactiveData().filter;
     if (filter.options) {
       return filter.search && filter.search.enabled;
     }
@@ -166,7 +166,7 @@ export class FilterComponent extends BlazeComponent {
   }
 
   searchValue() {
-    const data = this.nonReactiveData();
+    const data = this.reactiveData();
     return data.filter && data.filter.search && data.filter.search.value;
   }
 
@@ -192,12 +192,12 @@ export class FilterComponent extends BlazeComponent {
   }
 
   manageFieldsEditContext() {
-    const data = this.nonReactiveData();
+    const data = this.reactiveData();
     return data.field.edit;
   }
 
   isLoading() {
-    const data = this.nonReactiveData();
+    const data = this.reactiveData();
     return data.dataTable && data.dataTable.loading.get();
   }
 
@@ -256,7 +256,7 @@ export class FilterComponent extends BlazeComponent {
   }
 
   updateSpec(spec) {
-    const data = this.nonReactiveData();
+    const data = this.reactiveData();
     Tracker.nonreactive(() => {
       this.editableField.set(spec);
     });
@@ -371,7 +371,7 @@ export class FilterComponent extends BlazeComponent {
     this.operator = new ReactiveVar(null);
 
     this.autorun(() => {
-      const data = this.nonReactiveData();
+      const data = this.reactiveData();
 
       this.editableField.set(data.field && data.field.edit && data.field.edit.spec);
       this.isArrayField.set(false);

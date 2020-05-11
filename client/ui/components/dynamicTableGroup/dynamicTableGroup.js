@@ -673,7 +673,8 @@ Template.dynamicTableGroup.events({
     const tableId = $(target).attr("data-table-id");
     const options = this.customTableSpec.table;
     Modal.show("dynamicTableFilterSelector", {
-      columns: options.columns
+      columns: options.columns,
+      collection: options.collection
     });
   }
 });
