@@ -1,10 +1,12 @@
 <template name="dynamicTableInlineFilterForm">
   <div class="dynamic-table-filter-inline">
-    <select class="input-dynamic-table-action">
-      {{#each action in getActions}}
-        <option value="{{action.value}}" selected="{{#if action.isSelected}}selected{{/if}}">{{action.option}}</option>
-      {{/each}}
-    </select>
+    {{#if isActionHidden}}
+      <select class="input-dynamic-table-action">
+        {{#each action in getActions}}
+          <option value="{{action.value}}" selected="{{#if action.isSelected}}selected{{/if}}">{{action.option}}</option>
+        {{/each}}
+      </select>
+    {{/if}}
     <section class="dynamic-table-filter-search">
       {{#if isStringOrCustom}}
         {{#if hasOptions}}
@@ -34,8 +36,5 @@
         </select>
       {{/if}}
     </section>
-    <button class="btn-remove">                      
-        <i class="fa fa-times"></i>
-    </button>
   </div>
 </template>

@@ -4,6 +4,7 @@ import { FilterComponent } from "../filterComponent/filterComponent.js";
 import "./inlineFilterForm.html";
 import "./inlineFilterForm.css";
 
+
 const actionMapping = [
   {
     type: String,
@@ -72,7 +73,8 @@ export class InlineFilterForm extends FilterComponent {
   static HelperMap() {
     return _.union(FilterComponent.HelperMap(), [
       "getActions",
-      "isControlDisabled"
+      "isControlDisabled",
+      "isActionHidden"
     ]);
   }
 
@@ -89,6 +91,7 @@ export class InlineFilterForm extends FilterComponent {
       Meteor.defer(() => {
         const select2Component = this.$(".dynamic-table-select2");
         this.$(".dynamic-table-select2-section").children("span").remove();
+        this.$(".dynamic-table-select2-section").children("select").empty();
         if(_.isArray(options)) { 
           select2Component.select2({
             placeholder: "Search...",
@@ -106,7 +109,8 @@ export class InlineFilterForm extends FilterComponent {
 
   getActions() {
     const fieldType = this.fieldType.get();
-    const action = actionMapping.find(value => [].concat(value.type).includes(fieldType));
+    const getActionMapping = (type) => actionMapping.find(value => [].concat(value.type).includes(type));
+    let action = getActionMapping(fieldType) || getActionMapping(String);
     return action ? action.options.map(option => ({
       option,
       value: operatorMapping[option],
@@ -117,8 +121,16 @@ export class InlineFilterForm extends FilterComponent {
   isControlDisabled() {
     return this.operator.get().indexOf("$exists") !== -1 ? "disabled" : "";
   }
+  
+  isActionHidden() {
+    const options = this.options.get();
+    return !options || !!options.length;
+  }
 
   handleSearchChange(e) {
+    if(this.isActionHidden()) {
+      this.operator.set("$in");
+    }
     const value = $(e.currentTarget).val();
     const fieldType = this.fieldType.get();
     if (fieldType === Date || fieldType === "time" || fieldType === Number) {

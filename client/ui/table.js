@@ -5,7 +5,7 @@ import "./table.html";
 import "./table.css";
 import "./exportModal.js";
 import "./components/filterModal/filterModal.js";
-import "./components/filterSelector/filterSelector.js";
+import "./components/filterGroup/filterGroup.js";
 import "./components/headerCell/headerCell.js";
 import "./components/rawRender/rawRender.js";
 import "./components/tableCell/tableCell.js";
@@ -46,7 +46,7 @@ function getSelector() {
 */
 function openFiltersModal(extraOptions) {
   const options = this.data.table;
-  Modal.show("dynamicTableFilterSelector", _.extend({
+  Modal.show("dynamicTableFilterGroup", _.extend({
     columns: options.columns,
     collection: options.collection
   }, _.isObject(extraOptions) ? extraOptions : {}));

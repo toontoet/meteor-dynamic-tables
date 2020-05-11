@@ -1,0 +1,18 @@
+.dynamic-table-filter-group {
+  background-color: #fff;
+  z-index: 9999;
+  padding: 20px;
+  border: 1px solid #cccccc;
+  border-radius: 3px;
+  width: 100%;
+}
+
+.add-filter {
+  padding: 5px;
+  outline: 0;
+}
+
+.dynamic-table-selector-container {
+  padding: 5px;
+  width: 100%;
+}

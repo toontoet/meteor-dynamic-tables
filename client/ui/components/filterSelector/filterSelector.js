@@ -1,4 +1,5 @@
 import { BlazeComponent } from "meteor/znewsham:blaze-component";
+import { EJSON } from "meteor/ejson";
 
 import "./filterSelector.html";
 import "./filterSelector.css";
@@ -14,7 +15,8 @@ export class FilterSelector extends BlazeComponent {
 
   static EventMap() {
     return {
-      "change .input-dynamic-table-column": "updateColumn"
+      "change .input-dynamic-table-column": "updateColumn",
+      "click .btn-remove": "handleRemoveClick"
     }
   }
 
@@ -23,12 +25,13 @@ export class FilterSelector extends BlazeComponent {
   }
 
   getFilter() {
+    const column = this.column.get();
     return {
-        enabled: true,
+        enabled: column.filter && typeof column.filter.enabled === "boolean" ? column.filter.enabled : true,
         search: {
           enabled: true
         },
-        options: this.column.get().filterModal.options,
+        options: column.filterModal.options,
         selectedOptions: [],
         operator: {
           enabled: true,
@@ -43,15 +46,11 @@ export class FilterSelector extends BlazeComponent {
     const name = (column.filterModal.field && column.filterModal.field.name) || column.data;
     const obj = collection._c2 && collection._c2._simpleSchema && collection._c2._simpleSchema.schema(name);
     let type = (obj && obj.type) || String;
-    if(type.choices) {
-      type = type.choices.indexOf(String) !== -1 || !type.choices.length ? String : type.choices[0];
-    }
-    debugger;
     return _.extend({
       name,
       type,
       required: column.required,
-      label: column.title
+      label: column.title || column.id
     }, column.filterModal.field || {})
   }
 
@@ -59,15 +58,27 @@ export class FilterSelector extends BlazeComponent {
     return this.columns.get();
   }
 
+  handleRemoveClick() {
+    const removeCallback = this.removeCallback.get();
+    const id = this.id.get();
+    if(_.isFunction(removeCallback)) {
+      removeCallback(id);
+    }
+  }
+
   init() {
     this.columns = new ReactiveVar([]);
     this.column = new ReactiveVar(null);
     this.collection = new ReactiveVar(null);
+    this.id = new ReactiveVar(null);
+    this.removeCallback = new ReactiveVar(null);
+
     this.autorun(() => {
       const data = this.reactiveData();
       this.collection.set(data.collection);
-      this.columns.set(data.columns
-        .filter(column => column.filterModal && column.filterModal.options).map((column, i) => {
+      this.removeCallback.set(data.removeCallback);
+      this.id.set(data.id);
+      this.columns.set(data.columns.filter(column => column.filterModal).map((column, i) => {
         column.isSelected = !i;
         if(column.isSelected) {
           this.column.set(column);

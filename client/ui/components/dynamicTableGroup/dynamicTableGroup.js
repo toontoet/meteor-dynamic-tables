@@ -7,7 +7,7 @@ import { changed, getCustom, getColumns, getValue, createModal } from "../../../
 import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "../manageOrderModal/manageOrderModal.js";
 import "../manageFieldsModal/manageFieldsModal.js";
-import "../../components/filterSelector/filterSelector.js";
+import "../../components/filterGroup/filterGroup.js";
 
 /**
  * selectorToId - description
@@ -672,7 +672,7 @@ Template.dynamicTableGroup.events({
     const target = e.currentTarget;
     const tableId = $(target).attr("data-table-id");
     const options = this.customTableSpec.table;
-    Modal.show("dynamicTableFilterSelector", {
+    Modal.show("dynamicTableFilterGroup", {
       columns: options.columns,
       collection: options.collection
     });

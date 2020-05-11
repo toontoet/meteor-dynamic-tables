@@ -33,7 +33,7 @@ section.dynamic-table-filter-search>.input-dynamic-table-search {
 .select2-container--default.select2-container--focus .select2-selection--multiple {
   border: 1px solid #cccccc;
   border-radius: 3px;
-  width: 100%;
+  width: 100%!important;
 }
 
 .select2-container--default .select2-selection--multiple {
@@ -46,7 +46,7 @@ section.dynamic-table-filter-search>.input-dynamic-table-search {
 }
 
 .select2-container {
-  width: 100%;
+  width: 100%!important;
 }
 
 .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
@@ -54,15 +54,6 @@ section.dynamic-table-filter-search>.input-dynamic-table-search {
   float: right;
   font-size: 25px;
   padding-left: 2px;
-}
-
-.btn-remove {
-  padding-left: 20px;
-  padding-right: 20px; 
-  border: none;
-  outline: 0;
-  width: 2%;
-  background: none;
 }
 
 section.dynamic-table-filter-search>.input-dynamic-table-search.time {

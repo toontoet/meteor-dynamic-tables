@@ -315,7 +315,7 @@ Template.GroupedTable.events({
   },
   "click .grouped-table-manage-controller.filters"(e) {
     const options = this.table;
-    Modal.show("dynamicTableFilterSelector", {
+    Modal.show("dynamicTableFilterGroup", {
       columns: options.columns,
       collection: options.collection
     });

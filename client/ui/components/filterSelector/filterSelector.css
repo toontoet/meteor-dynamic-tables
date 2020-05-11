@@ -1,4 +1,20 @@
 .dynamic-table-filter-selector {
   display: inline-flex;
+  background-color: #fff;
   z-index: 9999;
+}
+
+.input-dynamic-table-column {
+  margin: auto;
+  margin-right: 20px;
+  width: 28%;
+}
+
+.btn-remove {
+  padding-left: 20px;
+  padding-right: 20px; 
+  border: none;
+  outline: 0;
+  width: 2%;
+  background: none;
 }
