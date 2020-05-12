@@ -7,7 +7,7 @@ import "./inlineFilterForm.css";
 
 const actionMapping = [
   {
-    type: String,
+    type: [String, Array],
     options: [
       "is...",
       "is not...",
@@ -95,7 +95,7 @@ export class InlineFilterForm extends FilterComponent {
         if(_.isArray(options)) { 
           select2Component.select2({
             placeholder: "Search...",
-            data: this.options.get().map(option => ({
+            data: options.map(option => ({
               text: option.label,
               id: option.label
             }))
@@ -108,7 +108,7 @@ export class InlineFilterForm extends FilterComponent {
   }
 
   getActions() {
-    const fieldType = this.fieldType.get();
+    const fieldType = this.isArrayField.get() ? Array : this.fieldType.get();
     const getActionMapping = (type) => actionMapping.find(value => [].concat(value.type).includes(type));
     let action = getActionMapping(fieldType) || getActionMapping(String);
     return action ? action.options.map(option => ({

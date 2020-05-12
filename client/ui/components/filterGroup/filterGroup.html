@@ -2,7 +2,10 @@
   <div class="dynamic-table-filter-group">
     {{#each filter in getFilters}}
       <div class="dynamic-table-selector-container">
-        {{> dynamicTableFilterSelector columns=getColumns collection=getCollection removeCallback=removeFilter id=filter.index}}
+        {{> dynamicTableFilterSelector filter=filter columns=getColumns collection=getCollection 
+          updateFilterCallback=updateFilterCallback 
+          removeFilterCallback=removeFilterCallback 
+          updateColumnCallback=updateColumnCallback}}
       </div>
     {{/each}}    
     <button class="btn-link add-filter">              

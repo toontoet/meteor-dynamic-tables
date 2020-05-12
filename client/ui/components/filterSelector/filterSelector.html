@@ -5,7 +5,7 @@
         <option value="{{column.id}}" selected="{{#if column.isSelected}}selected{{/if}}">{{column.title}}</option>
       {{/each}}
     </select>
-    {{> dynamicTableInlineFilterForm filter=getFilter field=getField}}
+    {{> dynamicTableInlineFilterForm filter=getFilter field=getField callback=callback}}
     <button class="btn-remove">                      
         <i class="fa fa-times"></i>
     </button>

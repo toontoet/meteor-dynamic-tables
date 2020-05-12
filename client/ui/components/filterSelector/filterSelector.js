@@ -9,19 +9,25 @@ export class FilterSelector extends BlazeComponent {
     return [
       "curColumns",
       "getFilter",
-      "getField"
+      "getField",
+      "callback"
     ];
   }
 
   static EventMap() {
     return {
-      "change .input-dynamic-table-column": "updateColumn",
+      "change .input-dynamic-table-column": "handleColumnChange",
       "click .btn-remove": "handleRemoveClick"
     }
   }
 
-  updateColumn(e) {
-    this.column.set(this.columns.get().find(val => val.id === $(e.currentTarget).val()));
+  handleColumnChange(e) {
+    const updateColumnCallback = this.updateColumnCallback.get();
+    const columnId = $(e.currentTarget).val();
+    this.column.set(this.columns.get().find(val => val.id === columnId));
+    if(_.isFunction(updateColumnCallback)) {
+      updateColumnCallback(this.id.get(), columnId);
+    }
   }
 
   getFilter() {
@@ -59,33 +65,59 @@ export class FilterSelector extends BlazeComponent {
   }
 
   handleRemoveClick() {
-    const removeCallback = this.removeCallback.get();
+    const removeFilterCallback = this.removeFilterCallback.get();
     const id = this.id.get();
-    if(_.isFunction(removeCallback)) {
-      removeCallback(id);
+    if(_.isFunction(removeFilterCallback)) {
+      removeFilterCallback(id);
     }
   }
 
+  updateFilter(...args) {
+    const updateFilterCallback = this.updateFilterCallback.get();
+    if(_.isFunction(updateFilterCallback)) {
+      updateFilterCallback(this.id.get(), ...args);
+    }
+  }
+
+  callback() {
+    return (...args) => this.updateFilter(...args);
+  }
+
   init() {
+    this.allColumns = new ReactiveVar([]);
     this.columns = new ReactiveVar([]);
     this.column = new ReactiveVar(null);
     this.collection = new ReactiveVar(null);
     this.id = new ReactiveVar(null);
-    this.removeCallback = new ReactiveVar(null);
+    this.updateFilterCallback = new ReactiveVar(null);
+    this.updateColumnCallback = new ReactiveVar(null);
+    this.removeFilterCallback = new ReactiveVar(null);
+    this.columnId = new ReactiveVar(null);
 
     this.autorun(() => {
-      const data = this.reactiveData();
+      const data = this.nonReactiveData();
+      this.allColumns.set(data.columns);
       this.collection.set(data.collection);
-      this.removeCallback.set(data.removeCallback);
-      this.id.set(data.id);
-      this.columns.set(data.columns.filter(column => column.filterModal).map((column, i) => {
-        column.isSelected = !i;
-        if(column.isSelected) {
-          this.column.set(column);
-        }
-        return column;
+      this.updateFilterCallback.set(data.updateFilterCallback);
+      this.updateColumnCallback.set(data.updateColumnCallback);
+      this.removeFilterCallback .set(data.removeFilterCallback);
+    });
+
+    this.autorun(() => {
+      const filter = this.reactiveData().filter;
+      
+      this.id.set(filter.id);
+      this.columns.set(this.allColumns.get().filter(column => 
+        column && column.filterModal && (
+          !filter.usedColumns.includes(column.id) || column.id === filter.columnId)
+        ).map((column, i) => {
+          column.isSelected = column.id === filter.columnId;
+          if(column.isSelected) {
+            this.column.set(column);
+          }
+          return column;
       }));
-    })
+    });
   }
 }
 BlazeComponent.register(Template.dynamicTableFilterSelector, FilterSelector);

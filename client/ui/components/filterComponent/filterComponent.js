@@ -520,7 +520,7 @@ export class FilterComponent extends BlazeComponent {
           let operator = this.operator.get();
           const options = this.allOptions.get();
           const fieldType = this.fieldType.get();
-          const trackOptions = !!options.length;
+          const trackOptions = options.length;
           if (selectedOptions.length === 0 &&
             ((!trackOptions && fieldType === Date) || fieldType === "time" || fieldType === Number)) {
             selectedOptions = this.search.get();

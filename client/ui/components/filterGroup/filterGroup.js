@@ -8,10 +8,12 @@ import "./filterGroup.css";
 export class FilterGroup extends BlazeComponent {
   static HelperMap() {
     return [
+      "getFilters",
       "getColumns",
       "getCollection",
-      "getFilters",
-      "removeFilter"
+      "updateFilterCallback",
+      "removeFilterCallback",
+      "updateColumnCallback"
     ];
   }
 
@@ -19,10 +21,6 @@ export class FilterGroup extends BlazeComponent {
     return {
       "click .add-filter": "addFilter"
     }
-  }
-
-  getFilters() {
-    return this.filters.get();
   }
 
   getColumns() {
@@ -33,18 +31,55 @@ export class FilterGroup extends BlazeComponent {
     return this.collection.get();
   }
 
-  addFilter() {
+  getFilters() {
     const filters = this.filters.get();
-    this.filters.set([...filters, {index: filters.length}]);
+    const columns = this.columns.get();
+    const usedColumns = filters.filter(filter => filter.columnId).map(filter => filter.columnId);
+    return filters.map(filter => _.extend({}, filter, {
+      usedColumns
+    }))
   }
 
-  removeFilter() {
-    const self = this;
-    return index => {
-      const filters = self.filters.get();
-      filters.splice(index, 1);
-      self.filters.set(filters);
+  addFilter() {
+    const useableFilters = this.columns.get().filter(column => column && column.filterModal);
+    const filters = this.filters.get();
+    if(useableFilters.length > filters.length) {
+      this.filters.set([...filters, { 
+        id: filters.length,
+        columnId: useableFilters.filter(filter => !filters.map(filter => filter.columnId).includes(filter.id))[0].id
+      }]);
     }
+  }
+
+  updateColumn(id, columnId) {
+    const filters = this.filters.get();
+    const filter = filters.find(filter => filter.id === id);
+    filter.columnId = columnId;
+    this.filters.set(filters);
+  }
+
+  updateFilter(id, ...args) {
+    const filters = this.filters.get();
+    const filter = filters.find(filter => filter.id === id);
+    console.log(filter, ...args);
+  }
+
+  removeFilter(id) {
+    const filters = this.filters.get();
+    filters.splice(filters.findIndex(filter => filter.id === id), 1);
+    self.filters.set(filters);
+  }
+
+  updateFilterCallback() {
+    return (id, ...args) => this.updateFilter(id, ...args);
+  }
+
+  updateColumnCallback() {
+    return (id, columnId) => this.updateColumn(id, columnId);
+  }
+
+  removeFilterCallback() {
+    return (id) => this.removeFilter(id);
   }
 
   init() {
