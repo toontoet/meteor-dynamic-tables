@@ -45,11 +45,26 @@ export class FilterGroup extends BlazeComponent {
     const filters = this.filters.get();
     if(useableFilters.length > filters.length) {
       this.filters.set([...filters, { 
-        id: filters.length,
+        id: this.filterIndex(filters.map(filter => filter.id)),
         columnId: useableFilters.filter(filter => !filters.map(filter => filter.columnId).includes(filter.id))[0].id
       }]);
     }
   }
+
+  filterIndex(values) {
+    let found = false;
+    let i = 0;
+    while(!found) {
+      if(!values.includes(i)) {
+        found = true;
+      }
+      if(!found) {
+        i++;
+      }
+    }
+    console.log(i);
+    return i;
+  };
 
   updateColumn(id, columnId) {
     const filters = this.filters.get();
@@ -67,7 +82,7 @@ export class FilterGroup extends BlazeComponent {
   removeFilter(id) {
     const filters = this.filters.get();
     filters.splice(filters.findIndex(filter => filter.id === id), 1);
-    self.filters.set(filters);
+    this.filters.set(filters);
   }
 
   updateFilterCallback() {

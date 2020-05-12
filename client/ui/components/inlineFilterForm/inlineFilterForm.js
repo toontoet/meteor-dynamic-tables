@@ -158,6 +158,7 @@ export class InlineFilterForm extends FilterComponent {
     this.updateOperator($(e.currentTarget).val());
     if(operator.indexOf("$exists") !== -1) {
       this.selectedOptions.set([]);
+      this.$(".dynamic-table-select2").val([]).trigger('change');
     }
   }
 }
