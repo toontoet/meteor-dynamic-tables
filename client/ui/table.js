@@ -46,10 +46,12 @@ function getSelector() {
 */
 function openFiltersModal(extraOptions) {
   const options = this.data.table;
-  Modal.show("dynamicTableFilterGroup", _.extend({
+  const templInstance = Template.instance();
+  Modal.show("dynamicTableFiltersModal", {
     columns: options.columns,
-    collection: options.collection
-  }, _.isObject(extraOptions) ? extraOptions : {}));
+    collection: options.collection,
+    advancedSearch: this.advancedSearch.get()
+  });
 }
 
 /**

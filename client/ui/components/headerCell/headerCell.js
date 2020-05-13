@@ -58,8 +58,6 @@ Template.dynamicTableHeaderCell.events({
     const searchObject = templInstance.data.advancedSearch;
     const columnSearch = EJSON.fromJSONValue(searchObject.$and && searchObject.$and.length >= 1 ?
       searchObject.$and[0][fieldName] : searchObject[fieldName]);
-
-    console.log(searchObject);
     let selectedOptions;
     let operator = "$in";
     let searchValue;

@@ -88,10 +88,12 @@ export class FiltersModal extends BlazeComponent {
     this.filterGroups = new ReactiveVar([]);
     this.columns = new ReactiveVar([]);
     this.collection = new ReactiveVar(null);
+    this.advancedSearch = new ReactiveVar(null);
     this.autorun(() => {
       const data = this.reactiveData();
       this.columns.set(data.columns);
       this.collection.set(data.collection);
+      this.advancedSearch.set(data.advancedSearch);
     });
   }
 }
