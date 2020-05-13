@@ -45,6 +45,15 @@ section.dynamic-table-filter-search>.input-dynamic-table-search {
   width: 100%!important;
 }
 
+.select2-container .select2-search--inline .select2-search__field {
+  font-size: 14px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.select2-container .select2-search--inline .select2-search__field {
+  margin-top: 0;
+}
+
 .select2-container {
   width: 100%!important;
 }

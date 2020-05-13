@@ -7,12 +7,19 @@
   width: 100%;
 }
 
-.add-filter {
+.dynamic-table-filter-group-add-filter {
   padding: 5px;
   outline: 0;
 }
 
-.dynamic-table-selector-container {
+.dynamic-table-filter-group-selector-container {
   padding: 5px;
   width: 100%;
+}
+
+.dynamic-table-filter-group-delimiter {
+  margin: 0;
+  margin-left: 6px;
+  font-size: 14px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }

@@ -2,12 +2,13 @@
   display: inline-flex;
   background-color: #fff;
   z-index: 9999;
+  width: 100%;
 }
 
 .input-dynamic-table-column {
   margin: auto;
   margin-right: 20px;
-  width: 200px;
+  width: 20%;
 }
 
 .btn-remove {

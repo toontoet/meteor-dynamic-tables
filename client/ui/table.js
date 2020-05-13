@@ -5,7 +5,7 @@ import "./table.html";
 import "./table.css";
 import "./exportModal.js";
 import "./components/filterModal/filterModal.js";
-import "./components/filterGroup/filterGroup.js";
+import "./components/filtersModal/filtersModal.js";
 import "./components/headerCell/headerCell.js";
 import "./components/rawRender/rawRender.js";
 import "./components/tableCell/tableCell.js";

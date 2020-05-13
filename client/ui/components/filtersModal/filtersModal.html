@@ -1,154 +1,36 @@
 <template name="dynamicTableFiltersModal">
-  <div class="dynamic-table-filter">
-    {{#if field.label}}
-      <header class="dynamic-table-filter-header">
-        {{#if editing}}Edit{{else}}Filter by{{/if}}: <b>{{fieldLabel}}</b>
-        {{#if field.edit}}
-          {{#unless editing}}
-            <span class="dynamic-table-filter-edit-btn">
-              <i class="fa fa-pencil"></i> Edit
-            </span>
+  <div class="modal fade in" id="dynamicTableFiltersModal" role="dialog" aria-labelledby="modal-dynamicTableFiltersModal" aria-hidden="false" style="display: none;">
+    <div class="modal-dialog modal-large-height">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title dynamic-table-filters-title">
+            Filters
+          </h4>
+        </div>
+        <div class="modal-body">
+          {{#unless hasFilterGroups}}
+            <p class="dynamic-table-filters-no-filters">You do not have any filters set for this Smart View.</p>
           {{/unless}}
-        {{/if}}
-      </header>
-    {{/if}}
-    {{#if loading}}
-      <div style="position: absolute; top: 0px; bottom: 0px; left: 0px; right: 0px; background-color: #fff; opacity: 0.5;">
-
-      </div>
-    {{/if}}
-    {{#if editing}}
-      {{> manageColumnsForm groupNames=groupNames editableField=editableField manageFieldsEditContext=manageFieldsEditContext}}
-    {{else}}
-      {{#if sort.enabled}}
-        <section class="dynamic-table-filter-sort">
-          <label>Sort</label>
-          <div>
-            {{#if isNumericOrDate}}
-              <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">0-9</button>
-              <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">9-0</button>
-            {{/if}}
-            {{#if isStringOrCustom}}
-              <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">A-Z</button>
-              <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">Z-A</button>
-            {{/if}}
-            {{#if isBoolean}}
-              <button class="btn btn-dynamic-table-sort {{#if sortDirection 1}}btn-dynamic-table-selected{{/if}}" data-direction="1">True</button>
-              <button class="btn btn-dynamic-table-sort {{#if sortDirection -1}}btn-dynamic-table-selected{{/if}}" data-direction="-1">False</button>
-            {{/if}}
-          </div>
-          <hr>
-        </section>
-      {{/if}}
-      {{#if filter.enabled}}
-        {{#if hasSelectedOptions}}
-          <section class="dynamic-table-filter-selected">
-            {{#each option in selectedOptions}}
-              <label data-value="{{option.value}}" class="label-dynamic-table-selected">
-                {{option.label}}
-                <i class="fa fa-times"></i>
-              </label>
-            {{/each}}
-          </section>
-        {{/if}}
-        {{#if searchEnabled}}
-          <section class="dynamic-table-filter-search">
-            {{#if isStringOrCustom}}
-              <input type="text" class="input-dynamic-table-search" placeholder="{{#if hasOptions}}Search values...{{else}}Search...{{/if}}" value="{{filter.search.value}}" />
-
-              {{#if filter.operator.enabled}}
-                <i class="fa fa-cog"></i>
-              {{/if}}
-            {{/if}}
-            {{#if isNumber}}
-              <input type="number" class="input-dynamic-table-search" placeholder="Value" value="{{numberValue}}" />
-              {{#if filter.operator.enabled}}
-                <i class="fa fa-cog"></i>
-              {{/if}}
-            {{/if}}
-            {{#if isDate}}
-              <!-- <label>Date</label> -->
-              <input type="date" class="input-dynamic-table-search" placeholder="Date..." value="{{dateValue}}" />
-              {{#if filter.operator.enabled}}
-                <i class="fa fa-cog"></i>
-              {{/if}}
-            {{/if}}
-            {{#if isTime}}
-              <label>Time</label>
-              <input type="number" class="input-dynamic-table-search" placeholder="Min" value="{{minuteValue}}" style="width: 49%;" />
-              <input type="number" class="input-dynamic-table-search" placeholder="Sec" value="{{secondValue}}" style="width: 49%;" />
-            {{/if}}
-            {{#if isBoolean}}
-              <select class="input-dynamic-table-search">
-                <option value="">Choose True/False</option>
-                <option value="true" {{isSelected true}}>True</option>
-                <option value="false" {{isSelected false}}>False</option>
-              </select>
-            {{/if}}
-          </section>
-        {{/if}}
-        {{#unless isBoolean}}
-          {{#if filter.operator.enabled}}
-            <section class="dynamic-table-filter-operator" style="{{#unless showOperators}}display: none;{{/unless}}">
-              <label>Where column</label>
-              <select class="select-dynamic-table-operator">
-                {{#if isDate}}
-                  <option value="$between" {{checkedIfWithValue}}>Equals</option>
-                  <option value="$gte">Greater</option>
-                  <option value="$lte">Less Than</option>
-                {{else}}
-                  {{#if isNumericOrDateAndNoOptions}}
-                    <option value="$between" {{checkedIfWithValue}}>Equals</option>
-                    <option value="$gte">Greater</option>
-                    <option value="$lte">Less Than</option>
-                  {{else}}
-                    <option value="$in" {{checkedIfWithValue}}>contains (OR)</option>
-                    {{#if hasOptions}}
-                      {{#if isArrayField}}
-                        <option value="$all" {{checkedIfWithAllValue}}>contains (ALL)</option>
-                      {{/if}}
-                    {{/if}}
-                    <option value="$nin" {{checkedIfWithoutValue}}>does not contain (OR)</option>
-                    {{#if hasOptions}}
-                      {{#if isArrayField}}
-                        <option value="$not$all" {{checkedIfWithoutAllValue}}>does not contain (ALL)</option>
-                      {{/if}}
-                    {{/if}}
-                  {{/if}}
-                {{/if}}
-              </select>
-            </section>
-          {{/if}}
-        {{/unless}}
-        {{#if hasOptions}}
-          <section class="dynamic-table-filter-options">
-            <label>Values{{#if searching}}...{{/if}}</label>
-            {{#unless options.length}}
-              Start typing to see your options
-            {{/unless}}
-            <div class="inner">
-              {{#each option in options}}
-                <label><input class="input-dynamic-table-option" type="checkbox" value="{{option.value}}" {{checkedIfSelected option.value}} /> <span class="dynamic-table-option-value">{{option.label}}</span></label>
-              {{/each}}
+          {{#each filterGroup in getFilterGroups}}
+            <div class="dynamic-table-filters-filter-group-container">
+              {{> dynamicTableFilterGroup filterGroup=filterGroup columns=getColumns collection=getCollection
+                removeFilterGroupCallback=removeFilterGroupCallback
+              }}
             </div>
-          </section>
-        {{/if}}
-      {{/if}}
-    {{/if}}
-    {{#if hasFooter}}
-      <footer class="dynamic-table-filter-footer" style="{{#if editing}}text-align: right; padding: 6px;{{/if}}">
-        {{#if editing}}
-          <button class="btn btn-default btn-dynamic-table-cancel">Cancel</button>
-          <button class="btn btn-success btn-dynamic-table-save">Save</button>
-        {{else}}
-          {{#unless field.required}}
-            <span class="btn-dynamic-table-remove"><i class="fa fa-eye-slash"></i> Hide Column</span>
-          {{/unless}}
-          {{#if filter.enabled}}
-            <span class="btn-dynamic-table-clear"><i class="fa fa-times"></i> Clear</span>
-          {{/if}}
-        {{/if}}
-      </footer>
-    {{/if}}
+            {{#if requiresDelimiter filterGroup}}
+              <p class="dynamic-table-filters-delimiter">OR</p>
+            {{/if}}
+          {{/each}}
+          <button class="dynamic-table-filters-add-filter-group">              
+              <i class="fa fa-plus"></i> {{#if hasFilterGroups}}OR{{else}}Filter{{/if}}
+          </button>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-danger dynamic-table-filters-clear">Clear</button>
+          <button class="btn btn-inverse dynamic-table-filters-apply">Apply</button>
+          <button class="btn btn-default dynamic-table-filters-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

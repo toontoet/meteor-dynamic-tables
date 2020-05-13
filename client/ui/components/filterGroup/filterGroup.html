@@ -1,15 +1,21 @@
 <template name="dynamicTableFilterGroup">
   <div class="dynamic-table-filter-group">
     {{#each filter in getFilters}}
-      <div class="dynamic-table-selector-container">
+      <div class="dynamic-table-filter-group-selector-container">
         {{> dynamicTableFilterSelector filter=filter columns=getColumns collection=getCollection 
           updateFilterCallback=updateFilterCallback 
           removeFilterCallback=removeFilterCallback 
-          updateColumnCallback=updateColumnCallback}}
+          updateColumnCallback=updateColumnCallback
+        }}
       </div>
-    {{/each}}    
-    <button class="btn-link add-filter">              
-        <i class="fa fa-plus"></i> AND
-    </button>
+      {{#if requiresDelimiter filter}}
+        <p class="dynamic-table-filter-group-delimiter">AND</p>
+      {{/if}}
+    {{/each}}
+    {{#if canAddFilters}}
+      <button class="btn-link dynamic-table-filter-group-add-filter">              
+          <i class="fa fa-plus"></i> AND
+      </button>
+    {{/if}}
   </div>
 </template>

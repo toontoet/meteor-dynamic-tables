@@ -1,4 +1,5 @@
 import { BlazeComponent } from "meteor/znewsham:blaze-component";
+import { nextId } from "../../helpers.js";
 
 import "../filterSelector/filterSelector.js";
 
@@ -13,14 +14,20 @@ export class FilterGroup extends BlazeComponent {
       "getCollection",
       "updateFilterCallback",
       "removeFilterCallback",
-      "updateColumnCallback"
+      "updateColumnCallback",
+      "requiresDelimiter",
+      "canAddFilters"
     ];
   }
 
   static EventMap() {
     return {
-      "click .add-filter": "addFilter"
+      "click .dynamic-table-filter-group-add-filter": "handleAddFilterClick"
     }
+  }
+
+  handleAddFilterClick() {
+    this.addFilter();
   }
 
   getColumns() {
@@ -40,31 +47,31 @@ export class FilterGroup extends BlazeComponent {
     }))
   }
 
+  requiresDelimiter(filter) {
+    const filters = this.filters.get();
+    return filters.findIndex(val => val.id === filter.id) < filters.length - 1;
+  }
+
   addFilter() {
-    const useableFilters = this.columns.get().filter(column => column && column.filterModal);
+    const useableFilters = this.useableFilters();
     const filters = this.filters.get();
     if(useableFilters.length > filters.length) {
       this.filters.set([...filters, { 
-        id: this.filterIndex(filters.map(filter => filter.id)),
+        id: nextId(filters.map(filter => filter.id)),
         columnId: useableFilters.filter(filter => !filters.map(filter => filter.columnId).includes(filter.id))[0].id
       }]);
     }
   }
 
-  filterIndex(values) {
-    let found = false;
-    let i = 0;
-    while(!found) {
-      if(!values.includes(i)) {
-        found = true;
-      }
-      if(!found) {
-        i++;
-      }
-    }
-    console.log(i);
-    return i;
-  };
+  useableFilters() {
+    return this.columns.get().filter(column => column && column.filterModal);
+  }
+
+  canAddFilters() {
+    const useableFilters = this.useableFilters();
+    const filters = this.filters.get();
+    return useableFilters.length > filters.length;
+  }
 
   updateColumn(id, columnId) {
     const filters = this.filters.get();
@@ -80,8 +87,12 @@ export class FilterGroup extends BlazeComponent {
   }
 
   removeFilter(id) {
+    const removeFilterGroupCallback = this.removeFilterGroupCallback.get();
     const filters = this.filters.get();
     filters.splice(filters.findIndex(filter => filter.id === id), 1);
+    if(_.isFunction(removeFilterGroupCallback) && !filters.length) {
+      removeFilterGroupCallback(this.id.get());
+    }
     this.filters.set(filters);
   }
 
@@ -98,13 +109,23 @@ export class FilterGroup extends BlazeComponent {
   }
 
   init() {
+    this.id = new ReactiveVar(null);
     this.filters = new ReactiveVar([]);
     this.collection = new ReactiveVar(null);
     this.columns = new ReactiveVar([]);
+    this.removeFilterGroupCallback = new ReactiveVar(null);
+    this.firstRun = true;
     this.autorun(() => {
       const data = this.reactiveData();
+      this.id.set(data.id);
       this.columns.set(data.columns);
       this.collection.set(data.collection);
+      this.removeFilterGroupCallback.set(data.removeFilterGroupCallback);
+
+      if(this.firstRun) {
+        this.firstRun = false;
+        this.addFilter();
+      }
     });
   }
 }
