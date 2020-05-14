@@ -80,8 +80,8 @@ export class InlineFilterForm extends FilterComponent {
 
   static EventMap() {
     return {
-      "blur .input-dynamic-table-search": "handleSearchChange",
-      "blur .input-dynamic-table-action": "handleActionChange"
+      "change .input-dynamic-table-search": "handleSearchChange",
+      "change .input-dynamic-table-action": "handleActionChange"
     };
   }
 

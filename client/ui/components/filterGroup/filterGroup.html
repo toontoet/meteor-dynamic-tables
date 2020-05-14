@@ -2,11 +2,15 @@
   <div class="dynamic-table-filter-group">
     {{#each filter in getFilters}}
       <div class="dynamic-table-filter-group-selector-container">
-        {{> dynamicTableFilterSelector filter=filter columns=getColumns collection=getCollection 
-          updateFilterCallback=updateFilterCallback 
-          removeFilterCallback=removeFilterCallback 
-          updateColumnCallback=updateColumnCallback
-        }}
+        <select  data-id="{{filter.id}}" class="dynamic-table-filter-group-column">
+          {{#each column in filter.columns}}
+            <option value="{{column.id}}" selected="{{#if isSelected column filter}}selected{{/if}}">{{column.title}}</option>
+          {{/each}}
+        </select>
+        {{> dynamicTableInlineFilterForm filter=(getFilter filter) field=(getField filter) callback=(callback filter.id)}}
+        <button class="dynamic-table-filter-group-remove-filter" data-id="{{filter.id}}">                      
+          <i class="fa fa-times"></i>
+        </button>
       </div>
       {{#if requiresDelimiter filter}}
         <p class="dynamic-table-filter-group-delimiter">AND</p>

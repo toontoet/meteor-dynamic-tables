@@ -14,7 +14,16 @@
 
 .dynamic-table-filter-group-selector-container {
   padding: 5px;
+  display: inline-flex;
+  background-color: #fff;
+  z-index: 9999;
   width: 100%;
+}
+
+.dynamic-table-filter-group-column {
+  margin: auto;
+  margin-right: 20px;
+  width: 20%;
 }
 
 .dynamic-table-filter-group-delimiter {
@@ -22,4 +31,26 @@
   margin-left: 6px;
   font-size: 14px;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.dynamic-table-filter-selector {
+  display: inline-flex;
+  background-color: #fff;
+  z-index: 9999;
+  width: 100%;
+}
+
+.input-dynamic-table-column {
+  margin: auto;
+  margin-right: 20px;
+  width: 20%;
+}
+
+.dynamic-table-filter-group-remove-filter {
+  padding-left: 20px;
+  padding-right: 20px; 
+  border: none;
+  outline: 0;
+  width: 2%;
+  background: none;
 }

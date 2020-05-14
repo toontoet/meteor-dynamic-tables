@@ -518,6 +518,7 @@ export class FilterComponent extends BlazeComponent {
         this.autorun((comp) => {
           let selectedOptions = this.selectedOptions.get();
           let operator = this.operator.get();
+          const originalOperator = operator;
           const options = this.allOptions.get();
           const fieldType = this.fieldType.get();
           const trackOptions = options.length;
@@ -580,7 +581,7 @@ export class FilterComponent extends BlazeComponent {
           }
 
           Tracker.nonreactive(() => callback(
-            selectedOptions.map(option => options.find(item => item.label === option || item.value === option).value), operator, direction, false));
+            selectedOptions.map(option => options.find(item => item.label === option || item.value === option).value), operator, direction, false, originalOperator));
         });
       }
     });

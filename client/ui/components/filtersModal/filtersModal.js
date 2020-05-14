@@ -73,7 +73,6 @@ export class FiltersModal extends BlazeComponent {
     this.filterGroups.set([...filterGroups, { 
       id: nextId(filterGroups.map(filter => filter.id))
     }]);
-    console.log(filterGroups);
   }
 
   removeFilterGroup(id) {
