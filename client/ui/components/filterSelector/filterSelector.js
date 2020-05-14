@@ -38,10 +38,10 @@ export class FilterSelector extends BlazeComponent {
           enabled: true
         },
         options: column.filterModal.options,
-        selectedOptions: [],
+        selectedOptions: this.selectedOptions.get(),
         operator: {
           enabled: true,
-          selected: "$in"
+          selected: this.operator.get()
         }
       }
   }
@@ -89,6 +89,8 @@ export class FilterSelector extends BlazeComponent {
     this.column = new ReactiveVar(null);
     this.collection = new ReactiveVar(null);
     this.id = new ReactiveVar(null);
+    this.selectedOptions = new ReactiveVar([]);
+    this.operator = new ReactiveVar(null);
     this.updateFilterCallback = new ReactiveVar(null);
     this.updateColumnCallback = new ReactiveVar(null);
     this.removeFilterCallback = new ReactiveVar(null);
@@ -107,6 +109,8 @@ export class FilterSelector extends BlazeComponent {
       const filter = this.reactiveData().filter;
       
       this.id.set(filter.id);
+      this.selectedOptions.set(filter.selectedOptions);
+      this.operator.set(filter.operator);
       this.columns.set(this.allColumns.get().filter(column => 
         column && column.filterModal && (
           !filter.usedColumns.includes(column.id) || column.id === filter.columnId)

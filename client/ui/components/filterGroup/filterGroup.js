@@ -80,10 +80,12 @@ export class FilterGroup extends BlazeComponent {
     this.filters.set(filters);
   }
 
-  updateFilter(id, ...args) {
+  updateFilter(id, selectedOptions, operator) {
     const filters = this.filters.get();
     const filter = filters.find(filter => filter.id === id);
-    console.log(filter, ...args);
+    filter.selectedOptions = selectedOptions;
+    filter.operator = operator;
+    this.filters.set(filters);
   }
 
   removeFilter(id) {
@@ -111,6 +113,7 @@ export class FilterGroup extends BlazeComponent {
   init() {
     this.id = new ReactiveVar(null);
     this.filters = new ReactiveVar([]);
+    this.updatedFilters = new ReactiveVar([]);
     this.collection = new ReactiveVar(null);
     this.columns = new ReactiveVar([]);
     this.removeFilterGroupCallback = new ReactiveVar(null);

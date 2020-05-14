@@ -1,6 +1,8 @@
 import { BlazeComponent } from "meteor/znewsham:blaze-component";
 import { nextId } from "../../helpers.js";
 
+import "../filterGroup/filterGroup.js";
+
 import "./filtersModal.html";
 import "./filtersModal.css";
 

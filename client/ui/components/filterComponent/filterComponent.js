@@ -579,7 +579,8 @@ export class FilterComponent extends BlazeComponent {
             operator = "$eq";
           }
 
-          Tracker.nonreactive(() => callback(selectedOptions.map(option => options.find(item => item.label === option || item.value === option).value), operator, direction, false));
+          Tracker.nonreactive(() => callback(
+            selectedOptions.map(option => options.find(item => item.label === option || item.value === option).value), operator, direction, false));
         });
       }
     });

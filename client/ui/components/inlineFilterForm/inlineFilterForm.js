@@ -80,8 +80,8 @@ export class InlineFilterForm extends FilterComponent {
 
   static EventMap() {
     return {
-      "change .input-dynamic-table-search": "handleSearchChange",
-      "change .input-dynamic-table-action": "handleActionChange"
+      "blur .input-dynamic-table-search": "handleSearchChange",
+      "blur .input-dynamic-table-action": "handleActionChange"
     };
   }
 
@@ -119,7 +119,8 @@ export class InlineFilterForm extends FilterComponent {
   }
 
   isControlDisabled() {
-    return this.operator.get().indexOf("$exists") !== -1 ? "disabled" : "";
+    const operator = this.operator.get();
+    return !operator || operator.indexOf("$exists") !== -1 ? "disabled" : "";
   }
   
   isActionHidden() {
@@ -156,10 +157,6 @@ export class InlineFilterForm extends FilterComponent {
   handleActionChange(e) {
     const operator = this.operator.get();
     this.updateOperator($(e.currentTarget).val());
-    if(operator.indexOf("$exists") !== -1) {
-      this.selectedOptions.set([]);
-      this.$(".dynamic-table-select2").val([]).trigger('change');
-    }
   }
 }
 BlazeComponent.register(Template.dynamicTableInlineFilterForm, InlineFilterForm);
