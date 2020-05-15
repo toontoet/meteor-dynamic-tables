@@ -12,12 +12,65 @@
             <p class="dynamic-table-filters-no-filters">You do not have any filters set for this Smart View.</p>
           {{/unless}}
           {{#each filterGroup in getFilterGroups}}
-            <div class="dynamic-table-filters-filter-group-container">
-              {{> dynamicTableFilterGroup filterGroup=filterGroup columns=getColumns collection=getCollection
-                removeFilterGroupCallback=removeFilterGroupCallback
-              }}
+            <div class="dynamic-table-filters-group-container">
+              {{#each filter in getFiltersData filterGroup.id}}
+              <div class="dynamic-table-filters-selector-container">
+                <select data-id="{{filter.id}}" data-group="{{filterGroup.id}}" class="dynamic-table-filters-column">
+                  {{#each column in filter.columns}}
+                    <option value="{{column.id}}" selected="{{#if op column.id '==' filter.column.id}}selected{{/if}}">{{column.title}}</option>
+                  {{/each}}
+                </select>
+                <div class="dynamic-table-filters-filter-container">
+                  <select data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-action">
+                    {{#each action in (getActions filterGroup.id filter.id)}}
+                      <option value="{{action.value}}" selected="{{#if action.isSelected}}selected{{/if}}">{{action.option}}</option>
+                    {{/each}}
+                  </select>
+                  <div class="dynamic-table-filters-search-container">
+                    {{#if isStringOrCustom filter}}
+                      {{#if hasOptions filter}}
+                        <section class="dynamic-table-filters-select2-section">
+                          <select {{isControlDisabled filter}} data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search dynamic-table-filters-select2" placeholder="Search..." multiple="multiple"></select>
+                        </section>
+                      {{else}}
+                        <input type="text" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Search..." value="{{filter.search.value}}" />
+                      {{/if}}
+                    {{/if}}
+                    {{#if isNumber filter}}
+                      <input type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Value" value="{{searchValue filter}}" />
+                    {{/if}}
+                    {{#if isDate filter}}
+                      <input type="date" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Date..." value="{{dateValue filter}}" />
+                    {{/if}}
+                    {{#if isTime filter}}
+                      <input type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time minutes" placeholder="Min" value="{{minuteValue filter}}"/>
+                      <span>:</span>
+                      <input type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time seconds" placeholder="Sec" value="{{secondValue filter}}"/>
+                    {{/if}}
+                    {{#if isBoolean filter}}
+                      <select class="dynamic-table-filters-search">
+                        <option value="">Choose True/False</option>
+                        <option value="true">True</option>
+                        <option value="false">False</option>
+                      </select>
+                    {{/if}}
+                    </div>
+                </div>
+                <button class="dynamic-table-filters-remove-filter" data-group="{{filterGroup.id}}" data-id="{{filter.id}}">                      
+                  <i class="fa fa-times"></i>
+                </button>
+              </div>
+              {{#if requiresDelimiter filterGroup.filters filter.id}}
+                <p class="dynamic-table-filters-delimiter">AND</p>
+              {{/if}}
+            {{/each}}
+            {{#if canAddFilters filterGroup.id}}
+              <button class="btn-link dynamic-table-filters-add-filter" data-group="{{filterGroup.id}}">              
+                  <i class="fa fa-plus"></i> AND
+              </button>
+            {{/if}}
             </div>
-            {{#if requiresDelimiter filterGroup}}
+            {{#if requiresDelimiter getFilterGroups filterGroup.id}}
               <p class="dynamic-table-filters-delimiter">OR</p>
             {{/if}}
           {{/each}}
