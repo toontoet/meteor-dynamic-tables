@@ -1,8 +1,6 @@
 import { BlazeComponent } from "meteor/znewsham:blaze-component";
 import { nextId } from "../../helpers.js";
 
-import "../inlineFilterForm/inlineFilterForm.js";
-
 import "./filtersModal.html";
 import "./filtersModal.css";
 
@@ -367,7 +365,7 @@ export class FiltersModal extends BlazeComponent {
   setFilter(groupId, id, filter) {
     const filterGroups = this.filterGroups.get();
     const groupIndex = filterGroups.findIndex(val => val.id === groupId);
-    const filterIndex = filterGroups.findIndex(val => val.id === id);
+    const filterIndex = filterGroups[groupIndex].filters.findIndex(val => val.id === id);
     filterGroups[groupIndex].filters[filterIndex] = filter;
     this.filterGroups.set(filterGroups);
   }

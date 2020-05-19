@@ -1,6 +1,5 @@
 import "./headerCell.html";
 import "../filterModal/filterModal.js";
-import "../inlineFilterForm/inlineFilterForm.js";
 
 import { EJSON } from "meteor/ejson";
 import { getPosition } from "../../../inlineSave.js";
