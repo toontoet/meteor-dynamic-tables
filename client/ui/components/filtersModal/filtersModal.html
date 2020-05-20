@@ -21,34 +21,31 @@
                   {{/each}}
                 </select>
                 <div class="dynamic-table-filters-filter-container">
-                  <select data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-action">
-                    {{#each action in (getActions filterGroup.id filter.id)}}
-                      <option value="{{action.value}}" selected="{{#if action.isSelected}}selected{{/if}}">{{action.option}}</option>
+                  <select data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-operator">
+                    {{#each operatorOption in (getOperatorOptions filterGroup.id filter.id)}}
+                      <option value="{{operatorOption.value}}" selected="{{#if operatorOption.isSelected}}selected{{/if}}">{{operatorOption.option}}</option>
                     {{/each}}
                   </select>
                   <div class="dynamic-table-filters-search-container">
-                    {{#if isStringOrCustom filter}}
+                    {{#unless isComplexDataType filter}}
                       {{#if hasOptions filter}}
                         <section class="dynamic-table-filters-select2-section">
                           <select {{isControlDisabled filter}} data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search dynamic-table-filters-select2" placeholder="Search..." multiple="multiple"></select>
                         </section>
                       {{else}}
-                        <input type="text" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Search..." value="{{filter.search.value}}" />
+                        <input {{isControlDisabled filter}} type="text" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Search..." value="{{searchValue filter}}" />
                       {{/if}}
-                    {{/if}}
-                    {{#if isNumber filter}}
-                      <input type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Value" value="{{searchValue filter}}" />
-                    {{/if}}
+                    {{/unless}}
                     {{#if isDate filter}}
-                      <input type="date" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Date..." value="{{dateValue filter}}" />
+                      <input {{isControlDisabled filter}} type="date" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Date..." value="{{dateValue filter}}" />
                     {{/if}}
                     {{#if isTime filter}}
-                      <input type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time minutes" placeholder="Min" value="{{minuteValue filter}}"/>
+                      <input {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time minutes" placeholder="Min" value="{{minuteValue filter}}"/>
                       <span>:</span>
-                      <input type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time seconds" placeholder="Sec" value="{{secondValue filter}}"/>
+                      <input {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time seconds" placeholder="Sec" value="{{secondValue filter}}"/>
                     {{/if}}
                     {{#if isBoolean filter}}
-                      <select class="dynamic-table-filters-search">
+                      <select {{isControlDisabled filter}} class="dynamic-table-filters-search">
                         <option value="">Choose True/False</option>
                         <option value="true">True</option>
                         <option value="false">False</option>

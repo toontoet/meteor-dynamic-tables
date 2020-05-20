@@ -319,7 +319,9 @@ Template.GroupedTable.events({
     Modal.show("dynamicTableFiltersModal", {
       columns: options.columns,
       collection: options.collection,
-      advancedSearch: templInstance.advancedSearch.get()
+      custom: templInstance.customTableSpec.custom
     });
   }
 });
+
+//recruitablePlayers-tablelocationcityKitchenerlocationstateOntario
