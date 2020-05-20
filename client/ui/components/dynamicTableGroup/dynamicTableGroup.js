@@ -100,6 +100,7 @@ function processDistinctValues(current, distinctValues) {
   }
   const values = asyncValues.map(v => _.extend(v, { _id: JSON.stringify(v.selector || v.query) }));
   values.forEach((val) => {
+    val.tableId = this.data.tableId + getTableIdSuffix.call(Template.instance(), val);
     if (!val._id) {
       val._id = JSON.stringify(val.query || val.selector);
     }
@@ -125,6 +126,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.nestedGrouping = new ReactiveDict(); // set of groupchains for nested tables
   this.nestedOrder = new ReactiveDict();    // set of orders for nested tables
   this.nestedColumns = new ReactiveDict();  // set of columns for nested tables
+
   this.advancedSearch = new ReactiveDict(); // set of advancedSearches for each group
   // needed for passing number of page and number of records per page
   this.nestedCustoms = new ReactiveDict();  // set of custom table specs for nested tables
@@ -162,8 +164,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       if (uncategorized) {
         values.push(uncategorized);
       }
-
       values.forEach((val) => {
+        val.tableId = this.data.tableId + getTableIdSuffix.call(Template.instance(), val);
         if (!val._id) {
           val._id = JSON.stringify(val.query || val.selector);
         }
@@ -201,25 +203,24 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const values = this.values.get();
     if (values.length) {
       values.forEach(value => {
-        const nestedTableId = data.tableId + getTableIdSuffix.call(this, value);
-        getCustom(data.customTableSpec.custom, nestedTableId, (custom) => {
-          this.nestedCustoms.set(nestedTableId, custom);
+        getCustom(data.customTableSpec.custom, value.tableId, (custom) => {
+          this.nestedCustoms.set(value.tableId, custom);
           if (custom.columns) {
-            this.nestedColumns.set(nestedTableId, custom.columns);
+            this.nestedColumns.set(value.tableId, custom.columns);
             if (custom.root !== true) {
-              this.highlitedColumns.set(nestedTableId, true);
+              this.highlitedColumns.set(value.tableId, true);
             }
           }
           else if (! this.data.columns) {
             const defaultColumns = JSON.parse(JSON.stringify(this.data.customTableSpec.columns().filter(c => c.default).map(c => ({ data: c.data, id: c.id }))));
-            this.nestedColumns.set(nestedTableId, defaultColumns);
+            this.nestedColumns.set(value.tableId, defaultColumns);
           }
           if (! custom.root) {
             if (custom.groupChainFields) {
-              this.nestedGrouping.set(nestedTableId, custom.groupChainFields);
+              this.nestedGrouping.set(value.tableId, custom.groupChainFields);
             }
             if (custom.order && custom.order.length) {
-              this.nestedOrder.set(nestedTableId, custom.order);
+              this.nestedOrder.set(value.tableId, custom.order);
             }
           }
         });
@@ -374,8 +375,7 @@ Template.dynamicTableGroup.helpers({
     return value.count || (value.count === undefined && current.count);
   },
   count(value) {
-    const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
-    return Template.instance().counts.get(tableId);
+    return Template.instance().counts.get(value.tableId);
   },
   shouldDisplayContent(valueId) {
     return !this.lazy || Template.instance().enabled.get(valueId);
@@ -384,8 +384,7 @@ Template.dynamicTableGroup.helpers({
     return !this.lazy || Template.instance().stickyEnabled.get(valueId);
   },
   newSelector(value, currentSelector) {
-    const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
-    const advancedSearch = Template.instance().advancedSearch.get(tableId) || {};
+    const advancedSearch = Template.instance().advancedSearch.get(value.tableId) || {};
     const current = Template.instance().grouping;
     const selector = _.extend({}, currentSelector);
     if (value.selector) {
@@ -406,17 +405,16 @@ Template.dynamicTableGroup.helpers({
     return _.keys(advancedSearch).length ? { $and: [selector, advancedSearch] } : selector;
   },
   table(value, newSelector) {
-    const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
     return _.extend(
       {},
       this.customTableSpec,
       {
-        hasContext: true,
+        hasContext: false,
         selector: newSelector,
-        id: tableId,
-        orders: Template.instance().nestedOrder.get(tableId) || Template.instance().orders.get(),
-        selectedColumns: Template.instance().nestedColumns.get(tableId) || Template.instance().columns.get(),
-        parentTableCustom: Template.instance().nestedCustoms.get(tableId) || this.custom
+        id: value.tableId,
+        orders: Template.instance().nestedOrder.get(value.tableId) || Template.instance().orders.get(),
+        selectedColumns: Template.instance().nestedColumns.get(value.tableId) || Template.instance().columns.get(),
+        parentTableCustom: Template.instance().nestedCustoms.get(value.tableId) || this.custom
       }
     );
   },
@@ -453,8 +451,7 @@ Template.dynamicTableGroup.helpers({
   },
   tableId(value){
     /* this is data context */
-    const tableId = this.tableId + getTableIdSuffix.call(Template.instance(), value);
-    return tableId;
+    return value.tableId;
   },
   advancedControl(option) {
     if (! this.advanced || !this.advanced[option]) {
@@ -668,13 +665,29 @@ Template.dynamicTableGroup.events({
     createModal(target, modalMeta,templInstance);
   },
   "click .dynamic-table-manage-controller.filters"(e) {
-    const target = e.currentTarget;
-    const tableId = $(target).attr("data-table-id");
+    const tableId = $(e.currentTarget).attr("data-table-id");
     const options = this.customTableSpec.table;
+    const values = Template.instance().values.get();
+    const templInstance = Template.instance();
+
+    let tables = [];
+    let currentFilter;
+
+    getCustom(this.customTableSpec.custom, tableId, custom => currentFilter = custom.filter);
+
+    values.map(val => val.tableId).forEach(tableId => 
+      getCustom(templInstance.nestedCustoms.get(tableId) || templInstance.custom, tableId, custom => {
+        if(!custom.filter || (custom.filter === currentFilter)) {
+          tables.push(tableId);
+        }
+    }));
+
     Modal.show("dynamicTableFiltersModal", {
       columns: options.columns,
       collection: options.collection,
-      advancedSearch: Template.instance().advancedSearch.get(tableId)
+      callback: this.filterModalCallback,
+      tables,
+      currentFilter
     });
   }
 });

@@ -46,11 +46,9 @@ function getSelector() {
 */
 function openFiltersModal(extraOptions) {
   const options = this.data.table;
-  const templInstance = Template.instance();
   Modal.show("dynamicTableFiltersModal", {
     columns: options.columns,
-    collection: options.collection,
-    advancedSearch: this.advancedSearch.get()
+    collection: options.collection
   });
 }
 
@@ -174,7 +172,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
 
   // NOTE: added .length to ensure correctness when disabling all options (e.g., add diagrams modal)
   // NOTE: added optionsOrQuery !== "" so you can clear the search by deleting text, not just clearing.
-  if ((_.isArray(optionsOrQuery) && (optionsOrQuery.length || operator.indexOf("$exists") !== -1)) || (optionsOrQuery !== undefined && optionsOrQuery !== "" && !_.isArray(optionsOrQuery))) {
+  if ((_.isArray(optionsOrQuery) && optionsOrQuery.length) || (optionsOrQuery !== undefined && optionsOrQuery !== "" && !_.isArray(optionsOrQuery))) {
     let newAdvancedSearchField;
     if (operator === "$between") {
       newAdvancedSearchField = {
@@ -187,15 +185,9 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
         [operator]: optionsOrQuery
       };
     }
-    else if (_.isArray(optionsOrQuery) && (optionsOrQuery.length || operator.indexOf("$exists") !== -1)) {
+    else if (_.isArray(optionsOrQuery) && optionsOrQuery.length) {
       if (operator === "$not$all") {
         newAdvancedSearchField = { $not: { $all: optionsOrQuery}};
-      }
-      else if (operator.indexOf("$exists") !== -1) {
-        newAdvancedSearchField = { $in: [null, []]};
-        if(operator.indexOf("$not") === -1) {
-          newAdvancedSearchField = { $not: newAdvancedSearchField };
-        }
       }
       else {
         newAdvancedSearchField = { [operator]: optionsOrQuery };
