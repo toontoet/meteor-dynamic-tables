@@ -3,47 +3,11 @@ import "./dynamicTableGroup.html";
 import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../db.js";
 import { changed, getCustom, getColumns, getValue, createModal } from "../../../inlineSave.js";
+import { getNestedTableIds, selectorToId, getTableIdSuffix } from "../../helpers.js"
 
 import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "../manageOrderModal/manageOrderModal.js";
 import "../manageFieldsModal/manageFieldsModal.js";
-
-/**
- * selectorToId - description
- *
- * @param  {object} selector      mongo selector
- * @param  {string} tableIdSuffix table suffix
- * @return {string}               table suffix
- */
-function selectorToId(selector, tableIdSuffix) {
-  if (tableIdSuffix) {
-    return tableIdSuffix;
-  }
-  return JSON.stringify(selector)
-  .replace(/\\t/g, "_t_t_t_t")
-  .replace(/ /g, "____")
-  .replace(/[^\d\w]/g, "");
-}
-
-/** @this = template instance */
-function getTableIdSuffix(value) {
-  const current = this.grouping;
-
-  const selector = {};
-  if (value && value.query.$nor) {
-    selector.$and = [value.query];
-  }
-  else if (value) {
-    selector[current.field] = value.query;
-  }
-  const nextSuffix = value && selectorToId(selector, value.tableIdSuffix);
-
-  const nextParts = (this.tableIdSuffixChain || []).slice(0);
-  if (nextSuffix) {
-    nextParts.push(nextSuffix);
-  }
-  return nextParts.join("");
-}
 
 /** @this = template instance */
 function shouldDisplaySection(current, value) {
@@ -666,28 +630,27 @@ Template.dynamicTableGroup.events({
   },
   "click .dynamic-table-manage-controller.filters"(e) {
     const tableId = $(e.currentTarget).attr("data-table-id");
-    const options = this.customTableSpec.table;
-    const values = Template.instance().values.get();
     const templInstance = Template.instance();
 
-    let tables = [];
-    let currentFilter;
+    const collection = this.customTableSpec.table.collection;
+    const columns = this.customTableSpec.table.columns;
 
-    getCustom(this.customTableSpec.custom, tableId, custom => currentFilter = custom.filter);
+    const field = templInstance.grouping.field;
+    const groupChain = templInstance.groupChain.get();
+    const value = templInstance.values.get().find(item => item.tableId === tableId);
+    const custom = this.customTableSpec.custom
 
-    values.map(val => val.tableId).forEach(tableId => 
-      getCustom(templInstance.nestedCustoms.get(tableId) || templInstance.custom, tableId, custom => {
-        if(!custom.filter || (custom.filter === currentFilter)) {
-          tables.push(tableId);
-        }
-    }));
-
-    Modal.show("dynamicTableFiltersModal", {
-      columns: options.columns,
-      collection: options.collection,
-      callback: this.filterModalCallback,
-      tables,
-      currentFilter
+    getCustom(custom, tableId, nestedCustom => {
+      const filter = nestedCustom && nestedCustom.filter;
+      getNestedTableIds(templInstance, tableId, collection, value, field, groupChain, filter).then(tableIds => {
+        Modal.show("dynamicTableFiltersModal", {
+          collection,
+          columns,
+          filter, // Top level filter, this is the actual query.
+          tableIds, // Tables that are affected by the filters modal.
+          custom, // Used to make the update to the table spec.
+        });
+      });
     });
   }
 });
