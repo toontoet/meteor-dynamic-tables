@@ -896,7 +896,8 @@ Template.DynamicTable.onCreated(function onCreated() {
   this.selector = new ReactiveVar({});
   this.options = new ReactiveVar({});
   this.query = new ReactiveVar(false);
-  this.advancedSearch = new ReactiveVar(EJSON.fromJSONValue(this.data.advancedFilter || {}));
+  this.advancedSearch = new ReactiveVar(EJSON.fromJSONValue(
+    _.keys(this.data.advancedFilter).length ? this.data.advancedFilter : this.data.parentFilter || {}));
   this.incomingSelector = new ReactiveVar({});
   this.tableId = new ReactiveVar("");
   this._columns = new ReactiveVar([]);
@@ -1006,6 +1007,10 @@ Template.DynamicTable.onCreated(function onCreated() {
         self.dataTable.api().ajax.reload();
       }
     }
+    const currentFilter = EJSON.fromJSONValue(
+      _.keys(currentData.advancedFilter).length ? currentData.advancedFilter : currentData.parentFilter || {});
+
+    this.advancedSearch.set(currentFilter);
   });
   this.blaze = {};
 });

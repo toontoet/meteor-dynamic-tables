@@ -92,6 +92,9 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.nestedColumns = new ReactiveDict();  // set of columns for nested tables
 
   this.advancedSearch = new ReactiveDict(); // set of advancedSearches for each group
+  this.parentFilters = new ReactiveDict();
+  this.parentFilter = new ReactiveVar({});
+
   // needed for passing number of page and number of records per page
   this.nestedCustoms = new ReactiveDict();  // set of custom table specs for nested tables
 
@@ -101,6 +104,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   const groupChain = new ReactiveVar(this.data.groupChain);
   this.autorun(() => {
     const data = Template.currentData();
+    this.parentFilter.set(data.parentFilter);
     if (JSON.stringify(Tracker.nonreactive(() => this.columns.get())) !== JSON.stringify(data.columns)) {
       this.columns.set(data.columns);
     }
@@ -187,6 +191,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
               this.nestedOrder.set(value.tableId, custom.order);
             }
           }
+          value.filter = custom.filter ? JSON.parse(custom.filter) : {};
+          this.parentFilters.set(value.tableId, value.filter);
         });
       });
     }
@@ -350,35 +356,49 @@ Template.dynamicTableGroup.helpers({
   newSelector(value, currentSelector) {
     const advancedSearch = Template.instance().advancedSearch.get(value.tableId) || {};
     const current = Template.instance().grouping;
-    const selector = _.extend({}, currentSelector);
+    const conditions = [];
+    let selector = {};
+    if(_.keys(currentSelector)) {
+      conditions.push(currentSelector);
+    }
     if (value.selector) {
-      if (!selector.$and) {
-        selector.$and = [];
-      }
-      selector.$and.push(value.selector);
+      conditions.push(value.selector);
     }
     else if (value.query.$nor) {
-      if (!selector.$and) {
-        selector.$and = [];
-      }
-      selector.$and.push(value.query);
+      conditions.push(value.query);
     }
     else {
-      selector[current.field] = value.query;
+      conditions.push({
+        [current.field]: value.query
+      });
     }
-    return _.keys(advancedSearch).length ? { $and: [selector, advancedSearch] } : selector;
+    if(_.keys(advancedSearch).length) {
+      conditions.push(advancedSearch);
+    }
+    if(conditions.length == 1) {
+      selector = conditions[0];
+    } else if(conditions.length > 0) {
+      selector = {
+        $and: conditions
+      }
+    }
+    return selector;
   },
   table(value, newSelector) {
+    const templInstance = Template.instance();
+    let parentFilter = templInstance.parentFilters.get(value.tableId);
+    parentFilter = _.keys(parentFilter).length ? parentFilter : templInstance.parentFilter.get() || {};
     return _.extend(
       {},
       this.customTableSpec,
       {
         hasContext: false,
         selector: newSelector,
+        parentFilter,
         id: value.tableId,
-        orders: Template.instance().nestedOrder.get(value.tableId) || Template.instance().orders.get(),
-        selectedColumns: Template.instance().nestedColumns.get(value.tableId) || Template.instance().columns.get(),
-        parentTableCustom: Template.instance().nestedCustoms.get(value.tableId) || this.custom
+        orders: templInstance.nestedOrder.get(value.tableId) || templInstance.orders.get(),
+        selectedColumns: templInstance.nestedColumns.get(value.tableId) || templInstance.columns.get(),
+        parentTableCustom: templInstance.nestedCustoms.get(value.tableId) || this.custom
       }
     );
   },
@@ -450,7 +470,7 @@ Template.dynamicTableGroup.helpers({
     return Template.instance().highlitedColumns.get(tableId);
   },
   hasFilters(tableId) {
-    return false;
+    return _.keys(Template.instance().parentFilters.get(tableId)).length;
   },
   orders(tableId) {
     const nestedOrder = Template.instance().nestedOrder.get(tableId);
@@ -467,6 +487,11 @@ Template.dynamicTableGroup.helpers({
   },
   orderCheckFn() {
     return this.orderCheckFn;
+  },
+  parentFilter(value) {
+    let filter = Template.instance().parentFilters.get(value.tableId) || {};
+    filter = _.keys(filter).length ? filter : Template.instance().parentFilter.get();
+    return filter;
   }
 });
 
@@ -632,25 +657,14 @@ Template.dynamicTableGroup.events({
     const tableId = $(e.currentTarget).attr("data-table-id");
     const templInstance = Template.instance();
 
-    const collection = this.customTableSpec.table.collection;
-    const columns = this.customTableSpec.table.columns;
-
-    const field = templInstance.grouping.field;
-    const groupChain = templInstance.groupChain.get();
-    const value = templInstance.values.get().find(item => item.tableId === tableId);
-    const custom = this.customTableSpec.custom
-
-    getCustom(custom, tableId, nestedCustom => {
-      const filter = nestedCustom && nestedCustom.filter;
-      getNestedTableIds(templInstance, tableId, collection, value, field, groupChain, filter).then(tableIds => {
-        Modal.show("dynamicTableFiltersModal", {
-          collection,
-          columns,
-          filter, // Top level filter, this is the actual query.
-          tableIds, // Tables that are affected by the filters modal.
-          custom, // Used to make the update to the table spec.
-        });
-      });
+    Modal.show("dynamicTableFiltersModal", {
+      collection: this.customTableSpec.table.collection,
+      columns: this.customTableSpec.table.columns,
+      filter: templInstance.parentFilters.get(tableId),
+      triggerUpdateFilter: (newFilter) => {
+        templInstance.parentFilters.set(tableId, newFilter);
+        changed(this.customTableSpec.custom, tableId, { newFilter });
+      }
     });
   }
 });

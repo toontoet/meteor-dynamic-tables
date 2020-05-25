@@ -24,7 +24,7 @@ const opMap = {
   notIn: {
     id: "notIn",
     label: "is none of...",
-    operators: ["$not", "$in"]
+    operators: ["$nin"]
   },
   empty: {
     id: "empty",
@@ -238,7 +238,7 @@ export class FiltersModal extends BlazeComponent {
     });
     let newFilter = {
       $or: filterGroups.filter(filterGroup => filterGroup.filters && filterGroup.filters.length).map(filterGroup => {
-        return filterGroup.filters.length == 1 ? filterGroup.filters[0].query : {
+        return filterGroup.filters.length == 1 && filterGroups.length == 1 ? filterGroup.filters[0].query : {
           $and: filterGroup.filters.map(filter => filter.query)
         };
       })
@@ -249,18 +249,12 @@ export class FiltersModal extends BlazeComponent {
       newFilter = newFilter.$or[0] || {};
     }
 
-    this.tableIds.forEach(tableId => changed(this.custom, tableId, { newFilter }));
+    this.triggerUpdateFilter(newFilter);
     $("#dynamicTableFiltersModal").modal("hide");
   }
 
   loadQuery(query) {
-    try {
-      query = JSON.parse(query);
-    } catch(e) {
-      console.error("Failed to load query", e);
-      return;
-    }
-    
+
     // Original format for filtering.
     if(!query.$or && !query.$and) {
       query = {
@@ -274,6 +268,8 @@ export class FiltersModal extends BlazeComponent {
       }
     }
 
+    const filterGroups = [];
+
     query.$or.forEach(queryOrGroup => {
       if(queryOrGroup.$and) {
         const filters = [];
@@ -284,10 +280,18 @@ export class FiltersModal extends BlazeComponent {
           }
         });
         if(filters.length) {
-          this.addFilterGroup(filters);
+          filterGroups.push(filters);
         }
       }
-    })
+    });
+
+    const sequencePromises = (items, promiseFunc, i = 0) => {
+      if(i < items.length) {
+        promiseFunc(items[i]).then(() => sequencePromises(items, val => promiseFunc(val), i+1));
+      }
+    }
+
+    sequencePromises(filterGroups, val => this.addFilterGroup(val));
   }
 
   toQuery(operator, options) {
@@ -320,7 +324,7 @@ export class FiltersModal extends BlazeComponent {
 
       while(collecting) {
         item = this.getFirstKey(query);
-        if(this.isAnOperator(item.key)) {
+        if(item && this.isAnOperator(item.key)) {
           operators.push(item.key);
           query = item.value;
         } else {
@@ -339,6 +343,7 @@ export class FiltersModal extends BlazeComponent {
           return {
             column,
             operator,
+            operators,
             selectedOptions
           }
         }
@@ -409,14 +414,15 @@ export class FiltersModal extends BlazeComponent {
     return !filter.operator || this.requiresNoValue(filter.operator) ? "disabled" : "";
   }
 
-  createFilter(id, column, type, operator, selectedOptions) {
+  createFilter(id, column, type, operator, selectedOptions, operators) {
     return {
       _id: `${id}`,
       id: id,
       column,
       type,
       operator,
-      selectedOptions
+      selectedOptions,
+      operators
     };
   }
 
@@ -486,6 +492,11 @@ export class FiltersModal extends BlazeComponent {
                 return (selected && selected.label) || option;
               });
             }
+
+            // Possible for options to affect possible operators so update those
+            if(filter.operators) {
+              filter.operator = this.getOperators(filter.type).find(val => arraysEqual(val.operators, filter.operators))
+            }
           }
           resolve(filter);
         }
@@ -543,6 +554,7 @@ export class FiltersModal extends BlazeComponent {
           const currentOption = filter.options.find(item => item.label === option);
           return currentOption && currentOption.value;
         }
+        return option;
       });
     }
   }
@@ -632,30 +644,35 @@ export class FiltersModal extends BlazeComponent {
   }
 
   addFilterGroup(filters) {
-    const filterGroups = this.filterGroups.get();
-    const newId = nextId(filterGroups.map(val => val.id));
-    const filterGroup = {
-      id: newId,
-      _id: `${newId}`,
-      filters: []
-    };
-    if(!filters) {
-      this.filterGroups.set([...filterGroups, filterGroup]);
-      this.addFilter(newId);
-    } else {
-      const promises = [];
-      filters.forEach((filter, i) => {
-        promises.push(this.getOptions(this.createFilter(
-          i, filter.column, 
-          this.getType(filter.column), 
-          filter.operator, filter.selectedOptions
-        )));
-      });
-      Promise.all(promises).then(filters => {
-        filterGroup.filters = filters;
+    return new Promise(resolve => {
+      const filterGroups = this.filterGroups.get();
+      const newId = nextId(filterGroups.map(val => val.id));
+      const filterGroup = {
+        id: newId,
+        _id: `${newId}`,
+        filters: []
+      };
+      if(!filters) {
         this.filterGroups.set([...filterGroups, filterGroup]);
-      });
-    }
+        this.addFilter(newId);
+        resolve();
+      } else {
+        const promises = [];
+        filters.forEach((filter, i) => {
+          promises.push(this.getOptions(this.createFilter(
+            i, filter.column, 
+            this.getType(filter.column), 
+            filter.operator, filter.selectedOptions,
+            filter.operators
+          )));
+        });
+        Promise.all(promises).then(filters => {
+          filterGroup.filters = filters;
+          this.filterGroups.set([...filterGroups, filterGroup]);
+          resolve();
+        });
+      }
+    });
   }
 
   removeFilterGroup(groupId) {
@@ -723,14 +740,14 @@ export class FiltersModal extends BlazeComponent {
 
   init() {
     this.filterGroups = new ReactiveVar([]);
-    const { columns, collection, tableIds, filter, custom } = this.nonReactiveData("columns", "collection", "tableIds", "filter", "custom");
+    
+    const { columns, collection, triggerUpdateFilter, filter } = this.nonReactiveData("columns", "collection", "triggerUpdateFilter", "filter");
+
     this.columns = columns.filter(column => column && column.filterModal);
     this.collection = collection;
-    this.tableIds = tableIds;
-    this.custom = custom;
-    if(filter) {
-      this.loadQuery(filter);
-    }
+    this.triggerUpdateFilter = triggerUpdateFilter;
+
+    this.loadQuery(filter);
   }
 }
 BlazeComponent.register(Template.dynamicTableFiltersModal, FiltersModal);
