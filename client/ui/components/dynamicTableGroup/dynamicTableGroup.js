@@ -3,47 +3,11 @@ import "./dynamicTableGroup.html";
 import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../db.js";
 import { changed, getCustom, getColumns, getValue, createModal } from "../../../inlineSave.js";
+import { getNestedTableIds, selectorToId, getTableIdSuffix } from "../../helpers.js"
 
 import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "../manageOrderModal/manageOrderModal.js";
 import "../manageFieldsModal/manageFieldsModal.js";
-
-/**
- * selectorToId - description
- *
- * @param  {object} selector      mongo selector
- * @param  {string} tableIdSuffix table suffix
- * @return {string}               table suffix
- */
-function selectorToId(selector, tableIdSuffix) {
-  if (tableIdSuffix) {
-    return tableIdSuffix;
-  }
-  return JSON.stringify(selector)
-  .replace(/\\t/g, "_t_t_t_t")
-  .replace(/ /g, "____")
-  .replace(/[^\d\w]/g, "");
-}
-
-/** @this = template instance */
-function getTableIdSuffix(value) {
-  const current = this.grouping;
-
-  const selector = {};
-  if (value && value.query.$nor) {
-    selector.$and = [value.query];
-  }
-  else if (value) {
-    selector[current.field] = value.query;
-  }
-  const nextSuffix = value && selectorToId(selector, value.tableIdSuffix);
-
-  const nextParts = (this.tableIdSuffixChain || []).slice(0);
-  if (nextSuffix) {
-    nextParts.push(nextSuffix);
-  }
-  return nextParts.join("");
-}
 
 /** @this = template instance */
 function shouldDisplaySection(current, value) {
@@ -128,6 +92,9 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.nestedColumns = new ReactiveDict();  // set of columns for nested tables
 
   this.advancedSearch = new ReactiveDict(); // set of advancedSearches for each group
+  this.parentFilters = new ReactiveDict();
+  this.parentFilter = new ReactiveVar({});
+
   // needed for passing number of page and number of records per page
   this.nestedCustoms = new ReactiveDict();  // set of custom table specs for nested tables
 
@@ -137,6 +104,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   const groupChain = new ReactiveVar(this.data.groupChain);
   this.autorun(() => {
     const data = Template.currentData();
+    this.parentFilter.set(data.parentFilter);
     if (JSON.stringify(Tracker.nonreactive(() => this.columns.get())) !== JSON.stringify(data.columns)) {
       this.columns.set(data.columns);
     }
@@ -223,6 +191,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
               this.nestedOrder.set(value.tableId, custom.order);
             }
           }
+          value.filter = custom.filter ? JSON.parse(custom.filter) : {};
+          this.parentFilters.set(value.tableId, value.filter);
         });
       });
     }
@@ -386,35 +356,49 @@ Template.dynamicTableGroup.helpers({
   newSelector(value, currentSelector) {
     const advancedSearch = Template.instance().advancedSearch.get(value.tableId) || {};
     const current = Template.instance().grouping;
-    const selector = _.extend({}, currentSelector);
+    const conditions = [];
+    let selector = {};
+    if(_.keys(currentSelector)) {
+      conditions.push(currentSelector);
+    }
     if (value.selector) {
-      if (!selector.$and) {
-        selector.$and = [];
-      }
-      selector.$and.push(value.selector);
+      conditions.push(value.selector);
     }
     else if (value.query.$nor) {
-      if (!selector.$and) {
-        selector.$and = [];
-      }
-      selector.$and.push(value.query);
+      conditions.push(value.query);
     }
     else {
-      selector[current.field] = value.query;
+      conditions.push({
+        [current.field]: value.query
+      });
     }
-    return _.keys(advancedSearch).length ? { $and: [selector, advancedSearch] } : selector;
+    if(_.keys(advancedSearch).length) {
+      conditions.push(advancedSearch);
+    }
+    if(conditions.length == 1) {
+      selector = conditions[0];
+    } else if(conditions.length > 0) {
+      selector = {
+        $and: conditions
+      }
+    }
+    return selector;
   },
   table(value, newSelector) {
+    const templInstance = Template.instance();
+    let parentFilter = templInstance.parentFilters.get(value.tableId);
+    parentFilter = _.keys(parentFilter).length ? parentFilter : templInstance.parentFilter.get() || {};
     return _.extend(
       {},
       this.customTableSpec,
       {
         hasContext: false,
         selector: newSelector,
+        parentFilter,
         id: value.tableId,
-        orders: Template.instance().nestedOrder.get(value.tableId) || Template.instance().orders.get(),
-        selectedColumns: Template.instance().nestedColumns.get(value.tableId) || Template.instance().columns.get(),
-        parentTableCustom: Template.instance().nestedCustoms.get(value.tableId) || this.custom
+        orders: templInstance.nestedOrder.get(value.tableId) || templInstance.orders.get(),
+        selectedColumns: templInstance.nestedColumns.get(value.tableId) || templInstance.columns.get(),
+        parentTableCustom: templInstance.nestedCustoms.get(value.tableId) || this.custom
       }
     );
   },
@@ -486,7 +470,7 @@ Template.dynamicTableGroup.helpers({
     return Template.instance().highlitedColumns.get(tableId);
   },
   hasFilters(tableId) {
-    return false;
+    return _.keys(Template.instance().parentFilters.get(tableId)).length;
   },
   orders(tableId) {
     const nestedOrder = Template.instance().nestedOrder.get(tableId);
@@ -503,6 +487,11 @@ Template.dynamicTableGroup.helpers({
   },
   orderCheckFn() {
     return this.orderCheckFn;
+  },
+  parentFilter(value) {
+    let filter = Template.instance().parentFilters.get(value.tableId) || {};
+    filter = _.keys(filter).length ? filter : Template.instance().parentFilter.get();
+    return filter;
   }
 });
 
@@ -666,28 +655,16 @@ Template.dynamicTableGroup.events({
   },
   "click .dynamic-table-manage-controller.filters"(e) {
     const tableId = $(e.currentTarget).attr("data-table-id");
-    const options = this.customTableSpec.table;
-    const values = Template.instance().values.get();
     const templInstance = Template.instance();
 
-    let tables = [];
-    let currentFilter;
-
-    getCustom(this.customTableSpec.custom, tableId, custom => currentFilter = custom.filter);
-
-    values.map(val => val.tableId).forEach(tableId => 
-      getCustom(templInstance.nestedCustoms.get(tableId) || templInstance.custom, tableId, custom => {
-        if(!custom.filter || (custom.filter === currentFilter)) {
-          tables.push(tableId);
-        }
-    }));
-
     Modal.show("dynamicTableFiltersModal", {
-      columns: options.columns,
-      collection: options.collection,
-      callback: this.filterModalCallback,
-      tables,
-      currentFilter
+      collection: this.customTableSpec.table.collection,
+      columns: this.customTableSpec.table.columns,
+      filter: templInstance.parentFilters.get(tableId),
+      triggerUpdateFilter: (newFilter) => {
+        templInstance.parentFilters.set(tableId, newFilter);
+        changed(this.customTableSpec.custom, tableId, { newFilter });
+      }
     });
   }
 });

@@ -8,11 +8,12 @@ import { EJSON } from "meteor/ejson";
 function filterColumns(columns, selectedColumnDataOrIds) {
   return _.compact(selectedColumnDataOrIds.map((c) => {
     return columns.find(col => (col.id ? col.id === c : col.data === c));
-  }));
+  }));a
 }
 
 Template.CustomizableTable.onCreated(function onCreated() {
   this.advancedFilter = new ReactiveVar();
+  this.parentFilter = new ReactiveVar(this.data.parentFilter);
   this.limit = new ReactiveVar(this.data.table.pageLength || 25);
   this.skip = new ReactiveVar(0);
   this.fnReorderCallback = () => {
@@ -23,7 +24,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
   };
   this.order = new ReactiveVar(this.data.orders)
   this.selectedColumns = new ReactiveVar([]);
-  // Used when Customizable table used alone without grouped table
+  // Used when Customizable table used alone witho ut grouped table
   if (! this.data.hasContext) {
     // gets custom from the database, sets selected columns
     let stop = false;
@@ -91,6 +92,8 @@ Template.CustomizableTable.onCreated(function onCreated() {
     if (comp.firstRun) {
       return;
     }
+
+    this.parentFilter.set(data.parentFilter);
     // refreshes table when order has been changed
     if (JSON.stringify(Tracker.nonreactive(() => this.order.get())) !== JSON.stringify(data.orders) && data.orders) {
       this.order.set(data.orders);
@@ -142,9 +145,16 @@ Template.CustomizableTable.helpers({
   advancedFilter() {
     return Template.instance().advancedFilter.get();
   },
+  parentFilter() {
+    return Template.instance().parentFilter.get();
+  },
   modifyFilterCallback() {
     const templInstance = Template.instance();
     return (newFilter, newOrder, columns) => {
+
+      // Make sure the filter stored in the Customizable table is updated as well.
+      templInstance.advancedFilter.set(newFilter);
+
       if (columns) {
         const currentColumns = templInstance.selectedColumns.get();
         for (let col of columns.filter(col => col.id)) {

@@ -55,6 +55,7 @@ Template.GroupedTable.onCreated(function onCreated() {
   this.customColumns = new ReactiveVar([]);
   this.groupChain = new ReactiveVar(this.data.groupChain || []);
   this.orders = new ReactiveVar(this.data.defaultOrder || []);
+  this.parentFilter = new ReactiveVar({});
   this.searchFn = _.debounce(() => {
     this.search.set(this.$(".dynamic-table-global-search").val());
   }, 1000);
@@ -81,6 +82,9 @@ Template.GroupedTable.onCreated(function onCreated() {
       }
       if (custom.groupChainFields) {
         this.groupChain.set(custom.groupChainFields);
+      }
+      if(custom.filter) {
+        this.parentFilter.set(JSON.parse(custom.filter));
       }
     });
     if (! stop) {
@@ -144,7 +148,7 @@ Template.GroupedTable.helpers({
     return Template.instance().orders.get();
   },
   filters() {
-    return true;
+    return _.keys(Template.instance().parentFilter.get() || {}).length;
   },
   columns() {
     return Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id }));
@@ -180,6 +184,9 @@ Template.GroupedTable.helpers({
       return advanced[parameter].root;
     }
     return false;
+  },
+  parentFilter() {
+    return Template.instance().parentFilter.get();
   }
 });
 
@@ -314,12 +321,18 @@ Template.GroupedTable.events({
     createModal(e.currentTarget, modalMeta, templInstance);
   },
   "click .grouped-table-manage-controller.filters"(e) {
-    const options = this.table;
+    const tableId = Template.instance().data.id;
     const templInstance = Template.instance();
+    const table = templInstance.data.table;
+
     Modal.show("dynamicTableFiltersModal", {
-      columns: options.columns,
-      collection: options.collection,
-      custom: templInstance.customTableSpec.custom
+      collection: table.collection,
+      columns: table.columns,
+      filter: templInstance.parentFilter.get() || {},
+      triggerUpdateFilter: (newFilter) => {
+        templInstance.parentFilter.set(newFilter);
+        changed(templInstance.data.custom, tableId, { newFilter });
+      }
     });
   }
 });

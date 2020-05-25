@@ -9,72 +9,80 @@ const opMap = {
   all: {
     id: "all",
     label: "is...",
-    toQuery: options => ({$all: options})
+    operators: ["$all"]
   },
   notAll: {
     id: "notAll",
     label: "is not...",
-    toQuery: options => ({$not: {$all: options}})
+    operators: ["$not", "$all"]
   },
   in: {
     id: "in",
     label: "is any of...",
-    toQuery: options => ({$in: options})
+    operators: ["$in"]
   },
   notIn: {
     id: "notIn",
     label: "is none of...",
-    toQuery: options => ({$not: {$in: options}})
+    operators: ["$nin"]
   },
   empty: {
     id: "empty",
     label: "is empty",
-    toQuery: () => ({$exists: false})
+    operators: ["$not", "$exists"]
   },
   notEmpty: {
     id: "notEmpty",
     label: "is not empty",
-    toQuery: () => ({$exists: true})
+    operators: ["$exists"]
   },
   equals: {
     id: "equals",
     label: "=",
-    toQuery: options => ({$eq: options[0]})
+    operators: ["$eq"],
+    singleValue: true
   },
   notEquals: {
     id: "notEquals",
     label: "≠",
-    toQuery: options => ({$ne: options[0]})
+    operators: ["$ne"],
+    singleValue: true
   },
   greaterThan: {
     id: "greaterThan",
     label: ">",
-    toQuery: options => ({$gt: options[0]})
+    operators: ["$gt"],
+    singleValue: true
   },
   lessThan: {
     id: "lessThan",
     label: "<",
-    toQuery: options => ({$lt: options[0]})
+    operators: ["$lt"],
+    singleValue: true
   },
   lessThanEqual: {
     id: "lessThanEqual",
     label: "≤",
-    toQuery: options => ({$lte: options[0]})
+    operators: ["$lte"],
+    singleValue: true
   },
   greaterThanEqual: {
     id: "greaterThanEqual",
     label: "≥",
-    toQuery: options => ({$gte: options[0]})
+    operators: ["$gte"],
+    singleValue: true
   },
   isBefore: {
     id: "isBefore",
     label: "is before...",
-    toQuery: options => ({$lt: options[0]})
+    operators: ["$lt"],
+    singleValue: true
   },
   isAfter: {
     id: "isAfter",
     label: "is after...",
-    toQuery: options => ({$lt: options[0]})
+    operators: ["$gt"],
+    singleValue: true
   }
 };
 
@@ -104,10 +112,10 @@ const typeMap = [
     operators: [
       opMap.all,
       opMap.notAll,
-      opMap.empty,
-      opMap.notEmpty,
       opMap.isBefore,
-      opMap.isAfter
+      opMap.isAfter,
+      opMap.empty,
+      opMap.notEmpty
     ]
   },
   {
@@ -212,11 +220,149 @@ export class FiltersModal extends BlazeComponent {
   }
 
   handleApplyClick() {
-    this.filterGroups.get().forEach(filterGroup => {
+    const filterGroups = this.filterGroups.get();
+    filterGroups.forEach(filterGroup => {
       filterGroup.filters.forEach(filter => {
-        filter.query = filter.operator.toQuery(filter.selectedOptions);
+        filter.query = this.toQuery(filter.operator, filter.selectedOptions);
+        if(filter.column.search) {
+          const toExtend = {};
+          if(filter.column.searchOptions) {
+            toExtend.$options = filter.column.searchOptions;
+          }
+          filter.query = filter.column.search(_.extend({}, filter.query, toExtend), false);
+        } else {
+          const field = (filter.column.filterModal && filter.column.filterModal.field && filter.column.filterModal.field.name) || filter.column.data;
+          filter.query = {[field]: filter.query};
+        }
       });
     });
+    let newFilter = {
+      $or: filterGroups.filter(filterGroup => filterGroup.filters && filterGroup.filters.length).map(filterGroup => {
+        return filterGroup.filters.length == 1 && filterGroups.length == 1 ? filterGroup.filters[0].query : {
+          $and: filterGroup.filters.map(filter => filter.query)
+        };
+      })
+    };
+
+    // Original format for filtering.
+    if(newFilter.$or.length <= 1) {
+      newFilter = newFilter.$or[0] || {};
+    }
+
+    this.triggerUpdateFilter(newFilter);
+    $("#dynamicTableFiltersModal").modal("hide");
+  }
+
+  loadQuery(query) {
+
+    // Original format for filtering.
+    if(!query.$or && !query.$and) {
+      query = {
+        $or: [{
+          $and: [query]
+        }]
+      }
+    } else if(!query.$or) {
+      query = {
+        $or: [query]
+      }
+    }
+
+    const filterGroups = [];
+
+    query.$or.forEach(queryOrGroup => {
+      if(queryOrGroup.$and) {
+        const filters = [];
+        queryOrGroup.$and.forEach(query => {
+          newFilter = this.fromQuery(query);
+          if(newFilter) {
+            filters.push(newFilter);
+          }
+        });
+        if(filters.length) {
+          filterGroups.push(filters);
+        }
+      }
+    });
+
+    const sequencePromises = (items, promiseFunc, i = 0) => {
+      if(i < items.length) {
+        promiseFunc(items[i]).then(() => sequencePromises(items, val => promiseFunc(val), i+1));
+      }
+    }
+
+    sequencePromises(filterGroups, val => this.addFilterGroup(val));
+  }
+
+  toQuery(operator, options) {
+    query = {};
+    let currentItem = query;
+    let index;
+    let value = options;
+    if(this.requiresNoValue(operator)) {
+      value = true;
+    }
+    if(operator.singleValue) {
+      value = value[0] || "";
+    }
+    operator.operators.forEach((val, i) => {
+      currentItem[val] = i == operator.operators.length - 1 ? value : {};
+      currentItem = currentItem[val];
+    });
+    return query;
+  }
+
+  fromQuery(query) {
+    let item = this.getFirstKey(query);
+    if(item) {
+      query = item.value;
+
+      const columnId = item.key;
+
+      let collecting = true;
+      const operators = [];
+
+      while(collecting) {
+        item = this.getFirstKey(query);
+        if(item && this.isAnOperator(item.key)) {
+          operators.push(item.key);
+          query = item.value;
+        } else {
+          collecting = false;
+        }
+      }
+
+      const column = this.columns.find(val => val.data === columnId || 
+        (val.filterModal && val.filterModal.field && val.filterModal.field.name === columnId));
+      const selectedOptions = [].concat(query);
+
+      if(column) {
+        const possibleOperators = this.getOperators(this.getType(column));
+        if(possibleOperators) {
+          const operator = possibleOperators.find(val => arraysEqual(val.operators, operators));
+          return {
+            column,
+            operator,
+            operators,
+            selectedOptions
+          }
+        }
+      }
+    }
+  }
+
+  isAnOperator(key) {
+    return _.contains(Object.keys(opMap).flatMap(val => opMap[val].operators), key);
+  }
+
+  getFirstKey(item) {
+    const keys = Object.keys(item);
+    if(keys && keys.length) {
+      return {
+        key: keys[0],
+        value: item[keys[0]]
+      }
+    }
   }
 
   isComplexDataType(filter) {
@@ -268,22 +414,41 @@ export class FiltersModal extends BlazeComponent {
     return !filter.operator || this.requiresNoValue(filter.operator) ? "disabled" : "";
   }
 
+  createFilter(id, column, type, operator, selectedOptions, operators) {
+    return {
+      _id: `${id}`,
+      id: id,
+      column,
+      type,
+      operator,
+      selectedOptions,
+      operators
+    };
+  }
+
   addFilter(groupId) {
     const filters = this.getFilters(groupId);
     if (filters) {
-      const column = this.columns.find(column => !filters.map(filter => filter.column.id).includes(column.id));
+      column = this.columns.find(column => !filters.map(filter => filter.column.data).includes(column.data));
       const newId = nextId(filters.map(filter => filter.id));
       const type = this.getType(column);
       if (this.columns.length > filters.length) {
-        filters.push({
-          _id: `${newId}`,
-          id: newId,
-          column,
-          type,
-          operator: this.getOperators(type)[0]
+        const filter = this.createFilter(newId, column, type, this.getOperators(type)[0]);
+        this.getOptions(filter).then(filterWithOptions => {
+          filters.push(filterWithOptions);
+          this.setFilters(groupId, filters);
         });
-        this.setFilters(groupId, filters);
-        this.getOptions(groupId, newId);
+      }
+    }
+  }
+  
+  removeFilter(groupId, id) {
+    const filters = this.getFilters(groupId);
+    if (filters) {
+      filters.splice(filters.findIndex(filter => filter.id === id), 1);
+      this.setFilters(groupId, filters);
+      if (!filters.length) {
+        this.removeFilterGroup(groupId);
       }
     }
   }
@@ -311,47 +476,58 @@ export class FiltersModal extends BlazeComponent {
     return filter.options && filter.options.length;
   }
 
-  getOptions(groupId, id) {
-    const filter = this.getFilter(groupId, id);
-    if(filter) {
+  getOptions(filter) {
+    return new Promise(resolve => {
+      if(filter) {
+        delete filter.options
+        const optionsCallback = (options) => {
+          filter.options = this.formatOptions(options);
+          if(filter.options.length > 0) {
+            filter.type = Array;
 
-      const optionsCallback = (options) => {
-        const filter = this.getFilter(groupId, id);
-        filter.options = this.formatOptions(options);
-        if(filter.options.length > 0) {
-          filter.type = Array;
-        } else if(filter.type === Array) {
-          filter.type = String;
+            // Selected options could be loaded in as values so adjust if needed.
+            if(filter.selectedOptions && filter.selectedOptions.length) {
+              filter.selectedOptions = filter.selectedOptions.map(option => {
+                const selected = filter.options.find(val => val.value === option || val.label === option)
+                return (selected && selected.label) || option;
+              });
+            }
+
+            // Possible for options to affect possible operators so update those
+            if(filter.operators) {
+              filter.operator = this.getOperators(filter.type).find(val => arraysEqual(val.operators, filter.operators))
+            }
+          }
+          resolve(filter);
         }
-        this.setFilter(groupId, id, filter);
-      }
 
-      const options = filter.column.filterModal.options;
-      const initSearch = filter.selectedOptions &&
-        !_.isArray(filter.selectedOptions) &&
-        filter.selectedOptions.length ? filter.selectedOptions : undefined;
+        const options = filter.column.filterModal.options;
+        const initSearch = filter.selectedOptions &&
+          !_.isArray(filter.selectedOptions) &&
+          filter.selectedOptions.length ? filter.selectedOptions : undefined;
 
-      if(_.isFunction(options)) {
-        const result = options(filter, initSearch, asyncOptions => optionsCallback(asyncOptions));
-        if(result instanceof Promise) {
-          result.then(asyncOptions => optionsCallback(asyncOptions));
-        } else if(result) {
-          optionsCallback(result);
+        if(_.isFunction(options)) {
+          const result = options(filter, initSearch, asyncOptions => optionsCallback(asyncOptions));
+          if(result instanceof Promise) {
+            result.then(asyncOptions => optionsCallback(asyncOptions));
+          } else if(result) {
+            optionsCallback(result);
+          }
+        } else if(_.isArray(options)) {
+          optionsCallback(options);
+        } else {
+          resolve(filter);
         }
-      } else if(_.isArray(options)) {
-        optionsCallback(options);
       }
-    }
+    });
   }
 
   updateColumn(groupId, id, columnId) {
     const filter = this.getFilter(groupId, id);
-    if (filter) {
-      filter.column = this.columns.find(val => val.id === columnId);
-      filter.type = this.getType(filter.column)
-      delete filter.options
-      this.setFilter(groupId, id, filter);
-      this.getOptions(groupId, id);
+    if (filter && filter.column.data !== columnId) {
+      filter.column = this.columns.find(val => val.data === columnId);
+      filter.type = this.getType(filter.column);
+      this.getOptions(filter).then(filterWithOptions => this.setFilter(groupId, id, filterWithOptions));
     }
   }
 
@@ -376,35 +552,27 @@ export class FiltersModal extends BlazeComponent {
       filter.selectedOptions = selectedOptions.map(option => {
         if(filter.options) {
           const currentOption = filter.options.find(item => item.label === option);
-          return currentOption && currentOption.value && currentOption.value.toString();
+          return currentOption && currentOption.value;
         }
+        return option;
       });
-        
-    }
-  }
-  
-  removeFilter(groupId, id) {
-    const filters = this.getFilters(groupId);
-    if (filters) {
-      filters.splice(filters.findIndex(filter => filter.id === id), 1);
-      this.setFilters(groupId, filters);
-      if (!filters.length) {
-        this.removeFilterGroup(groupId);
-      }
     }
   }
 
   getFiltersData(groupId) {
     const filters = this.getFilters(groupId);
     if (filters) {
-      const usedColumns = filters.filter(filter => filter.column.id).map(filter => filter.column.id);
+      const usedColumns = filters.filter(filter => filter.column.data).map(filter => filter.column.data);
       return filters.map(filter => _.extend({}, filter, {
-        columns: this.columns.filter(column => !usedColumns.includes(column.id) || column.id === filter.column.id)
+        columns: this.columns.filter(column => !usedColumns.includes(column.data) || column.data === filter.column.data)
       }));
     }
   }
 
   getType(column) {
+    if(column.isArray) {
+      return Array;
+    }
     const name = (column.filterModal && column.filterModal.field && column.filterModal.field.name) || column.data;
     const obj = this.collection._c2 && this.collection._c2._simpleSchema && this.collection._c2._simpleSchema.schema(name);
     let type = (obj && obj.type) || String;
@@ -475,15 +643,36 @@ export class FiltersModal extends BlazeComponent {
     return items.findIndex(val => val.id === id) < items.length - 1;
   }
 
-  addFilterGroup() {
-    const filterGroups = this.filterGroups.get();
-    const newId = nextId(filterGroups.map(val => val.id));
-    this.filterGroups.set([...filterGroups, {
-      id: newId,
-      _id: `${newId}`,
-      filters: []
-    }]);
-    this.addFilter(newId);
+  addFilterGroup(filters) {
+    return new Promise(resolve => {
+      const filterGroups = this.filterGroups.get();
+      const newId = nextId(filterGroups.map(val => val.id));
+      const filterGroup = {
+        id: newId,
+        _id: `${newId}`,
+        filters: []
+      };
+      if(!filters) {
+        this.filterGroups.set([...filterGroups, filterGroup]);
+        this.addFilter(newId);
+        resolve();
+      } else {
+        const promises = [];
+        filters.forEach((filter, i) => {
+          promises.push(this.getOptions(this.createFilter(
+            i, filter.column, 
+            this.getType(filter.column), 
+            filter.operator, filter.selectedOptions,
+            filter.operators
+          )));
+        });
+        Promise.all(promises).then(filters => {
+          filterGroup.filters = filters;
+          this.filterGroups.set([...filterGroups, filterGroup]);
+          resolve();
+        });
+      }
+    });
   }
 
   removeFilterGroup(groupId) {
@@ -551,14 +740,14 @@ export class FiltersModal extends BlazeComponent {
 
   init() {
     this.filterGroups = new ReactiveVar([]);
-    this.autorun(() => {
-      const { columns, collection } = this.nonReactiveData("columns", "collection");
-      this.columns = columns.filter(column => column && column.filterModal).map(column => {
-        column.id = column.id || column.name;
-        return column;
-      });
-      this.collection = collection;
-    });
+    
+    const { columns, collection, triggerUpdateFilter, filter } = this.nonReactiveData("columns", "collection", "triggerUpdateFilter", "filter");
+
+    this.columns = columns.filter(column => column && column.filterModal);
+    this.collection = collection;
+    this.triggerUpdateFilter = triggerUpdateFilter;
+
+    this.loadQuery(filter);
   }
 }
 BlazeComponent.register(Template.dynamicTableFiltersModal, FiltersModal);

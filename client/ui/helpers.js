@@ -1,3 +1,4 @@
+import { DynamicTableSpecs } from "meteor/znewsham:justplay-common";
 
 // Find lowest useable integer starting at 0, given a list of used integers.
 export function nextId(values) {
@@ -24,5 +25,77 @@ export function arraysEqual(arrayA, arrayB) {
   if(!arrayA || !arrayB) {
     return arrayA === arrayB;
   }
-  return _.isEqual(_.sortBy(_.keys(arrayA)), _.sortBy(_.keys(arrayB)));
+  arrayA = arrayA.filter(val => !_.isUndefined(val));
+  arrayB = arrayB.filter(val => !_.isUndefined(val));
+  return _.isEqual(_.sortBy(arrayA), _.sortBy(arrayB));
+}
+
+function getSelector(value, field, isUndefined) {
+  const selector = {};
+  if (value.selector) {
+    if (!selector.$and) {
+      selector.$and = [];
+    }
+    selector.$and.push(value.selector);
+  }
+  else if (value.query.$nor) {
+    if (!selector.$and) {
+      selector.$and = [];
+    }
+    selector.$and.push(value.query);
+  }
+  else {
+    selector[field] = value.query;
+  }
+  return selector;
+}
+
+function getValue(record, field) {
+  let result = record;
+  field.split(".").forEach(field => result = result[field]);
+  return result;
+}
+
+/**
+ * selectorToId - description
+ *
+ * @param  {object} selector      mongo selector
+ * @param  {string} tableIdSuffix table suffix
+ * @return {string}               table suffix
+ */
+export function selectorToId(selector, tableIdSuffix) {
+  if (tableIdSuffix) {
+    return tableIdSuffix;
+  }
+  return JSON.stringify(selector)
+  .replace(/\\t/g, "_t_t_t_t")
+  .replace(/ /g, "____")
+  .replace(/[^\d\w]/g, "");
+}
+
+function formatId(value) {
+  return value
+    .replace(/\\t/g, "_t_t_t_t")
+    .replace(/ /g, "____")
+    .replace(/[^\d\w]/g, "");
+}
+
+/** @this = template instance */
+export function getTableIdSuffix(value) {
+  const current = this.grouping;
+
+  const selector = {};
+  if (value && value.query.$nor) {
+    selector.$and = [value.query];
+  }
+  else if (value) {
+    selector[current.field] = value.query;
+  }
+  const nextSuffix = value && selectorToId(selector, value.tableIdSuffix);
+
+  const nextParts = (this.tableIdSuffixChain || []).slice(0);
+  if (nextSuffix) {
+    nextParts.push(nextSuffix);
+  }
+  return nextParts.join("");
 }
