@@ -46,7 +46,7 @@ function getRootSelector(currentSelector, search, advancedSearch, parentFilter) 
     });
   }
 
-  const $and = [selector, searchSelector, advancedSearch, parentFilter.filter].filter(s => s && _.keys(s).length);
+  const $and = [selector, searchSelector, advancedSearch, parentFilter && parentFilter.filter].filter(s => s && _.keys(s).length);
   return $and.length > 1 ? { $and } : $and[0] || {};
 }
 
