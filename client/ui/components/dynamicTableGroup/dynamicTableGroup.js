@@ -376,10 +376,10 @@ Template.dynamicTableGroup.helpers({
     const current = Template.instance().grouping;
     const conditions = [];
     let selector = {};
-    if(_.keys(currentSelector)) {
+    if(_.keys(currentSelector || {})) {
       conditions.push(currentSelector);
     }
-    if(_.keys(parentFilter)) {
+    if(_.keys(parentFilter || {})) {
       conditions.push(parentFilter);
     }
     if (value.selector) {
@@ -393,7 +393,7 @@ Template.dynamicTableGroup.helpers({
         [current.field]: value.query
       });
     }
-    if(_.keys(advancedSearch).length) {
+    if(_.keys(advancedSearch || {}).length) {
       conditions.push(advancedSearch);
     }
     if(conditions.length == 1) {
@@ -408,7 +408,7 @@ Template.dynamicTableGroup.helpers({
   table(value, newSelector) {
     const templInstance = Template.instance();
     let parentFilter = templInstance.parentFilters.get(value.tableId);
-    parentFilter = _.keys(parentFilter).length ? parentFilter : templInstance.parentFilter.get() || {};
+    parentFilter = _.keys(parentFilter || {}).length ? parentFilter : templInstance.parentFilter.get() || {};
     return _.extend(
       {},
       this.customTableSpec,
@@ -491,7 +491,7 @@ Template.dynamicTableGroup.helpers({
     return Template.instance().highlitedColumns.get(tableId);
   },
   hasFilters(tableId) {
-    return _.keys(Template.instance().parentFilters.get(tableId)).length;
+    return _.keys(Template.instance().parentFilters.get(tableId) || {}).length;
   },
   orders(tableId) {
     const nestedOrder = Template.instance().nestedOrder.get(tableId);
@@ -511,7 +511,7 @@ Template.dynamicTableGroup.helpers({
   },
   parentFilter(value) {
     let parentFilter = Template.instance().parentFilters.get(value.tableId) || {};
-    parentFilter = _.keys(parentFilter.filter).length ? parentFilter : Template.instance().parentFilter.get();
+    parentFilter = _.keys(parentFilter && parentFilter.filter || {}).length ? parentFilter : Template.instance().parentFilter.get();
     return parentFilter;
   }
 });

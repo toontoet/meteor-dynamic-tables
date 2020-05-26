@@ -213,17 +213,17 @@ export function changed(
     }
   }
   const update = {};
-  if (_.keys($set).length) {
+  if (_.keys($set || {}).length) {
     update.$set = $set;
   }
-  if (_.keys($pull).length) {
+  if (_.keys($pull || {}).length) {
     update.$pull = $pull;
   }
-  if (_.keys($addToSet).length) {
+  if (_.keys($addToSet || {}).length) {
     update.$addToSet = $addToSet;
   }
 
-  if (!_.keys(update).length) {
+  if (!_.keys(update || {}).length) {
     return;
   }
   if (_.isString(custom)) {

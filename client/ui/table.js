@@ -685,7 +685,7 @@ Template.DynamicTable.onRendered(function onRendered() {
         "__dynamicTableResultsArray",
         currentData.id,
         currentData.table.publication,
-        _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
+        _.keys(advancedSearch || {}).length ? { $and: [querySelector, advancedSearch] } : querySelector,
         queryOptions
       );
       templateInstance.sub.set(newSub);
@@ -697,7 +697,7 @@ Template.DynamicTable.onRendered(function onRendered() {
         currentData.id,
         currentData.table.publication,
         currentData.table.compositePublicationNames,
-        _.keys(advancedSearch).length ? { $and: [querySelector, advancedSearch] } : querySelector,
+        _.keys(advancedSearch || {}).length ? { $and: [querySelector, advancedSearch] } : querySelector,
         queryOptions
       );
       templateInstance.sub.set(newSub);
