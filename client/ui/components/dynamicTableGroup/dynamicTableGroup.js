@@ -9,6 +9,20 @@ import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "../manageOrderModal/manageOrderModal.js";
 import "../manageFieldsModal/manageFieldsModal.js";
 
+function openFiltersModal(templateInstance, tableId) {
+  const customTableSpec = templateInstance.data.customTableSpec;
+  Modal.show("dynamicTableFiltersModal", {
+    collection: customTableSpec.table.collection,
+    columns: customTableSpec.table.columns,
+    filter: templateInstance.parentFilters.get(tableId).filter,
+    parentFilter: templateInstance.parentFilter.get().filter,
+    triggerUpdateFilter: (newFilter) => {
+      templateInstance.parentFilters.set(tableId, newFilter);
+      changed(customTableSpec.custom, tableId, { newFilter });
+    }
+  });
+}
+
 /** @this = template instance */
 function shouldDisplaySection(current, value) {
   if (value.alwaysShow || (value.alwaysShow === undefined && current.alwaysShow)) {
@@ -192,7 +206,10 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
             }
           }
           value.filter = custom.filter ? JSON.parse(custom.filter) : {};
-          this.parentFilters.set(value.tableId, value.filter);
+          this.parentFilters.set(value.tableId, {
+            filter: value.filter,
+            triggerOpenFilters: () => openFiltersModal(this, value.tableId)
+          });
         });
       });
     }
@@ -355,11 +372,15 @@ Template.dynamicTableGroup.helpers({
   },
   newSelector(value, currentSelector) {
     const advancedSearch = Template.instance().advancedSearch.get(value.tableId) || {};
+    let parentFilter = Template.instance().parentFilters.get(value.tableId).filter || {};
     const current = Template.instance().grouping;
     const conditions = [];
     let selector = {};
     if(_.keys(currentSelector)) {
       conditions.push(currentSelector);
+    }
+    if(_.keys(parentFilter)) {
+      conditions.push(parentFilter);
     }
     if (value.selector) {
       conditions.push(value.selector);
@@ -489,9 +510,9 @@ Template.dynamicTableGroup.helpers({
     return this.orderCheckFn;
   },
   parentFilter(value) {
-    let filter = Template.instance().parentFilters.get(value.tableId) || {};
-    filter = _.keys(filter).length ? filter : Template.instance().parentFilter.get();
-    return filter;
+    let parentFilter = Template.instance().parentFilters.get(value.tableId) || {};
+    parentFilter = _.keys(parentFilter.filter).length ? parentFilter : Template.instance().parentFilter.get();
+    return parentFilter;
   }
 });
 
@@ -654,17 +675,6 @@ Template.dynamicTableGroup.events({
     createModal(target, modalMeta,templInstance);
   },
   "click .dynamic-table-manage-controller.filters"(e) {
-    const tableId = $(e.currentTarget).attr("data-table-id");
-    const templInstance = Template.instance();
-
-    Modal.show("dynamicTableFiltersModal", {
-      collection: this.customTableSpec.table.collection,
-      columns: this.customTableSpec.table.columns,
-      filter: templInstance.parentFilters.get(tableId),
-      triggerUpdateFilter: (newFilter) => {
-        templInstance.parentFilters.set(tableId, newFilter);
-        changed(this.customTableSpec.custom, tableId, { newFilter });
-      }
-    });
+    openFiltersModal(Template.instance(), $(e.currentTarget).attr("data-table-id"));
   }
 });

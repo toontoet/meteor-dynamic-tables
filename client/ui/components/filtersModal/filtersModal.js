@@ -161,6 +161,7 @@ export class FiltersModal extends BlazeComponent {
       "isString",
       "isBoolean",
       "isControlDisabled",
+      "isFilterDisabled",
 
       "dateValue",
       "minuteValue",
@@ -212,7 +213,13 @@ export class FiltersModal extends BlazeComponent {
   }
 
   handleClearClick() {
-    this.filterGroups.set([]);
+    const filterGroups = this.filterGroups.get();
+    if(filterGroups.length >= 1 && filterGroups[0].filters.filter(val => val.disabled).length) {
+      filterGroups[0].filters = filterGroups[0].filters.filter(val => val.disabled);
+      this.filterGroups.set([filterGroups[0]]);
+    } else {
+      this.filterGroups.set([]);
+    }
   }
 
   handleCancelClick() {
@@ -239,7 +246,7 @@ export class FiltersModal extends BlazeComponent {
     let newFilter = {
       $or: filterGroups.filter(filterGroup => filterGroup.filters && filterGroup.filters.length).map(filterGroup => {
         return filterGroup.filters.length == 1 && filterGroups.length == 1 ? filterGroup.filters[0].query : {
-          $and: filterGroup.filters.map(filter => filter.query)
+          $and: filterGroup.filters.filter(filter => !filter.disabled).map(filter => filter.query)
         };
       })
     };
@@ -253,7 +260,7 @@ export class FiltersModal extends BlazeComponent {
     $("#dynamicTableFiltersModal").modal("hide");
   }
 
-  loadQuery(query) {
+  formatQuery(query) {
 
     // Original format for filtering.
     if(!query.$or && !query.$and) {
@@ -268,13 +275,37 @@ export class FiltersModal extends BlazeComponent {
       }
     }
 
+    return query;
+  }
+
+  loadQuery(query, parentQuery) {
+
+    query = this.formatQuery(query);
+    let parentFilters = [];
+    
+    if(parentQuery) {
+      parentQuery = this.formatQuery(parentQuery);
+
+      if(parentQuery.$or.length == 1 && parentQuery.$or[0].$and.length) {
+        parentFilters = parentQuery.$or[0].$and;
+      }
+    }
+
     const filterGroups = [];
 
-    query.$or.forEach(queryOrGroup => {
+    query.$or.forEach((queryOrGroup, i) => {
       if(queryOrGroup.$and) {
         const filters = [];
+        if(i == 0) {
+          parentFilters.forEach(query => {
+            newFilter = this.fromQuery(query, true);
+            if(newFilter) {
+              filters.push(newFilter);
+            }
+          });
+        }
         queryOrGroup.$and.forEach(query => {
-          newFilter = this.fromQuery(query);
+          newFilter = this.fromQuery(query, false);
           if(newFilter) {
             filters.push(newFilter);
           }
@@ -312,7 +343,7 @@ export class FiltersModal extends BlazeComponent {
     return query;
   }
 
-  fromQuery(query) {
+  fromQuery(query, disabled) {
     let item = this.getFirstKey(query);
     if(item) {
       query = item.value;
@@ -344,7 +375,8 @@ export class FiltersModal extends BlazeComponent {
             column,
             operator,
             operators,
-            selectedOptions
+            selectedOptions,
+            disabled
           }
         }
       }
@@ -414,7 +446,11 @@ export class FiltersModal extends BlazeComponent {
     return !filter.operator || this.requiresNoValue(filter.operator) ? "disabled" : "";
   }
 
-  createFilter(id, column, type, operator, selectedOptions, operators) {
+  isFilterDisabled(filter) {
+    return filter.disabled ? "disabled" : "";
+  }
+
+  createFilter(id, column, type, operator, selectedOptions, operators, disabled = false) {
     return {
       _id: `${id}`,
       id: id,
@@ -422,7 +458,8 @@ export class FiltersModal extends BlazeComponent {
       type,
       operator,
       selectedOptions,
-      operators
+      operators,
+      disabled
     };
   }
 
@@ -444,7 +481,8 @@ export class FiltersModal extends BlazeComponent {
   
   removeFilter(groupId, id) {
     const filters = this.getFilters(groupId);
-    if (filters) {
+    const filter = filters.find(val => val.id === id);
+    if (filters && !filter.disabled) {
       filters.splice(filters.findIndex(filter => filter.id === id), 1);
       this.setFilters(groupId, filters);
       if (!filters.length) {
@@ -660,10 +698,13 @@ export class FiltersModal extends BlazeComponent {
         const promises = [];
         filters.forEach((filter, i) => {
           promises.push(this.getOptions(this.createFilter(
-            i, filter.column, 
+            i, 
+            filter.column, 
             this.getType(filter.column), 
-            filter.operator, filter.selectedOptions,
-            filter.operators
+            filter.operator, 
+            filter.selectedOptions,
+            filter.operators, 
+            filter.disabled
           )));
         });
         Promise.all(promises).then(filters => {
@@ -741,13 +782,14 @@ export class FiltersModal extends BlazeComponent {
   init() {
     this.filterGroups = new ReactiveVar([]);
     
-    const { columns, collection, triggerUpdateFilter, filter } = this.nonReactiveData("columns", "collection", "triggerUpdateFilter", "filter");
+    const { columns, collection, triggerUpdateFilter, filter, parentFilter } = 
+      this.nonReactiveData("columns", "collection", "triggerUpdateFilter", "filter", "parentFilter");
 
     this.columns = columns.filter(column => column && column.filterModal);
     this.collection = collection;
     this.triggerUpdateFilter = triggerUpdateFilter;
 
-    this.loadQuery(filter);
+    this.loadQuery(filter, parentFilter);
   }
 }
 BlazeComponent.register(Template.dynamicTableFiltersModal, FiltersModal);
