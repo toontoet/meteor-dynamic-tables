@@ -15,13 +15,13 @@
             <div class="dynamic-table-filters-group-container">
               {{#each filter in getFiltersData filterGroup.id}}
               <div class="dynamic-table-filters-selector-container">
-                <select data-id="{{filter.id}}" data-group="{{filterGroup.id}}" class="dynamic-table-filters-column">
+                <select {{isFilterDisabled filter}} data-id="{{filter.id}}" data-group="{{filterGroup.id}}" class="dynamic-table-filters-column">
                   {{#each column in filter.columns}}
                     <option value="{{column.id}}" selected="{{#if op column.id '==' filter.column.id}}selected{{/if}}">{{column.title}}</option>
                   {{/each}}
                 </select>
                 <div class="dynamic-table-filters-filter-container">
-                  <select data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-operator">
+                  <select {{isFilterDisabled filter}} data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-operator">
                     {{#each operatorOption in (getOperatorOptions filterGroup.id filter.id)}}
                       <option value="{{operatorOption.value}}" selected="{{#if operatorOption.isSelected}}selected{{/if}}">{{operatorOption.option}}</option>
                     {{/each}}
@@ -30,22 +30,22 @@
                     {{#unless isComplexDataType filter}}
                       {{#if hasOptions filter}}
                         <section class="dynamic-table-filters-select2-section">
-                          <select {{isControlDisabled filter}} data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search dynamic-table-filters-select2" placeholder="Search..." multiple="multiple"></select>
+                          <select {{isFilterDisabled filter}} {{isControlDisabled filter}} data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search dynamic-table-filters-select2" placeholder="Search..." multiple="multiple"></select>
                         </section>
                       {{else}}
-                        <input {{isControlDisabled filter}} type="text" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Search..." value="{{searchValue filter}}" />
+                        <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="text" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Search..." value="{{searchValue filter}}" />
                       {{/if}}
                     {{/unless}}
                     {{#if isDate filter}}
-                      <input {{isControlDisabled filter}} type="date" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Date..." value="{{dateValue filter}}" />
+                      <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="date" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Date..." value="{{dateValue filter}}" />
                     {{/if}}
                     {{#if isTime filter}}
-                      <input {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time minutes" placeholder="Min" value="{{minuteValue filter}}"/>
+                      <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time minutes" placeholder="Min" value="{{minuteValue filter}}"/>
                       <span>:</span>
-                      <input {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time seconds" placeholder="Sec" value="{{secondValue filter}}"/>
+                      <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time seconds" placeholder="Sec" value="{{secondValue filter}}"/>
                     {{/if}}
                     {{#if isBoolean filter}}
-                      <select {{isControlDisabled filter}} class="dynamic-table-filters-search">
+                      <select {{isFilterDisabled filter}} {{isControlDisabled filter}} class="dynamic-table-filters-search">
                         <option value="">Choose True/False</option>
                         <option value="true">True</option>
                         <option value="false">False</option>
@@ -53,9 +53,9 @@
                     {{/if}}
                     </div>
                 </div>
-                <button class="dynamic-table-filters-remove-filter" data-group="{{filterGroup.id}}" data-id="{{filter.id}}">                      
-                  <i class="fa fa-times"></i>
-                </button>
+                  <button class="dynamic-table-filters-remove-filter" style="{{#if filter.disabled}}visibility: hidden;{{/if}}" data-group="{{filterGroup.id}}" data-id="{{filter.id}}">                      
+                    <i class="fa fa-times"></i>
+                  </button>
               </div>
               {{#if requiresDelimiter filterGroup.filters filter.id}}
                 <p class="dynamic-table-filters-delimiter">AND</p>

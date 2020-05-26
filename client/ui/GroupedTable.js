@@ -7,8 +7,23 @@ import "./components/manageFieldsModal/manageFieldsModal.js";
 import "./advancedSearchModal.js";
 import { getColumns, getPosition, changed, getCustom, createModal} from "../inlineSave.js";
 
+function openFiltersModal(templateInstance) {
+  const tableId = templateInstance.data.id;
+  const table = templateInstance.data.table;
+
+  Modal.show("dynamicTableFiltersModal", {
+    collection: table.collection,
+    columns: table.columns,
+    filter: templateInstance.parentFilter.get().filter || {},
+    triggerUpdateFilter: (newFilter) => {
+      templateInstance.parentFilter.set(newFilter);
+      changed(templateInstance.data.custom, tableId, { newFilter });
+    }
+  });
+}
+
 /** @this = template instance */
-function getRootSelector(currentSelector, search, advancedSearch) {
+function getRootSelector(currentSelector, search, advancedSearch, parentFilter) {
   const selector = _.extend({}, currentSelector)
   const data = this.data;
   let searchSelector;
@@ -31,7 +46,7 @@ function getRootSelector(currentSelector, search, advancedSearch) {
     });
   }
 
-  const $and = [selector, searchSelector, advancedSearch].filter(s => s && _.keys(s).length);
+  const $and = [selector, searchSelector, advancedSearch, parentFilter.filter].filter(s => s && _.keys(s).length);
   return $and.length > 1 ? { $and } : $and[0] || {};
 }
 
@@ -84,7 +99,10 @@ Template.GroupedTable.onCreated(function onCreated() {
         this.groupChain.set(custom.groupChainFields);
       }
       if(custom.filter) {
-        this.parentFilter.set(JSON.parse(custom.filter));
+        this.parentFilter.set({
+          filter: JSON.parse(custom.filter),
+          triggerOpenFilters: () => openFiltersModal(this)
+        });
       }
     });
     if (! stop) {
@@ -118,7 +136,8 @@ Template.GroupedTable.helpers({
     const templInstance = Template.instance();
     const search = templInstance.search.get();
     const advancedSearch =  templInstance.advancedSearch.get();
-    const selector = getRootSelector.call(templInstance, this.selector, search, advancedSearch);
+    const parentFilter = templInstance.parentFilter.get();
+    const selector = getRootSelector.call(templInstance, this.selector, search, advancedSearch, parentFilter);
     return selector;
   },
   expandAll() {
@@ -321,19 +340,7 @@ Template.GroupedTable.events({
     createModal(e.currentTarget, modalMeta, templInstance);
   },
   "click .grouped-table-manage-controller.filters"(e) {
-    const tableId = Template.instance().data.id;
-    const templInstance = Template.instance();
-    const table = templInstance.data.table;
-
-    Modal.show("dynamicTableFiltersModal", {
-      collection: table.collection,
-      columns: table.columns,
-      filter: templInstance.parentFilter.get() || {},
-      triggerUpdateFilter: (newFilter) => {
-        templInstance.parentFilter.set(newFilter);
-        changed(templInstance.data.custom, tableId, { newFilter });
-      }
-    });
+    openFiltersModal(Template.instance());
   }
 });
 
