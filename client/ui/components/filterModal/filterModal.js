@@ -56,7 +56,10 @@ export class FilterModal extends BlazeComponent {
       "isStringOrCustom",
       "isBoolean",
       "isSelected",
+      "isControlDisabledForParent",
 
+      "curIsParentFilter",
+      "curParentFilterLabel",
       "curSelectedOptions",
       "curShowOperators",
       "curSearching",
@@ -83,6 +86,7 @@ export class FilterModal extends BlazeComponent {
       "change .select-dynamic-table-operator": "handleSelectOperatorChange",
       "click .label-dynamic-table-selected": "handleSelectedClick",
       "click .input-dynamic-table-option": "handleOptionClick",
+      "click .input-dynamic-table-filters-modal": "handleFiltersModalClick",
       "keyup .input-dynamic-table-search": "handleSearchKeyUp",
       "change .input-dynamic-table-search": "handleSearchChange"
     };
@@ -100,6 +104,13 @@ export class FilterModal extends BlazeComponent {
     let indexedNumber = this.nonReactiveData().field.edit.spec.indexedNumber;
     indexedNumber = indexedNumber === false ? "new" : indexedNumber;
     this.currentSpec.set("indexedNumber", $(e.currentTarget).is(":checked") ? indexedNumber : false);
+  }
+
+  handleFiltersModalClick() {
+    if(_.isFunction(this.triggerOpenFiltersModal.get())) {
+      this.triggerOpenFiltersModal.get()();
+      closeModal();
+    }
   }
 
   handleCancelClick(e) {
@@ -164,7 +175,9 @@ export class FilterModal extends BlazeComponent {
   }
 
   handleSelectedClick(e) {
-    this.updateSelectedOptions($(e.currentTarget).data("value"), false);
+    if(!this.isParentFilter.get()) {
+      this.updateSelectedOptions($(e.currentTarget).data("value"), false);
+    }
   }
 
   handleOptionClick(e) {
@@ -371,7 +384,7 @@ export class FilterModal extends BlazeComponent {
     }
 
     const options = this.allOptions.get();
-    return options && options.length;
+    return options && options.length && !this.isParentFilter.get();
   }
 
   getOptions() {
@@ -396,7 +409,7 @@ export class FilterModal extends BlazeComponent {
   }
 
   curShowOperators() {
-    return this.showOperators.get();
+    return this.showOperators.get() || this.isParentFilter.get();
   }
 
   curSearching() {
@@ -417,6 +430,18 @@ export class FilterModal extends BlazeComponent {
 
   curFieldLabel() {
     return this.fieldLabel.get();
+  }
+
+  curIsParentFilter() {
+    return this.isParentFilter.get();
+  }
+
+  curParentFilterLabel() {
+    return this.parentFilterLabel.get();
+  }
+
+  isControlDisabledForParent() {
+    return this.isParentFilter.get() ? "disabled" : ""
   }
 
   updateSpec(spec) {
@@ -533,9 +558,20 @@ export class FilterModal extends BlazeComponent {
     this.sortDirection = new ReactiveVar(null);
     this.asyncOptions = new ReactiveVar(false);
     this.operator = new ReactiveVar(null);
+    this.isParentFilter = new ReactiveVar(false);
+    this.parentFilterLabel = new ReactiveVar(null);
+    this.triggerOpenFiltersModal = new ReactiveVar(null);
 
     this.autorun(() => {
       const data = this.nonReactiveData();
+
+      // If this value is set, then the filter being shown is
+      // from a parent component and can't be changed by this filter.
+      if(data.parentFilterData) {
+        this.isParentFilter.set(true);
+        this.parentFilterLabel.set(data.parentFilterData.label);
+        this.triggerOpenFiltersModal.set(data.parentFilterData.triggerOpenFiltersModal);
+      }
 
       this.editableField.set(data.field && data.field.edit && data.field.edit.spec);
       this.isArrayField.set(false);
@@ -744,7 +780,7 @@ export class FilterModal extends BlazeComponent {
             operator = "$eq";
           }
 
-          Tracker.nonreactive(() => callback(selectedOptions.map(option => options.find(item => item.label === option || item.value === option).value), operator, direction, false, originalOperator));
+          Tracker.nonreactive(() => callback(_.isArray(selectedOptions) ? selectedOptions.map(option => options.find(item => item.label === option || item.value === option).value) : selectedOptions, operator, direction, false, originalOperator));
         });
       }
     });

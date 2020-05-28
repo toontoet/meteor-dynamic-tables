@@ -44,17 +44,6 @@ function getSelector() {
 /**
   @this Template.instance()
 */
-function openFiltersModal(extraOptions) {
-  const options = this.data.table;
-  Modal.show("dynamicTableFiltersModal", {
-    columns: options.columns,
-    collection: options.collection
-  });
-}
-
-/**
-  @this Template.instance()
-*/
 function doExport(extraOptions) {
   const query = this.query.get();
   const advancedSearch = this.advancedSearch.get();
@@ -555,6 +544,7 @@ Template.DynamicTable.onRendered(function onRendered() {
                 table: currentData.table,
                 dataTable: templateInstance.dataTable,
                 advancedSearch: templateInstance.advancedSearch.get(),
+                parentFilters: templateInstance.parentFilters.get(),
                 filterModalCallback: filterModalCallback.bind(self),
                 removeColumn: templateInstance.data.removeColumn
               },
@@ -661,6 +651,21 @@ Template.DynamicTable.onRendered(function onRendered() {
     const querySelector = query.selector;
     const advancedSearch = templateInstance.advancedSearch.get();
 
+    // Make sure we're only including filters that actually do something, no empty {} filters
+    const parentFilters = templateInstance.parentFilters.get().filter(filter => _.keys(filter.query || {}).length);
+
+    const queryElements = [querySelector];
+    if(_.keys(advancedSearch || {}).length) {
+      queryElements.push(advancedSearch);
+    }
+
+    if(parentFilters.length) {
+      queryElements.push(...parentFilters.map(filter => filter.query));
+    }
+
+    const selectorValue = queryElements.length == 1 ? queryElements[0] : {
+      $and: queryElements
+    };
 
     // NOTE: we dont want to rerun this since we're setting it just below
     let newSub;
@@ -685,7 +690,7 @@ Template.DynamicTable.onRendered(function onRendered() {
         "__dynamicTableResultsArray",
         currentData.id,
         currentData.table.publication,
-        _.keys(advancedSearch || {}).length ? { $and: [querySelector, advancedSearch] } : querySelector,
+        selectorValue,
         queryOptions
       );
       templateInstance.sub.set(newSub);
@@ -697,7 +702,7 @@ Template.DynamicTable.onRendered(function onRendered() {
         currentData.id,
         currentData.table.publication,
         currentData.table.compositePublicationNames,
-        _.keys(advancedSearch || {}).length ? { $and: [querySelector, advancedSearch] } : querySelector,
+        selectorValue,
         queryOptions
       );
       templateInstance.sub.set(newSub);
@@ -897,7 +902,7 @@ Template.DynamicTable.onCreated(function onCreated() {
   this.options = new ReactiveVar({});
   this.query = new ReactiveVar(false);
   this.advancedSearch = new ReactiveVar(EJSON.fromJSONValue(this.data.advancedFilter));
-  this.parentFilter = new ReactiveVar(this.data.parentFilter);
+  this.parentFilters = new ReactiveVar(this.data.parentFilters);
   this.incomingSelector = new ReactiveVar({});
   this.tableId = new ReactiveVar("");
   this._columns = new ReactiveVar([]);
@@ -1007,7 +1012,8 @@ Template.DynamicTable.onCreated(function onCreated() {
         self.dataTable.api().ajax.reload();
       }
     }
-    this.parentFilter.set(currentData.parentFilter);
+    this.parentFilters.set(currentData.parentFilters);
+    this.advancedSearch.set(currentData.advancedFilter);
   });
   this.blaze = {};
 });
@@ -1035,12 +1041,6 @@ Template.DynamicTable.onDestroyed(function onDestroyed() {
       dt.destroy();
     }
     // this.$tableElement.html("");
-  }
-});
-
-Template.DynamicTable.events({
-  "click .filters"() {
-    openFiltersModal.call();
   }
 });
 

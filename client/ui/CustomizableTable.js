@@ -13,7 +13,7 @@ function filterColumns(columns, selectedColumnDataOrIds) {
 
 Template.CustomizableTable.onCreated(function onCreated() {
   this.advancedFilter = new ReactiveVar();
-  this.parentFilter = new ReactiveVar(this.data.parentFilter);
+  this.parentFilters = new ReactiveVar(this.data.parentFilters);
   this.limit = new ReactiveVar(this.data.table.pageLength || 25);
   this.skip = new ReactiveVar(0);
   this.fnReorderCallback = () => {
@@ -93,7 +93,8 @@ Template.CustomizableTable.onCreated(function onCreated() {
       return;
     }
 
-    this.parentFilter.set(data.parentFilter);
+    this.parentFilters.set(data.parentFilters);
+    this.advancedFilter.set(data.currentFilter);
     // refreshes table when order has been changed
     if (JSON.stringify(Tracker.nonreactive(() => this.order.get())) !== JSON.stringify(data.orders) && data.orders) {
       this.order.set(data.orders);
@@ -145,8 +146,8 @@ Template.CustomizableTable.helpers({
   advancedFilter() {
     return Template.instance().advancedFilter.get();
   },
-  parentFilter() {
-    return Template.instance().parentFilter.get();
+  parentFilters() {
+    return Template.instance().parentFilters.get();
   },
   modifyFilterCallback() {
     const templInstance = Template.instance();

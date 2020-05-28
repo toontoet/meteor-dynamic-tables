@@ -3,7 +3,7 @@ import "./dynamicTableGroup.html";
 import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../db.js";
 import { changed, getCustom, getColumns, getValue, createModal } from "../../../inlineSave.js";
-import { getNestedTableIds, selectorToId, getTableIdSuffix } from "../../helpers.js"
+import { getNestedTableIds, selectorToId, getTableIdSuffix, formatQuery, getQueryFields } from "../../helpers.js"
 
 import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "../manageOrderModal/manageOrderModal.js";
@@ -14,13 +14,45 @@ function openFiltersModal(templateInstance, tableId) {
   Modal.show("dynamicTableFiltersModal", {
     collection: customTableSpec.table.collection,
     columns: customTableSpec.table.columns,
-    filter: templateInstance.parentFilters.get(tableId).filter,
-    parentFilter: templateInstance.parentFilter.get().filter,
-    triggerUpdateFilter: (newFilter) => {
-      templateInstance.parentFilters.set(tableId, newFilter);
-      changed(customTableSpec.custom, tableId, { newFilter });
+    filter: templateInstance.currentFilters.get(tableId),
+    parentFilters: templateInstance.parentFilters.get(),
+    triggerUpdateFilter: newQuery => {
+      const currentFilter = templateInstance.currentFilters.get(tableId);
+      currentFilter.query = newQuery;
+      templateInstance.currentFilters.set(tableId, currentFilter);
+      changed(customTableSpec.custom, tableId, { newFilter: newQuery });
     }
   });
+}
+
+// returns true if a given filter is valid with its parent.
+function isFilterValid(templateInstance, filter) {
+  if(!_.keys(filter || {}).length) {
+    return true;
+  }
+  const parentFilters = templateInstance.parentFilters.get();
+
+  // Using for loops so we can return as soon as the filter is invalid.
+  for(let i = 0; i < parentFilters.length; i++) {
+    const parentFilter = parentFilters[i];
+
+    // No filter is valid if its parent has multiple OR groups.
+    if(parentFilter.query.$or && parentFilter.query.$or.length > 1) {
+      return false;
+    }
+
+    // Get the fields for the parent filter's first OR group 
+    const filterFields = getQueryFields(formatQuery(filter).$or[0].$and);
+    const parentFilterFields = getQueryFields(formatQuery(parentFilter.query).$or[0].$and);
+
+    for(let h = 0; h < filterFields.length; h++) {
+      if(_.contains(parentFilterFields, filterFields[h])) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 /** @this = template instance */
@@ -106,8 +138,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.nestedColumns = new ReactiveDict();  // set of columns for nested tables
 
   this.advancedSearch = new ReactiveDict(); // set of advancedSearches for each group
-  this.parentFilters = new ReactiveDict();
-  this.parentFilter = new ReactiveVar({});
+  this.currentFilters = new ReactiveDict();
+  this.parentFilters = new ReactiveVar([]);
 
   // needed for passing number of page and number of records per page
   this.nestedCustoms = new ReactiveDict();  // set of custom table specs for nested tables
@@ -118,7 +150,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   const groupChain = new ReactiveVar(this.data.groupChain);
   this.autorun(() => {
     const data = Template.currentData();
-    this.parentFilter.set(data.parentFilter);
+    this.parentFilters.set(data.parentFilters);
     if (JSON.stringify(Tracker.nonreactive(() => this.columns.get())) !== JSON.stringify(data.columns)) {
       this.columns.set(data.columns);
     }
@@ -205,10 +237,16 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
               this.nestedOrder.set(value.tableId, custom.order);
             }
           }
-          value.filter = custom.filter ? JSON.parse(custom.filter) : {};
-          this.parentFilters.set(value.tableId, {
-            filter: value.filter,
-            triggerOpenFilters: () => openFiltersModal(this, value.tableId)
+          let filter = custom.filter ? JSON.parse(custom.filter) : {};
+          if(!isFilterValid(this, filter)) {
+            value.filter = {}
+            changed(data.customTableSpec.custom, value.tableId, { newFilter: {} })
+          } else {
+            value.filter = filter
+          }
+          this.currentFilters.set(value.tableId, {
+            label: value.label,
+            query: value.filter
           });
         });
       });
@@ -372,15 +410,11 @@ Template.dynamicTableGroup.helpers({
   },
   newSelector(value, currentSelector) {
     const advancedSearch = Template.instance().advancedSearch.get(value.tableId) || {};
-    let parentFilter = Template.instance().parentFilters.get(value.tableId).filter || {};
     const current = Template.instance().grouping;
     const conditions = [];
     let selector = {};
     if(_.keys(currentSelector || {})) {
       conditions.push(currentSelector);
-    }
-    if(_.keys(parentFilter || {})) {
-      conditions.push(parentFilter);
     }
     if (value.selector) {
       conditions.push(value.selector);
@@ -407,15 +441,20 @@ Template.dynamicTableGroup.helpers({
   },
   table(value, newSelector) {
     const templInstance = Template.instance();
-    let parentFilter = templInstance.parentFilters.get(value.tableId);
-    parentFilter = _.keys(parentFilter || {}).length ? parentFilter : templInstance.parentFilter.get() || {};
+    let parentFilters = templInstance.parentFilters.get();
+    let currentFilter = templInstance.currentFilters.get(value.tableId);
+
+    // Functions don't get stored in reactive dictionaries so set the filters modal callback here.
+    currentFilter.triggerOpenFiltersModal = () => openFiltersModal(templateInstance, value.tableId);
+
     return _.extend(
       {},
       this.customTableSpec,
       {
         hasContext: false,
         selector: newSelector,
-        parentFilter,
+        parentFilters,
+        currentFilter: currentFilter.query,
         id: value.tableId,
         orders: templInstance.nestedOrder.get(value.tableId) || templInstance.orders.get(),
         selectedColumns: templInstance.nestedColumns.get(value.tableId) || templInstance.columns.get(),
@@ -491,7 +530,7 @@ Template.dynamicTableGroup.helpers({
     return Template.instance().highlitedColumns.get(tableId);
   },
   hasFilters(tableId) {
-    return _.keys(Template.instance().parentFilters.get(tableId) || {}).length;
+    return _.keys(Template.instance().currentFilters.get(tableId).query || {}).length;
   },
   orders(tableId) {
     const nestedOrder = Template.instance().nestedOrder.get(tableId);
@@ -509,10 +548,18 @@ Template.dynamicTableGroup.helpers({
   orderCheckFn() {
     return this.orderCheckFn;
   },
-  parentFilter(value) {
-    let parentFilter = Template.instance().parentFilters.get(value.tableId) || {};
-    parentFilter = _.keys(parentFilter && parentFilter.filter || {}).length ? parentFilter : Template.instance().parentFilter.get();
-    return parentFilter;
+  parentFilters(value) {
+    const templateInstance = Template.instance();
+    let currentFilter = templateInstance.currentFilters.get(value.tableId);
+
+    // Functions don't get stored in reactive dictionaries so set the filters modal callback here.
+    currentFilter.triggerOpenFiltersModal = () => openFiltersModal(templateInstance, value.tableId);
+
+    let parentFilters = templateInstance.parentFilters.get();
+    if(_.keys(currentFilter.query || {}).length) {
+      return [...parentFilters, currentFilter];
+    }
+    return parentFilters;
   }
 });
 
@@ -527,7 +574,7 @@ Template.dynamicTableGroup.events({
     let open = false;
     if (templInstance.enabled.get(valueId)) {
       open = false;
-    }
+    } 
     else {
       open = true;
       templInstance.stickyEnabled.set(valueId, true);

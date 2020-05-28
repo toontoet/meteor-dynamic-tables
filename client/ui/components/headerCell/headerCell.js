@@ -17,11 +17,51 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
 Template.dynamicTableHeaderCell.helpers({
   hasFilter() {
     const templInstance = Template.instance();
+
+    // While formatting the parent filters to match the fields in the advanced search,
+    // we'll store the filters modal callback and label using the field name as an identifier.
+    // parentFiltersData holds the parent data for multiple fields
+    // parentFilterData only holds parent data for a single parent filter when there are multiple
+    // OR groups.
+    templInstance.parentFiltersData = {};
+    templInstance.parentFilterData;
+
+    // The whole process dealing with the parent filters is to format them in a way that the
+    // filter modal will accept while at the same time, including the needed information
+    // for indicating the current filter is a parent filter.
+    const parentFilters = templInstance.data.parentFilters.flatMap(filter => {
+
+      // We don't need to check if the length of the $or array is more than one because
+      // if it isn't, the $or level is removed to maintain the legacy format of the queries.
+      if(filter && filter.query && filter.query.$or) {
+        templInstance.parentFilterData = {
+          label: filter.label,
+          triggerOpenFiltersModal: filter.triggerOpenFiltersModal
+        }
+        return [{}];
+      }
+      if(filter && !filter.query || !filter.query.$and) {
+        filter.query = {
+          $and: [filter.query || {}]
+        }
+      }
+      filter.query.$and.forEach(query => {
+        const keys = _.keys(query || {});
+        if(keys.length == 1) {
+          templInstance.parentFiltersData[keys[0]] = {
+            label: filter.label,
+            triggerOpenFiltersModal: filter.triggerOpenFiltersModal
+          };
+        }
+      });
+      return filter.query.$and;
+    });
     const fieldName = (templInstance.data.column.filterModal.field && templInstance.data.column.filterModal.field.name) || templInstance.data.column.data;
     const searchFunction = templInstance.data.column.search;
     if (searchFunction) {
       const searchResult = searchFunction("");
-      const advanceSearchAnd = templInstance.data.advancedSearch.$and || [];
+      const advanceSearchAnd = templInstance.data.advancedSearch.$and || [templInstance.data.advancedSearch];
+      advanceSearchAnd.push(...parentFilters);
       if (advanceSearchAnd) {
         return advanceSearchAnd.some((query) => {
           const queryElements = query.$or || query.$and || query;
@@ -36,9 +76,14 @@ Template.dynamicTableHeaderCell.helpers({
       }
       return false;
     }
-    const searchObject = templInstance.data.advancedSearch;
-    const columnSearch = EJSON.fromJSONValue(searchObject.$and && searchObject.$and.length >= 1 ?
-      searchObject.$and[0][fieldName] : searchObject[fieldName]);
+    let searchObject = templInstance.data.advancedSearch;
+    if(!searchObject.$and) {
+      searchObject = {
+        $and: [searchObject]
+      }
+    }
+    parentFilters.forEach(filter => _.extend(searchObject.$and[0], filter));
+    const columnSearch = searchObject.$and[0][fieldName];
     return columnSearch;
   },
   columnTitle() {
@@ -57,6 +102,7 @@ Template.dynamicTableHeaderCell.events({
     const searchObject = templInstance.data.advancedSearch;
     const columnSearch = EJSON.fromJSONValue(searchObject.$and && searchObject.$and.length >= 1 ?
       searchObject.$and[0][fieldName] : searchObject[fieldName]);
+    const parentFilterData = templInstance.parentFilterData || templInstance.parentFiltersData[fieldName];
     let selectedOptions;
     let operator = "$in";
     let searchValue;
@@ -217,6 +263,7 @@ Template.dynamicTableHeaderCell.events({
           selected: operator
         }
       },
+      parentFilterData,
       removeColumn() {
         if (templInstance.data.removeColumn) {
           templInstance.data.removeColumn(column);

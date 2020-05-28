@@ -4,7 +4,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h4 class="modal-title dynamic-table-filters-title">
-            Filters
+            {{getFilterLabel}} Filters
           </h4>
         </div>
         <div class="modal-body">
@@ -12,8 +12,21 @@
             <p class="dynamic-table-filters-no-filters">You do not have any filters set for this Smart View.</p>
           {{/unless}}
           {{#each filterGroup in getFilterGroups}}
+            {{#if requiresDelimiter getFilterGroups filterGroup.id}}
+              <p class="dynamic-table-filters-delimiter">OR</p>
+            {{/if}}
             <div class="dynamic-table-filters-group-container">
               {{#each filter in getFiltersData filterGroup.id}}
+              {{#if filter.label}}
+                <button class="btn-link dynamic-table-filters-open-filters-modal" data-group="{{filterGroup.id}}" data-id="{{filter.id}}">
+                  {{#if requiresDelimiter filterGroup.filters filter.id}}AND{{/if}}
+                  {{filter.label}} Filters
+                </button>
+              {{else}}
+                {{#if requiresDelimiter filterGroup.filters filter.id}}
+                  <p class="dynamic-table-filters-delimiter">AND</p>
+                {{/if}}
+              {{/if}}
               <div class="dynamic-table-filters-selector-container">
                 <select {{isFilterDisabled filter}} data-id="{{filter.id}}" data-group="{{filterGroup.id}}" class="dynamic-table-filters-column">
                   {{#each column in filter.columns}}
@@ -57,9 +70,6 @@
                     <i class="fa fa-times"></i>
                   </button>
               </div>
-              {{#if requiresDelimiter filterGroup.filters filter.id}}
-                <p class="dynamic-table-filters-delimiter">AND</p>
-              {{/if}}
             {{/each}}
             {{#if canAddFilters filterGroup.id}}
               <button class="btn-link dynamic-table-filters-add-filter" data-group="{{filterGroup.id}}">              
@@ -67,13 +77,12 @@
               </button>
             {{/if}}
             </div>
-            {{#if requiresDelimiter getFilterGroups filterGroup.id}}
-              <p class="dynamic-table-filters-delimiter">OR</p>
-            {{/if}}
           {{/each}}
-          <button class="dynamic-table-filters-add-filter-group">              
-              <i class="fa fa-plus"></i> {{#if hasFilterGroups}}OR{{else}}Filter{{/if}}
-          </button>
+          {{#if canAddFilterGroups}}
+            <button class="dynamic-table-filters-add-filter-group">              
+                <i class="fa fa-plus"></i> {{#if hasFilterGroups}}OR{{else}}Filter{{/if}}
+            </button>
+          {{/if}}
         </div>
         <div class="modal-footer">
           <button class="btn btn-danger dynamic-table-filters-clear">Clear</button>
