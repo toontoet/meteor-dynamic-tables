@@ -46,7 +46,7 @@
             {{#each option in curSelectedOptions}}
               <label data-value="{{option.value}}" class="label-dynamic-table-selected">
                 {{option.label}}
-                <i class="fa fa-times"></i>
+                {{#unless curIsParentFilter}}<i class="fa fa-times"></i>{{/unless}}
               </label>
             {{/each}}
           </section>
@@ -54,32 +54,35 @@
         {{#if searchEnabled}}
           <section class="dynamic-table-filter-search">
             {{#if isStringOrCustom}}
-              <input type="text" class="input-dynamic-table-search" placeholder="{{#if hasOptions}}Search values...{{else}}Search...{{/if}}" value="{{filter.search.value}}" />
-
+              <input {{isControlDisabledForParent}} type="text" class="input-dynamic-table-search" placeholder="{{#if hasOptions}}Search values...{{else}}Search...{{/if}}" value="{{filter.search.value}}" />
               {{#if filter.operator.enabled}}
-                <i class="fa fa-cog"></i>
+                {{#unless curIsParentFilter}}
+                  <i class="fa fa-cog"></i>
+                {{/unless}}
               {{/if}}
             {{/if}}
             {{#if isNumber}}
-              <input type="number" class="input-dynamic-table-search" placeholder="Value" value="{{searchValue}}" />
+              <input {{isControlDisabledForParent}} type="number" class="input-dynamic-table-search" placeholder="Value" value="{{searchValue}}" />
               {{#if filter.operator.enabled}}
-                <i class="fa fa-cog"></i>
+                {{#unless curIsParentFilter}}
+                  <i class="fa fa-cog"></i>
+                {{/unless}}
               {{/if}}
             {{/if}}
             {{#if isDate}}
               <!-- <label>Date</label> -->
-              <input type="date" class="input-dynamic-table-search" placeholder="Date..." value="{{dateValue}}" />
+              <input {{isControlDisabledForParent}} type="date" class="input-dynamic-table-search" placeholder="Date..." value="{{dateValue}}" />
               {{#if filter.operator.enabled}}
                 <i class="fa fa-cog"></i>
               {{/if}}
             {{/if}}
             {{#if isTime}}
               <label>Time</label>
-              <input type="number" class="input-dynamic-table-search" placeholder="Min" value="{{minuteValue}}" style="width: 49%;" />
-              <input type="number" class="input-dynamic-table-search" placeholder="Sec" value="{{secondValue}}" style="width: 49%;" />
+              <input {{isControlDisabledForParent}} type="number" class="input-dynamic-table-search" placeholder="Min" value="{{minuteValue}}" style="width: 49%;" />
+              <input {{isControlDisabledForParent}} type="number" class="input-dynamic-table-search" placeholder="Sec" value="{{secondValue}}" style="width: 49%;" />
             {{/if}}
             {{#if isBoolean}}
-              <select class="input-dynamic-table-search">
+              <select {{isControlDisabledForParent}} class="input-dynamic-table-search">
                 <option value="">Choose True/False</option>
                 <option value="true" {{isSelected true}}>True</option>
                 <option value="false" {{isSelected false}}>False</option>
@@ -91,7 +94,7 @@
           {{#if filter.operator.enabled}}
             <section class="dynamic-table-filter-operator" style="{{#unless curShowOperators}}display: none;{{/unless}}">
               <label>Where column</label>
-              <select class="select-dynamic-table-operator">
+              <select {{isControlDisabledForParent}} class="select-dynamic-table-operator">
                 {{#if isDate}}
                   <option value="$between" {{checkedIfWithValue}}>Equals</option>
                   <option value="$gte">Greater</option>
@@ -132,6 +135,15 @@
               {{/each}}
             </div>
           </section>
+        {{/if}}
+        {{#if curIsParentFilter}}
+          <div class="dynamic-table-filter-parent-filter-message">
+            <p>Filtering is disabled for this column because you have applied filters to a parent of this table.</p>
+            <span>
+              <button class="btn-link input-dynamic-table-filters-modal">Click here</button> 
+              to adjust the filters to the <b>{{curParentFilterLabel}}</b> group level.
+            </span>
+          </div>
         {{/if}}
       {{/if}}
     {{/if}}

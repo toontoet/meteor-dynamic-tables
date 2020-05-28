@@ -30,6 +30,50 @@ export function arraysEqual(arrayA, arrayB) {
   return _.isEqual(_.sortBy(arrayA), _.sortBy(arrayB));
 }
 
+// Ensures there's always an $or and $and object in a query.
+export function formatQuery(query) {
+
+  // This method just ensures that the data has a consistent
+  // structure so there aren't multiple cases when working with the queries.
+
+  // Original format for filtering.
+
+  // Single field is set
+  if(!query.$or && !query.$and) {
+    query = {
+      $or: [{
+        $and: [query]
+      }]
+    }
+  
+  // Single OR group, multiple fields set.
+  } else if(!query.$or) {
+    query = {
+      $or: [query]
+    }
+
+  // Multiple OR groups, each with a single field set.
+  } else if(query.$or && query.$or.length) {
+    query.$or = query.$or.map(val => {
+      return val.$and ? val : {
+        $and: [val]
+      };
+    });
+  }
+
+  return query;
+}
+
+// Returns fields for an AND group provided
+export function getQueryFields(queryAndGroup) {
+  if(queryAndGroup.length) {
+    return queryAndGroup.filter(item => _.keys(item || {}).length).map(item => {
+      return _.keys(item)[0];
+    });
+  }
+  return [];
+}
+
 function getSelector(value, field, isUndefined) {
   const selector = {};
   if (value.selector) {

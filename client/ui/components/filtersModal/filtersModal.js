@@ -1,5 +1,5 @@
 import { BlazeComponent } from "meteor/znewsham:blaze-component";
-import { nextId, jQueryData, arraysEqual } from "../../helpers.js";
+import { nextId, jQueryData, arraysEqual, formatQuery } from "../../helpers.js";
 import { changed } from "../../../inlineSave.js";
 
 import "./filtersModal.html";
@@ -83,6 +83,16 @@ const opMap = {
     label: "is after...",
     operators: ["$gt"],
     singleValue: true
+  },
+  contains: {
+    id: "contains",
+    label: "is...",
+    operators: ["$regex"]
+  },
+  notContains: {
+    id: "notContains",
+    label: "is not...",
+    operators: ["$not", "$regex"]
   }
 };
 
@@ -101,8 +111,8 @@ const typeMap = [
   {
     type: [String],
     operators: [
-      opMap.all,
-      opMap.notAll,
+      opMap.contains,
+      opMap.notContains,
       opMap.empty,
       opMap.notEmpty
     ]
@@ -150,9 +160,11 @@ export class FiltersModal extends BlazeComponent {
 
       "requiresDelimiter",
       "canAddFilters",
+      "canAddFilterGroups",
       "getFiltersData",
       "getOperatorOptions",
       "hasOptions",
+      "getFilterLabel",
 
       "isComplexDataType",
       "isTime",
@@ -173,6 +185,7 @@ export class FiltersModal extends BlazeComponent {
   static EventMap() {
     return {
       "click .dynamic-table-filters-add-filter-group": "handleAddFilterGroupClick",
+      "click .dynamic-table-filters-open-filters-modal": "handleOpenFiltersModalClick",
       "click .dynamic-table-filters-add-filter": "handleAddFilterClick",
       "click .dynamic-table-filters-remove-filter": "handleRemoveFilterClick",
       "click .dynamic-table-filters-clear": "handleClearClick",
@@ -198,6 +211,17 @@ export class FiltersModal extends BlazeComponent {
 
   handleColumnChange(e) {
     this.updateColumn(...jQueryData(e, "group", "id"), $(e.currentTarget).val());
+  }
+
+  handleOpenFiltersModalClick(e) {
+    const filter = this.getFilter(...jQueryData(e, "group", "id"));
+    if(_.isFunction(filter.triggerOpenFiltersModal)) {
+      $('#dynamicTableFiltersModal').on('hidden.bs.modal', function (e) {
+        $(e.currentTarget).unbind();
+        filter.triggerOpenFiltersModal();
+      });
+      $("#dynamicTableFiltersModal").modal("hide");
+    }
   }
 
   handleAddFilterGroupClick() {
@@ -245,10 +269,17 @@ export class FiltersModal extends BlazeComponent {
     });
     let newFilter = {
       $or: filterGroups.filter(filterGroup => filterGroup.filters && filterGroup.filters.length).map(filterGroup => {
-        return filterGroup.filters.length == 1 && filterGroups.length == 1 ? filterGroup.filters[0].query : {
-          $and: filterGroup.filters.filter(filter => !filter.disabled).map(filter => filter.query)
+
+        // If the query has multiple fields, it should be in an $or group.
+        const filters = filterGroup.filters.filter(filter => !filter.disabled)
+          .map(filter => filter.query.length && filter.query.length > 1 ? {$or: filter.query} : filter.query);
+        if(!filters.length) {
+          return undefined;
+        }
+        return filters.length == 1 ? filters[0] : {
+          $and: filters
         };
-      })
+      }).filter(filterGroup => filterGroup)
     };
 
     // Original format for filtering.
@@ -260,62 +291,30 @@ export class FiltersModal extends BlazeComponent {
     $("#dynamicTableFiltersModal").modal("hide");
   }
 
-  formatQuery(query) {
+  loadQuery(filter, parentFilters) {
 
-    // Original format for filtering.
-    if(!query.$or && !query.$and) {
-      query = {
-        $or: [{
-          $and: [query]
-        }]
-      }
-    } else if(!query.$or) {
-      query = {
-        $or: [query]
-      }
-    }
+    let filterGroups = [];
 
-    return query;
-  }
+    // If any parent filters are present, the user can never add extra OR groups
+    if(parentFilters && parentFilters.length) {
+      filterGroups = this.formatQueries(filterGroups, true, ...parentFilters);
 
-  loadQuery(query, parentQuery) {
-
-    query = this.formatQuery(query);
-    let parentFilters = [];
-    
-    if(parentQuery) {
-      parentQuery = this.formatQuery(parentQuery);
-
-      if(parentQuery.$or.length == 1 && parentQuery.$or[0].$and.length) {
-        parentFilters = parentQuery.$or[0].$and;
+      // If there's one filter group, disable OR groups, if there's more, disable AND groups.
+      if(filterGroups.length) {
+        this.disableOrGroups.set(true);
+      } 
+      
+      if(filterGroups.length > 1) {
+        this.disableAndGroups.set(true);
       }
     }
 
-    const filterGroups = [];
+    filterGroups = this.formatQueries(filterGroups || [], false, filter)
 
-    query.$or.forEach((queryOrGroup, i) => {
-      if(queryOrGroup.$and) {
-        const filters = [];
-        if(i == 0) {
-          parentFilters.forEach(query => {
-            newFilter = this.fromQuery(query, true);
-            if(newFilter) {
-              filters.push(newFilter);
-            }
-          });
-        }
-        queryOrGroup.$and.forEach(query => {
-          newFilter = this.fromQuery(query, false);
-          if(newFilter) {
-            filters.push(newFilter);
-          }
-        });
-        if(filters.length) {
-          filterGroups.push(filters);
-        }
-      }
-    });
-
+    // The final step of creating the filter groups is to resolve all the options, which is an asynchronous process.
+    // Because the filter groups aren't updated until the options for all its filters are resolved, we need to make
+    // sure that the promises for each filter group being created are done sequentially as the ids used for the filter
+    // groups are dependant on the previous groups that were created.
     const sequencePromises = (items, promiseFunc, i = 0) => {
       if(i < items.length) {
         promiseFunc(items[i]).then(() => sequencePromises(items, val => promiseFunc(val), i+1));
@@ -325,17 +324,62 @@ export class FiltersModal extends BlazeComponent {
     sequencePromises(filterGroups, val => this.addFilterGroup(val));
   }
 
+  // Formats the queries within the filters and returns a list of filter groups and filters
+  // which contain the arguments used by methods that create values used by the filters modal.
+  formatQueries(filterGroups, isParent, ...filters) {
+
+    // filterGroups is passed in here because the filters that get created can be placed in the
+    // proper OR group when created. E.i. if there's multiple parent filters, all their queries will appear
+    // in the first filter group.
+
+    if(filters && filters.length) {
+      filters.forEach(item => {
+
+        // Ensures there's always an $or level and $and level.
+        query = formatQuery(item.query);
+        query.$or.forEach((queryAndGroup, i) => {
+          if(queryAndGroup.$and.length) {
+            // Format these filters into objects this modal can interpret. Sometimes, there's nested $or groups.
+            const filters = _.uniq(queryAndGroup.$and.flatMap(query => query.$or ? query.$or : [query]).map(query => 
+              this.fromQuery(query, isParent)).filter(filter => !_.isUndefined(filter)), filter => filter.column.id);
+
+            if(filters.length) {
+
+              // Only set the parent filters modal link for the first filter of the first filter group.
+              if(isParent && i == 0) {
+                // Apply the label and callback to the first filter item so it appears once for a set of filters at the beginning.
+                filters[0].label = item.label;
+                filters[0].triggerOpenFiltersModal = item.triggerOpenFiltersModal;
+              }
+              if(!filterGroups[i]) {
+                filterGroups[i] = []
+              }
+              filterGroups[i] = filterGroups[i].concat(filters);
+            }
+          }
+        });
+      });
+    }
+
+    return filterGroups;
+  }
+
   toQuery(operator, options) {
     query = {};
     let currentItem = query;
     let index;
     let value = options;
-    if(this.requiresNoValue(operator)) {
-      value = true;
-    }
+
     if(operator.singleValue) {
       value = value[0] || "";
     }
+    if(_.contains(operator.operators, "$exists")) {
+      value = true;
+    }
+    if(_.contains(operator.operators, "$regex")) {
+      value = `^${value[0] || ""}`;
+    }
+
     operator.operators.forEach((val, i) => {
       currentItem[val] = i == operator.operators.length - 1 ? value : {};
       currentItem = currentItem[val];
@@ -363,8 +407,14 @@ export class FiltersModal extends BlazeComponent {
         }
       }
 
-      const column = this.columns.find(val => val.data === columnId || 
-        (val.filterModal && val.filterModal.field && val.filterModal.field.name === columnId));
+      // The unique identifier for distinguishing which operator is being used is a combination
+      // of the order of operators and the column type. This is why "not exists" operator is a combination of $not and $exists
+      // instead of just $exists: false so it's distinguishable from "exists" and it can be resolved without adding a special case
+      // to check the value if the operator is $exists: true or $exists: false.
+      const column = this.columns.find(val => _.contains(this.getColumnFields(val), columnId));
+      if(_.contains(operators, "$regex")) {
+        query = query.substr(1);
+      }
       const selectedOptions = [].concat(query);
 
       if(column) {
@@ -374,13 +424,40 @@ export class FiltersModal extends BlazeComponent {
           return {
             column,
             operator,
+
+            // We want to keep track of the operators list (which is just the combination of values like [$not, $in] from the original query)
+            // because there's cases where the type is marked as String, 
+            // for example, but once the options are resolved (which can be asynchronous), it could end up
+            // being an Array instead if a list of options are returned. 
+            // At that point the operators list is needed to find the proper operator.
             operators,
             selectedOptions,
+
+            // This value is used when the filter comes from a parent filter. The user would need to open the parent filters modal to change that filter's value.
             disabled
           }
         }
       }
     }
+  }
+
+  getColumnFields(column) {
+    const results = [column.data];
+
+    if(column.filterModal && column.filterModal.field && column.filterModal.field.name) {
+      results.push(column.filterModal.field.name);
+    }
+
+    if(_.isFunction(column.search)) {
+
+      // Use the search function of the column to find any fields that get produced when creating a query.
+      // They'll be used to identify fields in a query that were previously produced from this search function.
+      // Also, it's possible for the search function to return multiple objects with different fields.
+      const searchResult = [].concat(column.search());
+      results.push(...searchResult.flatMap(item => _.keys(item)));
+    }
+
+    return results;
   }
 
   isAnOperator(key) {
@@ -443,14 +520,20 @@ export class FiltersModal extends BlazeComponent {
   }
 
   isControlDisabled(filter) {
-    return !filter.operator || this.requiresNoValue(filter.operator) ? "disabled" : "";
+    return !filter.operator || _.contains(filter.operator.operators, "$exists") ? "disabled" : "";
   }
 
   isFilterDisabled(filter) {
     return filter.disabled ? "disabled" : "";
   }
 
-  createFilter(id, column, type, operator, selectedOptions, operators, disabled = false) {
+  createFilter(id, column, type, operator, selectedOptions, operators, disabled = false, triggerOpenFiltersModal, label) {
+
+    // Remove selected options if the filter doesn't require any selected value.
+    if(_.contains(operator && operator.operators || {}, "$exists")) {
+      selectedOptions = [];
+    }
+
     return {
       _id: `${id}`,
       id: id,
@@ -459,7 +542,11 @@ export class FiltersModal extends BlazeComponent {
       operator,
       selectedOptions,
       operators,
-      disabled
+
+      // These fields are used for parent filters.
+      disabled,
+      triggerOpenFiltersModal,
+      label
     };
   }
 
@@ -531,7 +618,7 @@ export class FiltersModal extends BlazeComponent {
               });
             }
 
-            // Possible for options to affect possible operators so update those
+            // Possible for options to affect possible operators so update those.
             if(filter.operators) {
               filter.operator = this.getOperators(filter.type).find(val => arraysEqual(val.operators, filter.operators))
             }
@@ -539,6 +626,7 @@ export class FiltersModal extends BlazeComponent {
           resolve(filter);
         }
 
+        // There's multiple ways for the options to appear in the column, the logic below should cover every case.
         const options = filter.column.filterModal.options;
         const initSearch = filter.selectedOptions &&
           !_.isArray(filter.selectedOptions) &&
@@ -569,15 +657,11 @@ export class FiltersModal extends BlazeComponent {
     }
   }
 
-  requiresNoValue(operator) {
-    return _.contains([opMap.empty, opMap.notEmpty], operator);
-  }
-
   updateOperator(groupId, id, operatorId) {
     const filter = this.getFilter(groupId, id);
     if (filter) {
       filter.operator = opMap[operatorId];
-      if(this.requiresNoValue(filter.operator)) {
+      if(_.contains(filter.operator.operators, "$exists")) {
         filter.selectedOptions = [];
       }
       this.setFilter(groupId, id, filter)
@@ -597,10 +681,17 @@ export class FiltersModal extends BlazeComponent {
     }
   }
 
+  getFilterLabel() {
+    return this.label;
+  }
+
   getFiltersData(groupId) {
     const filters = this.getFilters(groupId);
     if (filters) {
       const usedColumns = filters.filter(filter => filter.column.data).map(filter => filter.column.data);
+
+      // Takes the original list of filters and includes a list of columns the filters can choose from.
+      // This list changes as the user changes other filters, so it needs to be reactive to that.
       return filters.map(filter => _.extend({}, filter, {
         columns: this.columns.filter(column => !usedColumns.includes(column.data) || column.data === filter.column.data)
       }));
@@ -624,6 +715,7 @@ export class FiltersModal extends BlazeComponent {
     return typeMap.find(value => [].concat(value.type).includes(type)).operators;
   }
 
+  // Returns objects that the select list for options uses.
   getOperatorOptions(groupId, id) {
     const filter = this.getFilter(groupId, id);
     if(filter) {
@@ -639,6 +731,8 @@ export class FiltersModal extends BlazeComponent {
     return [];
   }
 
+  // The following getFilters, getFilter, setFilters and setFilter are the only methods that make changes to
+  // the filters of their filter groups
   getFilters(groupId) {
     const filterGroups = this.filterGroups.get().find(val => val.id === groupId);
     return filterGroups && filterGroups.filters;
@@ -666,7 +760,11 @@ export class FiltersModal extends BlazeComponent {
 
   canAddFilters(groupId) {
     const filters = this.getFilters(groupId);
-    return filters && this.columns.length > filters.length;
+    return filters && this.columns.length > filters.length && !this.disableAndGroups.get();
+  }
+
+  canAddFilterGroups() {
+    return !this.disableOrGroups.get();
   }
 
   getFilterGroups() {
@@ -678,7 +776,7 @@ export class FiltersModal extends BlazeComponent {
   }
 
   requiresDelimiter(items, id) {
-    return items.findIndex(val => val.id === id) < items.length - 1;
+    return items.findIndex(val => val.id === id) > 0;
   }
 
   addFilterGroup(filters) {
@@ -704,7 +802,9 @@ export class FiltersModal extends BlazeComponent {
             filter.operator, 
             filter.selectedOptions,
             filter.operators, 
-            filter.disabled
+            filter.disabled,
+            filter.triggerOpenFiltersModal,
+            filter.label
           )));
         });
         Promise.all(promises).then(filters => {
@@ -723,8 +823,17 @@ export class FiltersModal extends BlazeComponent {
   }
 
   updateSelect2Components() {
+    
+    // Using this method instead of the select2 template gives more control over when the select2
+    // components are refreshed when the options of a specific filter change.
     const filterGroups = this.filterGroups.get();
     const components = $(".dynamic-table-filters-select2");
+
+    // We only want to refresh the select2 components when the expected count of filters
+    // using the select2 components matches the count we find from the jQuery results.
+    // If this is being called, we know that the select2 components need to be refreshed,
+    // but we need to wait for the page to render the components before we initialize them
+    // as select2 components or else some components will get rendered after the logic below.
     if(components.length == filterGroups.flatMap(filterGroup => filterGroup.filters)
       .filter(filter => filter.options && filter.options.length).length) {
         [...components].forEach(val => {
@@ -753,6 +862,8 @@ export class FiltersModal extends BlazeComponent {
           }
         });
     } else {
+
+      // We know the select2 components need to be refreshed so defer and try again.
       Meteor.defer(() => this.updateSelect2Components());
     }
   }
@@ -780,16 +891,22 @@ export class FiltersModal extends BlazeComponent {
   }
 
   init() {
-    this.filterGroups = new ReactiveVar([]);
-    
-    const { columns, collection, triggerUpdateFilter, filter, parentFilter } = 
-      this.nonReactiveData("columns", "collection", "triggerUpdateFilter", "filter", "parentFilter");
 
+    // The filterGroups variable pretty much handles all reactivity for the modal.
+    this.filterGroups = new ReactiveVar([]);
+    this.disableOrGroups = new ReactiveVar(false);
+    this.disableAndGroups = new ReactiveVar(false);
+    
+    const { columns, collection, triggerUpdateFilter, filter, parentFilters } = 
+      this.nonReactiveData("columns", "collection", "triggerUpdateFilter", "filter", "parentFilters");
+
+    // All of these values shouldn't change while the modal is open so they don't need to be reactive.
     this.columns = columns.filter(column => column && column.filterModal);
     this.collection = collection;
     this.triggerUpdateFilter = triggerUpdateFilter;
+    this.label = filter.label;
 
-    this.loadQuery(filter, parentFilter);
+    this.loadQuery(filter, parentFilters);
   }
 }
 BlazeComponent.register(Template.dynamicTableFiltersModal, FiltersModal);

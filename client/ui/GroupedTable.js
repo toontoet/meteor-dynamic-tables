@@ -14,16 +14,18 @@ function openFiltersModal(templateInstance) {
   Modal.show("dynamicTableFiltersModal", {
     collection: table.collection,
     columns: table.columns,
-    filter: templateInstance.parentFilter.get().filter || {},
-    triggerUpdateFilter: (newFilter) => {
-      templateInstance.parentFilter.set(newFilter);
-      changed(templateInstance.data.custom, tableId, { newFilter });
+    filter: templateInstance.parentFilter.get() || {},
+    triggerUpdateFilter: (newQuery) => {
+      const currentFilter = templateInstance.parentFilter.get();
+      currentFilter.query = newQuery;
+      templateInstance.parentFilter.set(currentFilter);
+      changed(templateInstance.data.custom, tableId, { newFilter: newQuery });
     }
   });
 }
 
 /** @this = template instance */
-function getRootSelector(currentSelector, search, advancedSearch, parentFilter) {
+function getRootSelector(currentSelector, search, advancedSearch) {
   const selector = _.extend({}, currentSelector)
   const data = this.data;
   let searchSelector;
@@ -46,7 +48,7 @@ function getRootSelector(currentSelector, search, advancedSearch, parentFilter) 
     });
   }
 
-  const $and = [selector, searchSelector, advancedSearch, parentFilter && parentFilter.filter].filter(s => s && _.keys(s).length);
+  const $and = [selector, searchSelector, advancedSearch].filter(s => s && _.keys(s).length);
   return $and.length > 1 ? { $and } : $and[0] || {};
 }
 
@@ -100,8 +102,9 @@ Template.GroupedTable.onCreated(function onCreated() {
       }
       if(custom.filter) {
         this.parentFilter.set({
-          filter: JSON.parse(custom.filter),
-          triggerOpenFilters: () => openFiltersModal(this)
+          label: "Top Level",
+          query: JSON.parse(custom.filter) || {},
+          triggerOpenFiltersModal: () => openFiltersModal(this)
         });
       }
     });
@@ -136,8 +139,7 @@ Template.GroupedTable.helpers({
     const templInstance = Template.instance();
     const search = templInstance.search.get();
     const advancedSearch =  templInstance.advancedSearch.get();
-    const parentFilter = templInstance.parentFilter.get();
-    const selector = getRootSelector.call(templInstance, this.selector, search, advancedSearch, parentFilter);
+    const selector = getRootSelector.call(templInstance, this.selector, search, advancedSearch);
     return selector;
   },
   expandAll() {
@@ -167,7 +169,7 @@ Template.GroupedTable.helpers({
     return Template.instance().orders.get();
   },
   filters() {
-    return _.keys(Template.instance().parentFilter.get() || {}).length;
+    return _.keys(Template.instance().parentFilter.get().query || {}).length;
   },
   columns() {
     return Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id }));
@@ -204,8 +206,8 @@ Template.GroupedTable.helpers({
     }
     return false;
   },
-  parentFilter() {
-    return Template.instance().parentFilter.get();
+  parentFilters() {
+    return [Template.instance().parentFilter.get()];
   }
 });
 
