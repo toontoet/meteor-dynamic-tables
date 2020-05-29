@@ -14,6 +14,7 @@ function filterColumns(columns, selectedColumnDataOrIds) {
 Template.CustomizableTable.onCreated(function onCreated() {
   this.advancedFilter = new ReactiveVar();
   this.parentFilters = new ReactiveVar(this.data.parentFilters);
+  this.updateCurrentFilter = this.data.updateCurrentFilter;
   this.limit = new ReactiveVar(this.data.table.pageLength || 25);
   this.skip = new ReactiveVar(0);
   this.fnReorderCallback = () => {
@@ -171,6 +172,11 @@ Template.CustomizableTable.helpers({
           }
         }
       }
+
+      if(_.isFunction(this.updateCurrentFilter)) {
+        this.updateCurrentFilter(newFilter);
+      }
+
       changed(templInstance.data.custom, templInstance.data.id, { newColumns: Tracker.nonreactive(() => templInstance.selectedColumns.get()), newFilter, newOrder });
     };
   },

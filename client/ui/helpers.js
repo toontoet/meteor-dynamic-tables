@@ -30,6 +30,11 @@ export function arraysEqual(arrayA, arrayB) {
   return _.isEqual(_.sortBy(arrayA), _.sortBy(arrayB));
 }
 
+// Returns true if the elements of arrayB are in arrayA.
+export function arrayContains(arrayA, arrayB) {
+  return arrayB.filter(element => _.contains(arrayA, element)).length === arrayB.length;
+}
+
 // Ensures there's always an $or and $and object in a query.
 export function formatQuery(query) {
 
@@ -142,4 +147,41 @@ export function getTableIdSuffix(value) {
     nextParts.push(nextSuffix);
   }
   return nextParts.join("");
+}
+
+// Given a column, find all the fields affected by it.
+export function getColumnFields(column) {
+  const results = [column.data];
+
+  if(column.filterModal && column.filterModal.field && column.filterModal.field.name) {
+    results.push(column.filterModal.field.name);
+  }
+
+  if(_.isFunction(column.search)) {
+
+    // Use the search function of the column to find any fields that get produced when creating a query.
+    // They'll be used to identify fields in a query that were previously produced from this search function.
+    // Also, it's possible for the search function to return multiple objects with different fields.
+    // This makes the assumption a search function returns unique field names.
+    const searchResult = [].concat(column.search());
+    results.push(...searchResult.flatMap(item => _.keys(item)));
+  }
+
+  return results;
+}
+
+// Gets used fields for a query.
+export function getFields(...values) {
+  let results = [];
+  values.forEach(value => {
+    const keys = _.keys(value || {});
+    keys.forEach(key => {
+      if(_.contains(["$and", "$or"], key)) {
+        results = results.concat(getFields(...[].concat(value[key])));
+      } else {
+        results.push(key);
+      }
+    });
+  });
+  return results;
 }

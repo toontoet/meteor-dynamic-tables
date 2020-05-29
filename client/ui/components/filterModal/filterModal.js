@@ -57,6 +57,7 @@ export class FilterModal extends BlazeComponent {
       "isBoolean",
       "isSelected",
       "isControlDisabledForParent",
+      "shouldShowControl",
 
       "curIsParentFilter",
       "curParentFilterLabel",
@@ -380,11 +381,16 @@ export class FilterModal extends BlazeComponent {
 
   hasOptions() {
     if (this.asyncOptions.get()) {
-      return true;
+      return !this.isParentFilter.get();
     }
 
     const options = this.allOptions.get();
     return options && options.length && !this.isParentFilter.get();
+  }
+
+  shouldShowControl() {
+    const searchValue = this.searchValue();
+    return !this.isParentFilter.get() || searchValue && searchValue.length;
   }
 
   getOptions() {
@@ -409,7 +415,7 @@ export class FilterModal extends BlazeComponent {
   }
 
   curShowOperators() {
-    return this.showOperators.get() || this.isParentFilter.get();
+    return this.showOperators.get() || (this.isParentFilter.get() && !this.isMultiOrGroup.get());
   }
 
   curSearching() {
@@ -559,6 +565,7 @@ export class FilterModal extends BlazeComponent {
     this.asyncOptions = new ReactiveVar(false);
     this.operator = new ReactiveVar(null);
     this.isParentFilter = new ReactiveVar(false);
+    this.isMultiOrGroup = new ReactiveVar(false);
     this.parentFilterLabel = new ReactiveVar(null);
     this.triggerOpenFiltersModal = new ReactiveVar(null);
 
@@ -571,6 +578,12 @@ export class FilterModal extends BlazeComponent {
         this.isParentFilter.set(true);
         this.parentFilterLabel.set(data.parentFilterData.label);
         this.triggerOpenFiltersModal.set(data.parentFilterData.triggerOpenFiltersModal);
+
+        // If this is a filter with multiple OR groups, just return and do nothing.
+        if(data.parentFilterData.isMultiOrGroup) {
+          this.isMultiOrGroup.set(true);
+          return;
+        }
       }
 
       this.editableField.set(data.field && data.field.edit && data.field.edit.spec);

@@ -1,5 +1,5 @@
 import { BlazeComponent } from "meteor/znewsham:blaze-component";
-import { nextId, jQueryData, arraysEqual, formatQuery } from "../../helpers.js";
+import { nextId, jQueryData, arraysEqual, formatQuery, getColumnFields } from "../../helpers.js";
 import { changed } from "../../../inlineSave.js";
 
 import "./filtersModal.html";
@@ -88,11 +88,6 @@ const opMap = {
     id: "contains",
     label: "is...",
     operators: ["$regex"]
-  },
-  notContains: {
-    id: "notContains",
-    label: "is not...",
-    operators: ["$not", "$regex"]
   }
 };
 
@@ -112,7 +107,7 @@ const typeMap = [
     type: [String],
     operators: [
       opMap.contains,
-      opMap.notContains,
+      opMap.notAll,
       opMap.empty,
       opMap.notEmpty
     ]
@@ -276,7 +271,10 @@ export class FiltersModal extends BlazeComponent {
         if(!filters.length) {
           return undefined;
         }
-        return filters.length == 1 ? filters[0] : {
+
+        // If there's a nested OR group for a single field, wrap it in an AND group
+        // to avoid being interpreted by the filters modal as an actual OR group.
+        return filters.length == 1 && !filters[0].$or ? filters[0] : {
           $and: filters
         };
       }).filter(filterGroup => filterGroup)
@@ -411,7 +409,7 @@ export class FiltersModal extends BlazeComponent {
       // of the order of operators and the column type. This is why "not exists" operator is a combination of $not and $exists
       // instead of just $exists: false so it's distinguishable from "exists" and it can be resolved without adding a special case
       // to check the value if the operator is $exists: true or $exists: false.
-      const column = this.columns.find(val => _.contains(this.getColumnFields(val), columnId));
+      const column = this.columns.find(val => _.contains(getColumnFields(val), columnId));
       if(_.contains(operators, "$regex")) {
         query = query.substr(1);
       }
@@ -439,25 +437,6 @@ export class FiltersModal extends BlazeComponent {
         }
       }
     }
-  }
-
-  getColumnFields(column) {
-    const results = [column.data];
-
-    if(column.filterModal && column.filterModal.field && column.filterModal.field.name) {
-      results.push(column.filterModal.field.name);
-    }
-
-    if(_.isFunction(column.search)) {
-
-      // Use the search function of the column to find any fields that get produced when creating a query.
-      // They'll be used to identify fields in a query that were previously produced from this search function.
-      // Also, it's possible for the search function to return multiple objects with different fields.
-      const searchResult = [].concat(column.search());
-      results.push(...searchResult.flatMap(item => _.keys(item)));
-    }
-
-    return results;
   }
 
   isAnOperator(key) {
