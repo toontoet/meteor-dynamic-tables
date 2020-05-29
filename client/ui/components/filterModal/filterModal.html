@@ -52,7 +52,7 @@
           </section>
         {{/if}}
         {{#if searchEnabled}}
-          <section class="dynamic-table-filter-search">
+        <section class="dynamic-table-filter-search" style="{{#unless shouldShowControl}}display: none{{/unless}}">
             {{#if isStringOrCustom}}
               <input {{isControlDisabledForParent}} type="text" class="input-dynamic-table-search" placeholder="{{#if hasOptions}}Search values...{{else}}Search...{{/if}}" value="{{filter.search.value}}" />
               {{#if filter.operator.enabled}}
@@ -73,7 +73,9 @@
               <!-- <label>Date</label> -->
               <input {{isControlDisabledForParent}} type="date" class="input-dynamic-table-search" placeholder="Date..." value="{{dateValue}}" />
               {{#if filter.operator.enabled}}
-                <i class="fa fa-cog"></i>
+                {{#unless curIsParentFilter}}
+                  <i class="fa fa-cog"></i>
+                {{/unless}}
               {{/if}}
             {{/if}}
             {{#if isTime}}
@@ -157,7 +159,9 @@
             <span class="btn-dynamic-table-remove"><i class="fa fa-eye-slash"></i> Hide Column</span>
           {{/unless}}
           {{#if filter.enabled}}
-            <span class="btn-dynamic-table-clear"><i class="fa fa-times"></i> Clear</span>
+            {{#unless curIsParentFilter}}
+              <span class="btn-dynamic-table-clear"><i class="fa fa-times"></i> Clear</span>
+            {{/unless}}
           {{/if}}
         {{/if}}
       </footer>

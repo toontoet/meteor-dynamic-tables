@@ -455,6 +455,10 @@ Template.dynamicTableGroup.helpers({
         selector: newSelector,
         parentFilters,
         currentFilter: currentFilter.query,
+        updateCurrentFilter: newFilter => {
+          currentFilter.query = newFilter;
+          templInstance.currentFilters.set(value.tableId, currentFilter)
+        },
         id: value.tableId,
         orders: templInstance.nestedOrder.get(value.tableId) || templInstance.orders.get(),
         selectedColumns: templInstance.nestedColumns.get(value.tableId) || templInstance.columns.get(),

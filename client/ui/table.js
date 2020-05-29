@@ -652,7 +652,7 @@ Template.DynamicTable.onRendered(function onRendered() {
     const advancedSearch = templateInstance.advancedSearch.get();
 
     // Make sure we're only including filters that actually do something, no empty {} filters
-    const parentFilters = templateInstance.parentFilters.get().filter(filter => _.keys(filter.query || {}).length);
+    const parentFilters = (templateInstance.parentFilters.get() || []).filter(filter => _.keys(filter.query || {}).length);
 
     const queryElements = [querySelector];
     if(_.keys(advancedSearch || {}).length) {
