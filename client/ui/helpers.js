@@ -163,7 +163,7 @@ export function getColumnFields(column) {
     // They'll be used to identify fields in a query that were previously produced from this search function.
     // Also, it's possible for the search function to return multiple objects with different fields.
     // This makes the assumption a search function returns unique field names.
-    const searchResult = [].concat(column.search());
+    const searchResult = [].concat(column.search({}));
     results.push(...searchResult.flatMap(item => _.keys(item)));
   }
 
