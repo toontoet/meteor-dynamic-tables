@@ -24,43 +24,44 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
     const parentAdvancedSearch = { $and: [{}] };
 
     // Add parent filter queries to advanced search.
-    parentFilters.forEach(filter => {
+    if(parentFilters) {
+      parentFilters.forEach(filter => {
 
-      // Make the structure of the query consistent
-      const query = formatQuery(filter.query);
+        // Make the structure of the query consistent
+        const query = formatQuery(filter.query);
 
-      if(query.$or.length > 1) {
-        this.parentFilterData = {
-          label: filter.label,
-          triggerOpenFiltersModal: filter.triggerOpenFiltersModal,
-          isMultiOrGroup: true
+        if(query.$or.length > 1) {
+          this.parentFilterData = {
+            label: filter.label,
+            triggerOpenFiltersModal: filter.triggerOpenFiltersModal,
+            isMultiOrGroup: true
+          }
         }
-      }
 
-      query.$or.forEach(queryOrGroup => {
-        queryOrGroup.$and.forEach(queryAndGroup => {
+        query.$or.forEach(queryOrGroup => {
+          queryOrGroup.$and.forEach(queryAndGroup => {
 
-          const currentFields = getFields(queryAndGroup);
-          
-          // If the current query condition has the same fields as the fields from the column,
-          // or there's multiple $or groups, use the parent's information in the filter modal.
-          if(currentFields.length && arrayContains(fields, currentFields)) {
+            const currentFields = getFields(queryAndGroup);
+            
+            // If the current query condition has the same fields as the fields from the column,
+            // or there's multiple $or groups, use the parent's information in the filter modal.
+            if(currentFields.length && arrayContains(fields, currentFields)) {
 
-            // We can marked this filter as active if there's a column affected by the parent filter.
-            this.hasParentFilter = true;
-            if(!this.parentFilterData) {
-              this.parentFilterData = {
-                label: filter.label,
-                triggerOpenFiltersModal: filter.triggerOpenFiltersModal,
-                isMultiOrGroup: false
+              // We can marked this filter as active if there's a column affected by the parent filter.
+              this.hasParentFilter = true;
+              if(!this.parentFilterData) {
+                this.parentFilterData = {
+                  label: filter.label,
+                  triggerOpenFiltersModal: filter.triggerOpenFiltersModal,
+                  isMultiOrGroup: false
+                }
               }
             }
-          }
-          _.extend(parentAdvancedSearch.$and[0], queryAndGroup);
+            _.extend(parentAdvancedSearch.$and[0], queryAndGroup);
+          });
         });
       });
-    });
-
+    }
     this.parentAdvancedSearch.set(parentAdvancedSearch);
   });
   if (this.data.column.title) {
