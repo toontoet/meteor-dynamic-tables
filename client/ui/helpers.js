@@ -38,6 +38,10 @@ export function arrayContains(arrayA, arrayB) {
 // Ensures there's always an $or and $and object in a query.
 export function formatQuery(query) {
 
+  if(!query) {
+    query = {};
+  }
+
   // This method just ensures that the data has a consistent
   // structure so there aren't multiple cases when working with the queries.
 
