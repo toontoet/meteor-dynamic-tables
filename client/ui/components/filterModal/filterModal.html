@@ -121,6 +121,8 @@
                     {{/if}}
                   {{/if}}
                 {{/if}}
+                <option value="$exists" {{checkedIfNotEmptyValue}}>not empty</option>
+                <option value="$not$exists" {{checkedIfEmptyValue}}>empty</option>
               </select>
             </section>
           {{/if}}
