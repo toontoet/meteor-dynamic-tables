@@ -333,7 +333,7 @@ export class FiltersModal extends BlazeComponent {
               // If a field is an OR group, (like in the case of name), we want to flatten those nested fields.
               // If it's not, we don't want any changes to the field so we can just stick the query in an array
               // and have it flattened as well.
-              query.$or ? query.$or : [query]
+              return query.$or ? query.$or : [query];
             }).map(query => 
               this.fromQuery(query, isParent)).filter(filter => !_.isUndefined(filter)), filter => filter.column.data);
 

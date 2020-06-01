@@ -13,7 +13,7 @@ function openFiltersModal(templateInstance, tableId) {
   const customTableSpec = templateInstance.data.customTableSpec;
   Modal.show("dynamicTableFiltersModal", {
     collection: customTableSpec.table.collection,
-    columns: templateInstance.data.columns(),
+    columns: _.isFunction(templateInstance.data.columns) ? templateInstance.data.columns() : customTableSpec.columns(),
     filter: templateInstance.currentFilters.get(tableId),
     parentFilters: templateInstance.parentFilters.get(),
     triggerUpdateFilter: newQuery => {
