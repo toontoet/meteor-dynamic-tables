@@ -13,7 +13,7 @@ function openFiltersModal(templateInstance) {
 
   Modal.show("dynamicTableFiltersModal", {
     collection: table.collection,
-    columns: table.columns,
+    columns: templateInstance.data.columns(),
     filter: templateInstance.parentFilter.get() || {},
     triggerUpdateFilter: (newQuery) => {
       const currentFilter = templateInstance.parentFilter.get();
@@ -178,12 +178,19 @@ Template.GroupedTable.helpers({
     const templInstance = Template.instance();
     const search = templInstance.search.get();
     const advancedSearch =  templInstance.advancedSearch.get();
+    const parentFilter = templInstance.parentFilter.get();
     const selector = getRootSelector.call(templInstance, this.selector, search, advancedSearch);
     return _.extend(
       {},
       this,
       {
         selector,
+        parentFilters: [parentFilter],
+        currentFilter: parentFilter.query,
+        updateCurrentFilter: newFilter => {
+          parentFilter.query = newFilter;
+          templInstance.parentFilter.set(parentFilter);
+        },
         hasContext: true, // letting customizableTable know that it will pass custom table spec data
         orders: templInstance.orders.get(),
         selectedColumns: templInstance.customColumns.get().map(c => ({ data: c.data, id: c.id })),

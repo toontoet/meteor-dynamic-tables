@@ -13,7 +13,7 @@ function openFiltersModal(templateInstance, tableId) {
   const customTableSpec = templateInstance.data.customTableSpec;
   Modal.show("dynamicTableFiltersModal", {
     collection: customTableSpec.table.collection,
-    columns: customTableSpec.table.columns,
+    columns: templateInstance.data.columns(),
     filter: templateInstance.currentFilters.get(tableId),
     parentFilters: templateInstance.parentFilters.get(),
     triggerUpdateFilter: newQuery => {
@@ -37,7 +37,7 @@ function isFilterValid(templateInstance, filter) {
     const parentFilter = parentFilters[i];
 
     // No filter is valid if its parent has multiple OR groups.
-    if(parentFilter.query.$or && parentFilter.query.$or.length > 1) {
+    if(parentFilter.query && parentFilter.query.$or && parentFilter.query.$or.length > 1) {
       return false;
     }
 
@@ -457,7 +457,7 @@ Template.dynamicTableGroup.helpers({
         currentFilter: currentFilter.query,
         updateCurrentFilter: newFilter => {
           currentFilter.query = newFilter;
-          templInstance.currentFilters.set(value.tableId, currentFilter)
+          templInstance.currentFilters.set(value.tableId, currentFilter);
         },
         id: value.tableId,
         orders: templInstance.nestedOrder.get(value.tableId) || templInstance.orders.get(),
