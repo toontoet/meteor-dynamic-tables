@@ -46,6 +46,8 @@ export class FilterModal extends BlazeComponent {
       "checkedIfLteValue",
       "checkedIfWithoutValue",
       "checkedIfWithoutAllValue",
+      "checkedIfEmptyValue",
+      "checkedIfNotEmptyValue",
 
       "isNumericOrDate",
       "isNumericOrDateAndNoOptions",
@@ -163,6 +165,10 @@ export class FilterModal extends BlazeComponent {
         operator = "$not";
       }
     }
+    if (!!~operator.indexOf("$exists")) {
+      this.search.set(true);
+      this.selectedOptions.set([]);
+    }
     this.operator.set(operator);
   }
 
@@ -261,6 +267,16 @@ export class FilterModal extends BlazeComponent {
   checkedIfWithoutAllValue() {
     const { filter } = this.nonReactiveData("filter");
     return ["$not$all"].includes(filter.operator.selected) ? { selected: "selected" } : {};
+  }
+
+  checkedIfNotEmptyValue() {
+    const { filter } = this.nonReactiveData("filter");
+    return ["$exists"].includes(filter.operator.selected) ? { selected: "selected" } : {};
+  }
+
+  checkedIfEmptyValue() {
+    const { filter } = this.nonReactiveData("filter");
+    return ["$not$exists"].includes(filter.operator.selected) ? { selected: "selected" } : {};
   }
 
   checkedIf(valA, valB) {
@@ -381,16 +397,16 @@ export class FilterModal extends BlazeComponent {
 
   hasOptions() {
     if (this.asyncOptions.get()) {
-      return !this.isParentFilter.get();
+      return !this.isParentFilter.get() && !~this.operator.get().indexOf("$exists");
     }
 
     const options = this.allOptions.get();
-    return options && options.length && !this.isParentFilter.get();
+    return options && options.length && !this.isParentFilter.get() && !~this.operator.get().indexOf("$exists");
   }
 
   shouldShowControl() {
     const searchValue = this.searchValue();
-    return !this.isParentFilter.get() || searchValue && searchValue.length;
+    return (!this.isParentFilter.get() || searchValue && searchValue.length) && !~this.operator.get().indexOf("$exists");
   }
 
   getOptions() {
@@ -475,6 +491,10 @@ export class FilterModal extends BlazeComponent {
         break;
       default:
       }
+    }
+    if (!!~operator.indexOf("$exists")) {
+      this.search.set(true);
+      this.selectedOptions.set([]);
     }
     this.operator.set(operator);
   }

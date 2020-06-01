@@ -137,6 +137,9 @@ Template.dynamicTableHeaderCell.events({
           selectedOptions = columnSearch.$not.$all;
           operator = "$not$all";
         }
+        else if (columnSearch.$not.$exists) {
+          operator = "$not$exists"
+        }
         else {
           searchValue = columnSearch.$not.toString().split("/").join("").slice(1);
         }

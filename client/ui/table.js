@@ -161,7 +161,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
 
   // NOTE: added .length to ensure correctness when disabling all options (e.g., add diagrams modal)
   // NOTE: added optionsOrQuery !== "" so you can clear the search by deleting text, not just clearing.
-  if ((_.isArray(optionsOrQuery) && optionsOrQuery.length) || (optionsOrQuery !== undefined && optionsOrQuery !== "" && !_.isArray(optionsOrQuery))) {
+  if ((_.isArray(optionsOrQuery) && optionsOrQuery.length) || !!~operator.indexOf("$exists") || (optionsOrQuery !== undefined && optionsOrQuery !== "" && !_.isArray(optionsOrQuery))) {
     let newAdvancedSearchField;
     if (operator === "$between") {
       newAdvancedSearchField = {
@@ -173,6 +173,12 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       newAdvancedSearchField = {
         [operator]: optionsOrQuery
       };
+    }
+    else if(operator === "$not$exists") {
+      newAdvancedSearchField = { $not: { $exists: true}};
+    }
+    else if(operator === "$exists") {
+      newAdvancedSearchField = { $exists: true };
     }
     else if (_.isArray(optionsOrQuery) && optionsOrQuery.length) {
       if (operator === "$not$all") {
