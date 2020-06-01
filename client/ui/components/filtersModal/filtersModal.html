@@ -30,13 +30,13 @@
               <div class="dynamic-table-filters-selector-container">
                 <select {{isFilterDisabled filter}} data-id="{{filter.id}}" data-group="{{filterGroup.id}}" class="dynamic-table-filters-column">
                   {{#each column in filter.columns}}
-                    <option value="{{column.id}}" selected="{{#if op column.id '==' filter.column.id}}selected{{/if}}">{{column.title}}</option>
+                    <option value="{{column.data}}" selected="{{#if op column.data '==' filter.column.data}}selected{{/if}}">{{column.title}}</option>
                   {{/each}}
                 </select>
                 <div class="dynamic-table-filters-filter-container">
                   <select {{isFilterDisabled filter}} data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-operator">
                     {{#each operatorOption in (getOperatorOptions filterGroup.id filter.id)}}
-                      <option value="{{operatorOption.value}}" selected="{{#if operatorOption.isSelected}}selected{{/if}}">{{operatorOption.option}}</option>
+                      <option value="{{operatorOption.value}}" selected="{{#if operatorOption.isSelected}}selected{{/if}}">{{operatorOption.label}}</option>
                     {{/each}}
                   </select>
                   <div class="dynamic-table-filters-search-container">
@@ -46,7 +46,7 @@
                           <select {{isFilterDisabled filter}} {{isControlDisabled filter}} data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search dynamic-table-filters-select2" placeholder="Search..." multiple="multiple"></select>
                         </section>
                       {{else}}
-                        <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="text" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Search..." value="{{searchValue filter}}" />
+                        <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="{{#if isNumber filter}}number{{else}}text{{/if}}" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Search..." value="{{searchValue filter}}" />
                       {{/if}}
                     {{/unless}}
                     {{#if isDate filter}}

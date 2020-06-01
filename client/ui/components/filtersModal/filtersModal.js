@@ -249,17 +249,7 @@ export class FiltersModal extends BlazeComponent {
     const filterGroups = this.filterGroups.get();
     filterGroups.forEach(filterGroup => {
       filterGroup.filters.forEach(filter => {
-        filter.query = this.toQuery(filter.operator, filter.selectedOptions);
-        if(filter.column.search) {
-          const toExtend = {};
-          if(filter.column.searchOptions) {
-            toExtend.$options = filter.column.searchOptions;
-          }
-          filter.query = filter.column.search(_.extend({}, filter.query, toExtend), false);
-        } else {
-          const field = (filter.column.filterModal && filter.column.filterModal.field && filter.column.filterModal.field.name) || filter.column.data;
-          filter.query = {[field]: filter.query};
-        }
+        filter.query = this.toQuery(filter);
       });
     });
     let newFilter = {
@@ -338,8 +328,14 @@ export class FiltersModal extends BlazeComponent {
         query.$or.forEach((queryAndGroup, i) => {
           if(queryAndGroup.$and.length) {
             // Format these filters into objects this modal can interpret. Sometimes, there's nested $or groups.
-            const filters = _.uniq(queryAndGroup.$and.flatMap(query => query.$or ? query.$or : [query]).map(query => 
-              this.fromQuery(query, isParent)).filter(filter => !_.isUndefined(filter)), filter => filter.column.id);
+            // Also make sure the returned filters are unique by checking the field it's affecting.
+            const filters = _.uniq(queryAndGroup.$and.flatMap(query => {
+              // If a field is an OR group, (like in the case of name), we want to flatten those nested fields.
+              // If it's not, we don't want any changes to the field so we can just stick the query in an array
+              // and have it flattened as well.
+              query.$or ? query.$or : [query]
+            }).map(query => 
+              this.fromQuery(query, isParent)).filter(filter => !_.isUndefined(filter)), filter => filter.column.data);
 
             if(filters.length) {
 
@@ -362,27 +358,45 @@ export class FiltersModal extends BlazeComponent {
     return filterGroups;
   }
 
-  toQuery(operator, options) {
+  toQuery(filter) {
     query = {};
     let currentItem = query;
     let index;
-    let value = options;
+    let value = filter.selectedOptions;
 
-    if(operator.singleValue) {
+    if(filter.operator.singleValue) {
       value = value[0] || "";
+      if(filter.type === Number) {
+        try {
+          value = parseFloat(value);
+        } catch(e) {
+          // Couldn't parse as a number. This would only happen if the input control was manually changed from a number. Set it to 0.
+          value = 0;
+        }
+      }
     }
-    if(_.contains(operator.operators, "$exists")) {
+    if(_.contains(filter.operator.operators, "$exists")) {
       value = true;
     }
-    if(_.contains(operator.operators, "$regex")) {
+    if(_.contains(filter.operator.operators, "$regex")) {
       value = `^${value[0] || ""}`;
     }
 
-    operator.operators.forEach((val, i) => {
-      currentItem[val] = i == operator.operators.length - 1 ? value : {};
+    filter.operator.operators.forEach((val, i) => {
+      currentItem[val] = i == filter.operator.operators.length - 1 ? value : {};
       currentItem = currentItem[val];
     });
-    return query;
+
+    if(filter.column.search) {
+      const toExtend = {};
+      if(filter.column.searchOptions) {
+        toExtend.$options = filter.column.searchOptions;
+      }
+      return filter.column.search(_.extend({}, query, toExtend), false);
+    } else {
+      const field = (filter.column.filterModal && filter.column.filterModal.field && filter.column.filterModal.field.name) || filter.column.data;
+      return {[field]: query};
+    }
   }
 
   fromQuery(query, disabled) {
@@ -701,7 +715,7 @@ export class FiltersModal extends BlazeComponent {
       const opList = this.getOperators(filter.type);
       if(opList) {
         return opList ? opList.map(operator => ({
-          option: operator.label,
+          label: operator.label,
           value: operator.id,
           isSelected: operator === filter.operator
         })) : [];
@@ -832,7 +846,7 @@ export class FiltersModal extends BlazeComponent {
           const selectedOptions = component.val();
           if(!this.isControlDisabled(filter)) {
             if(!arraysEqual(selectedOptions, filter.selectedOptions)) {
-              component.val(filter.selectedOptions);
+              component.val((filter.selectedOptions || []).map(option => filter.options.find(val => val.value === option || val.label === option).label));
               component.trigger("change");
             }
           } else {
