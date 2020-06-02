@@ -42,8 +42,13 @@ export function formatQuery(query) {
     query = {};
   }
 
-  // If the query has multiple keys, format the query so each field is its own object
-  if(_.keys(query).length > 1) {
+  // Sometimes the query has a single AND field with one item that has all the fields .
+  if(query.$and && query.$and.length == 1) {
+    query = query.$and[0]
+  }
+
+  // If the query has multiple keys, format the query so each field is its own object.
+  if(_.keys(query).length > 1 || query.$or) {
     query = {
       $and: _.keys(query).map(key => ({[key]: query[key]}))
     };

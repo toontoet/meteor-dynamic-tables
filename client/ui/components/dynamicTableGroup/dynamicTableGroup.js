@@ -413,7 +413,7 @@ Template.dynamicTableGroup.helpers({
     const current = Template.instance().grouping;
     const conditions = [];
     let selector = {};
-    if(_.keys(currentSelector || {})) {
+    if(_.keys(currentSelector || {}).length) {
       conditions.push(currentSelector);
     }
     if (value.selector) {

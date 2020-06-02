@@ -141,6 +141,10 @@ export class FilterModal extends BlazeComponent {
   handleClearClick() {
     this.search.set(undefined);
     this.selectedOptions.set([]);
+    if(!!~this.operator.get().indexOf("$exists")) {
+      // By changing the operator in this case, it triggers the filter to properly reset.
+      this.operator.set("$in");
+    }
     this.$(".input-dynamic-table-search").val("");
   }
 

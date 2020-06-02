@@ -5,6 +5,21 @@ import { EJSON } from "meteor/ejson";
 import { getPosition } from "../../../inlineSave.js";
 import { getColumnFields, formatQuery, getFields, arrayContains } from "../../helpers.js";
 
+function getSearch(advancedSearch, parentAdvancedSearch) {
+  const getAndValue = value => {
+    if(value && value.$and && value.$and.length == 1) {
+      return value.$and[0];
+    } else if(value.$and.length > 1) {
+      const result = {};
+      value.$and.forEach(item => _.keys(item || {}).forEach(key => result[key] = item[key]));
+      return result;
+    }
+  };
+  return {
+    $and: [_.extend({}, getAndValue(advancedSearch), getAndValue(parentAdvancedSearch))]
+  };
+}
+
 Template.dynamicTableHeaderCell.onCreated(function onCreated() {
   this.columnTitle = new ReactiveVar();
   this.advancedSearch = new ReactiveVar(null);
@@ -75,11 +90,7 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
 Template.dynamicTableHeaderCell.helpers({
   hasFilter() {
     const templInstance = Template.instance();
-    let advancedSearch = {
-      $and: [
-        _.extend({}, templInstance.advancedSearch.get().$and[0], templInstance.parentAdvancedSearch.get().$and[0])
-      ]
-    };
+    let advancedSearch = getSearch(templInstance.advancedSearch.get(), templInstance.parentAdvancedSearch.get());
 
     if(templInstance.hasParentFilter) {
       return true;
@@ -99,7 +110,7 @@ Template.dynamicTableHeaderCell.helpers({
               return !_.isEqual(_.sortBy(_.keys(qe)), _.sortBy(_.keys(sr)));
             });
           }
-          return _.isEqual(_.sortBy(_.keys(queryElements)), _.sortBy(_.keys(searchResult)));
+          return arrayContains(_.sortBy(_.keys(queryElements)), _.sortBy(_.keys(searchResult)));
         });
       }
       return false;
@@ -120,11 +131,7 @@ Template.dynamicTableHeaderCell.events({
     const column = columns.find(c => (templInstance.data.column.id ? c.id === templInstance.data.column.id : c.data === templInstance.data.column.data));
     const columnOrder = _.find(order, col => col[0] === column.idx);
     const fieldName = (templInstance.data.column.filterModal.field && templInstance.data.column.filterModal.field.name) || templInstance.data.column.data;
-    const searchObject = {
-      $and: [
-        _.extend({}, templInstance.advancedSearch.get().$and[0], templInstance.parentAdvancedSearch.get().$and[0])
-      ]
-    };
+    const searchObject = getSearch(templInstance.advancedSearch.get(), templInstance.parentAdvancedSearch.get());;
     const columnSearch = EJSON.fromJSONValue(searchObject.$and && searchObject.$and.length >= 1 ?
       searchObject.$and[0][fieldName] : searchObject[fieldName]);
     let selectedOptions;

@@ -241,7 +241,12 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
         toExtend.$options = columns[columnIndex].searchOptions;
       }
       if (newAdvancedSearchField) {
-        advancedSearch[fieldName] = _.extend({}, newAdvancedSearchField, toExtend);
+        // Sometimes the advanced search has an AND group.
+        if(advancedSearch.$and && advancedSearch.$and.length) {
+          advancedSearch.$and[0][fieldName] = _.extend({}, newAdvancedSearchField, toExtend);
+        } else {
+          advancedSearch[fieldName] = _.extend({}, newAdvancedSearchField, toExtend);
+        }
       }
       this.advancedSearch.set(advancedSearch);
       changed = true;
@@ -249,6 +254,11 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
   }
   else if (fieldName && advancedSearch[fieldName]) {
     delete advancedSearch[fieldName];
+    this.advancedSearch.set(advancedSearch);
+    changed = true;
+  }
+  else if(advancedSearch.$and && advancedSearch.$and.length && advancedSearch.$and[0][fieldName]) {
+    delete advancedSearch.$and[0][fieldName];
     this.advancedSearch.set(advancedSearch);
     changed = true;
   }
