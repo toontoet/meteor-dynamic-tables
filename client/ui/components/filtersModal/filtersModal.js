@@ -264,9 +264,13 @@ export class FiltersModal extends BlazeComponent {
 
         // If there's a nested OR group for a single field, wrap it in an AND group
         // to avoid being interpreted by the filters modal as an actual OR group.
-        return filters.length == 1 && !filters[0].$or ? filters[0] : {
-          $and: filters
+        const andGroup = {
+          $and: [{}]
         };
+
+        filters.forEach(filter => _.keys(filter || {}).forEach(key => andGroup.$and[0][key] = filter[key]));
+
+        return filters.length == 1 && !filters[0].$or ? filters[0] : andGroup;
       }).filter(filterGroup => filterGroup)
     };
 
