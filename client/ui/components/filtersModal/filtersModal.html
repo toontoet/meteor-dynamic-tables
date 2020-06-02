@@ -50,7 +50,7 @@
                       {{/if}}
                     {{/unless}}
                     {{#if isDate filter}}
-                      <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="date" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Date..." value="{{dateValue filter}}" />
+                      <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="text" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search dynamic-table-filters-datepicker" placeholder="Date..." value="{{dateValue filter}}" />
                     {{/if}}
                     {{#if isTime filter}}
                       <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time minutes" placeholder="Min" value="{{minuteValue filter}}"/>

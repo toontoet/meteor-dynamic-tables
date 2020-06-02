@@ -604,21 +604,21 @@ export class FiltersModal extends BlazeComponent {
         delete filter.options
         const optionsCallback = (options) => {
           filter.options = this.formatOptions(options);
-          if(filter.options.length > 0) {
+          if(filter.options.length > 0 && !this.isComplexDataType(filter)) {
             filter.type = Array;
+          }
 
-            // Selected options could be loaded in as values so adjust if needed.
-            if(filter.selectedOptions && filter.selectedOptions.length) {
-              filter.selectedOptions = filter.selectedOptions.map(option => {
-                const selected = filter.options.find(val => val.value === option || val.label === option)
-                return (selected && selected.label) || option;
-              });
-            }
+          // Selected options could be loaded in as values so adjust if needed.
+          if(filter.selectedOptions && filter.selectedOptions.length) {
+            filter.selectedOptions = filter.selectedOptions.map(option => {
+              const selected = filter.options.find(val => val.value === option || val.label === option)
+              return (selected && selected.label) || option;
+            });
+          }
 
-            // Possible for options to affect possible operators so update those.
-            if(filter.operators) {
-              filter.operator = this.getOperators(filter.type).find(val => arraysEqual(val.operators, filter.operators))
-            }
+          // Possible for options to affect possible operators so update those.
+          if(filter.operators) {
+            filter.operator = this.getOperators(filter.type).find(val => arraysEqual(val.operators, filter.operators))
           }
           resolve(filter);
         }
@@ -669,7 +669,7 @@ export class FiltersModal extends BlazeComponent {
     const filter = this.getFilter(groupId, id);
     if (filter) {
       filter.selectedOptions = selectedOptions.map(option => {
-        if(filter.options) {
+        if(filter.options && !this.isComplexDataType(filter)) {
           const currentOption = filter.options.find(item => item.label === option);
           return currentOption && currentOption.value;
         }
@@ -701,11 +701,11 @@ export class FiltersModal extends BlazeComponent {
     }
     const name = (column.filterModal && column.filterModal.field && column.filterModal.field.name) || column.data;
     const obj = this.collection._c2 && this.collection._c2._simpleSchema && this.collection._c2._simpleSchema.schema(name);
-    let type = (obj && obj.type) || String;
+    let type = (obj && obj.type) || (column.filterModal && column.filterModal.field && column.filterModal.field.type) || String;
     if(_.isArray(type.choices)) {
       type = typeMap.flatMap(val => val.type).find(val => type.choices.includes(val));
     }
-    return type;
+    return _.isArray(type) ? type[0] : type;
   }
 
   getOperators(type) {
@@ -819,6 +819,25 @@ export class FiltersModal extends BlazeComponent {
     this.filterGroups.set(filterGroups);
   }
 
+  updateDatepickerComponents() {
+    const filterGroups = this.filterGroups.get();
+    const components = $(".dynamic-table-filters-datepicker");
+    if(components.length == filterGroups.flatMap(filterGroup => filterGroup.filters)
+      .filter(filter => filter.type === Date).length) {
+        [...components].forEach(val => {
+          const component = $(val);
+          const filter = this.getFilter(...jQueryData(component, "group", "id"));
+          const resolved = component.data("resolved");
+          if(!resolved) {
+            component.datepicker();
+            component.data("resolved", true);
+          }
+        });
+    } else {
+      Meteor.defer(() => this.updateDatepickerComponents());
+    }
+  }
+
   updateSelect2Components() {
     
     // Using this method instead of the select2 template gives more control over when the select2
@@ -884,6 +903,7 @@ export class FiltersModal extends BlazeComponent {
       this.filterGroups.get();
       this.updateSelect2Components();
       this.updateInputComponents();
+      this.updateDatepickerComponents();
     });
   }
 
