@@ -9,7 +9,7 @@ function getSearch(advancedSearch, parentAdvancedSearch) {
   const getAndValue = value => {
     if(value && value.$and && value.$and.length == 1) {
       return value.$and[0];
-    } else if(value.$and.length > 1) {
+    } else if(value && value.$and && value.$and.length > 1) {
       const result = {};
       value.$and.forEach(item => _.keys(item || {}).forEach(key => result[key] = item[key]));
       return result;

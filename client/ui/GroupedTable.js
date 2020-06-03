@@ -6,6 +6,7 @@ import "./components/manageOrderModal/manageOrderModal.js";
 import "./components/manageFieldsModal/manageFieldsModal.js";
 import "./advancedSearchModal.js";
 import { getColumns, getPosition, changed, getCustom, createModal} from "../inlineSave.js";
+import { EJSON } from "meteor/ejson";
 
 function openFiltersModal(templateInstance) {
   const tableId = templateInstance.data.id;
@@ -103,7 +104,7 @@ Template.GroupedTable.onCreated(function onCreated() {
       if(custom.filter) {
         this.parentFilter.set({
           label: "Top Level",
-          query: JSON.parse(custom.filter) || {},
+          query: EJSON.fromJSONValue(JSON.parse(custom.filter)) || {},
           triggerOpenFiltersModal: () => openFiltersModal(this)
         });
       }

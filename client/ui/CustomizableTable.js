@@ -37,7 +37,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
         }
         const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
         this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columnsToUse.map(c => c.id || c.data)));
-        this.advancedFilter.set(custom.filter ? JSON.parse(custom.filter) : {});
+        this.advancedFilter.set(custom.filter ? EJSON.fromJSONValue(JSON.parse(custom.filter)) : {});
         const oldOrder = Tracker.nonreactive(() => this.order.get());
         if (custom.order && EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
           this.order.set(custom.order);

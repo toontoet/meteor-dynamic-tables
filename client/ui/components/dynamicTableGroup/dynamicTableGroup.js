@@ -1,4 +1,5 @@
 import { ReactiveDict } from "meteor/reactive-dict";
+import { EJSON } from "meteor/ejson";
 import "./dynamicTableGroup.html";
 import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../db.js";
@@ -237,7 +238,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
               this.nestedOrder.set(value.tableId, custom.order);
             }
           }
-          let filter = custom.filter ? JSON.parse(custom.filter) : {};
+          let filter = custom.filter ? EJSON.fromJSONValue(JSON.parse(custom.filter)) : {};
           if(!isFilterValid(this, filter)) {
             value.filter = {}
             changed(data.customTableSpec.custom, value.tableId, { newFilter: {} })

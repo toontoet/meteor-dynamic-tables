@@ -75,13 +75,13 @@ const opMap = {
   isBefore: {
     id: "isBefore",
     label: "is before...",
-    operators: ["$lt"],
+    operators: ["$lte"],
     singleValue: true
   },
   isAfter: {
     id: "isAfter",
     label: "is after...",
-    operators: ["$gt"],
+    operators: ["$gte"],
     singleValue: true
   },
   contains: {
@@ -170,7 +170,6 @@ export class FiltersModal extends BlazeComponent {
       "isControlDisabled",
       "isFilterDisabled",
 
-      "dateValue",
       "minuteValue",
       "secondValue",
       "searchValue"
@@ -270,7 +269,7 @@ export class FiltersModal extends BlazeComponent {
 
         filters.forEach(filter => _.keys(filter || {}).forEach(key => andGroup.$and[0][key] = filter[key]));
 
-        return filters.length == 1 && !filters[0].$or ? filters[0] : andGroup;
+        return filters.length == 1 && !filters[0].$or && filterGroups.length == 1 ? filters[0] : andGroup;
       }).filter(filterGroup => filterGroup)
     };
 
@@ -330,6 +329,14 @@ export class FiltersModal extends BlazeComponent {
         // Ensures there's always an $or level and $and level.
         query = formatQuery(item.query);
         query.$or.forEach((queryAndGroup, i) => {
+
+          // If the query has multiple keys, format the query so each field is its own object.
+          if(_.keys(queryAndGroup.$and[0] || {}).length > 1) {
+            queryAndGroup = {
+              $and: _.keys(queryAndGroup.$and[0]).map(key => ({[key]: queryAndGroup.$and[0][key]}))
+            };
+          }
+
           if(queryAndGroup.$and.length) {
             // Format these filters into objects this modal can interpret. Sometimes, there's nested $or groups.
             // Also make sure the returned filters are unique by checking the field it's affecting.
@@ -431,6 +438,9 @@ export class FiltersModal extends BlazeComponent {
       if(_.contains(operators, "$regex")) {
         query = query.substr(1);
       }
+      if(query.$date) {
+        query = new Date(query.$date);
+      }
       const selectedOptions = [].concat(query);
 
       if(column) {
@@ -493,17 +503,6 @@ export class FiltersModal extends BlazeComponent {
 
   searchValue(filter) {
     return filter.selectedOptions && filter.selectedOptions.length ? filter.selectedOptions[0] : "";
-  }
-
-  dateValue(filter) {
-    const searchValue = this.searchValue(filter);
-    const date = (searchValue instanceof Date) ? searchValue : new Date(searchValue);
-    if (date) {
-      if (!searchValue || date === "Invalid Date") {
-        return "";
-      }
-      return date.toISOString().split("T")[0];
-    }
   }
 
   minuteValue(filter) {
@@ -604,14 +603,14 @@ export class FiltersModal extends BlazeComponent {
         delete filter.options
         const optionsCallback = (options) => {
           filter.options = this.formatOptions(options);
-          if(filter.options.length > 0 && !this.isComplexDataType(filter)) {
+          if(filter.options.length > 0) {
             filter.type = Array;
           }
 
           // Selected options could be loaded in as values so adjust if needed.
           if(filter.selectedOptions && filter.selectedOptions.length) {
             filter.selectedOptions = filter.selectedOptions.map(option => {
-              const selected = filter.options.find(val => val.value === option || val.label === option)
+              const selected = filter.options.find(val => val.value.toString() === option.toString() || val.label.toString() === option.toString())
               return (selected && selected.label) || option;
             });
           }
@@ -635,6 +634,8 @@ export class FiltersModal extends BlazeComponent {
             result.then(asyncOptions => optionsCallback(asyncOptions));
           } else if(result) {
             optionsCallback(result);
+          } else {
+            resolve(filter);
           }
         } else if(_.isArray(options)) {
           optionsCallback(options);
@@ -669,11 +670,16 @@ export class FiltersModal extends BlazeComponent {
     const filter = this.getFilter(groupId, id);
     if (filter) {
       filter.selectedOptions = selectedOptions.map(option => {
-        if(filter.options && !this.isComplexDataType(filter)) {
-          const currentOption = filter.options.find(item => item.label === option);
+        if(filter.options) {
+          const currentOption = filter.options.find(item => item.label.toString() === option.toString());
           return currentOption && currentOption.value;
         }
-        return option;
+        switch(filter.type) {
+          case Date:
+            return new Date(option);
+          default:
+            return option;
+        }
       });
     }
   }
@@ -832,6 +838,15 @@ export class FiltersModal extends BlazeComponent {
             component.datepicker();
             component.data("resolved", true);
           }
+          if(!this.isControlDisabled(filter)) {
+            if(component.val() !== filter.selectedOptions[0]) {
+              component.datepicker("setDate", filter.selectedOptions[0]);
+              component.trigger("change");
+            }
+          } else {
+            component.val(null);
+            component.trigger("change");
+          }
         });
     } else {
       Meteor.defer(() => this.updateDatepickerComponents());
@@ -869,7 +884,7 @@ export class FiltersModal extends BlazeComponent {
           const selectedOptions = component.val();
           if(!this.isControlDisabled(filter)) {
             if(!arraysEqual(selectedOptions, filter.selectedOptions)) {
-              component.val((filter.selectedOptions || []).map(option => filter.options.find(val => val.value === option || val.label === option).label));
+              component.val((filter.selectedOptions || []).map(option => filter.options.find(val => val.value.toString() === option.toString() || val.label.toString() === option.toString()).label));
               component.trigger("change");
             }
           } else {
