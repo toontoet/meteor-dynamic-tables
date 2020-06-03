@@ -229,8 +229,12 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
           arrayToReplaceIn.push(newAdvancedSearchField);
         }
       }
-      if (!EJSON.equals(EJSON.toJSONValue(arrayToReplaceIn), EJSON.toJSONValue(advancedSearch.$and))) {
+      if (advancedSearch.$and && !EJSON.equals(EJSON.toJSONValue(arrayToReplaceIn), EJSON.toJSONValue(advancedSearch.$and))) {
         advancedSearch.$and = arrayToReplaceIn;
+        this.advancedSearch.set(advancedSearch);
+        changed = true;
+      } else if(!EJSON.equals(EJSON.toJSONValue(arrayToReplaceIn), EJSON.toJSONValue(advancedSearch))) {
+        arrayToReplaceIn.forEach(item => _.keys(item).forEach(key => advancedSearch[key] = item[key]));
         this.advancedSearch.set(advancedSearch);
         changed = true;
       }

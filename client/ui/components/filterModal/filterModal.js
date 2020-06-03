@@ -505,13 +505,12 @@ export class FilterModal extends BlazeComponent {
 
   updateSelectedOptions(newOption, checked) {
     const selectedOptions = this.selectedOptions.get();
-    newOption = this.fieldType.get() === Date ? new Date(newOption) : newOption.toString();
+    newOption = newOption.toString();
     if (checked) {
       this.selectedOptions.set(_.union(selectedOptions, [newOption]));
     }
     else {
-      this.selectedOptions.set(selectedOptions.filter(f =>
-        (f instanceof Date ? f.getTime() !== new Date(newOption).getTime() : f !== newOption)));
+      this.selectedOptions.set(selectedOptions.filter(f => f !== newOption));
     }
   }
 
