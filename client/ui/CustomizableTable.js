@@ -8,12 +8,18 @@ import { EJSON } from "meteor/ejson";
 function filterColumns(columns, selectedColumnDataOrIds) {
   return _.compact(selectedColumnDataOrIds.map((c) => {
     return columns.find(col => (col.id ? col.id === c : col.data === c));
-  }));a
+  }));
 }
 
 Template.CustomizableTable.onCreated(function onCreated() {
-  this.advancedFilter = new ReactiveVar();
+  this.advancedFilter = new ReactiveVar(this.data.currentFilter);
+
+  // Parent filters hold a chain of filters that are applied in order from the top level to the table level.
   this.parentFilters = new ReactiveVar(this.data.parentFilters);
+
+  // Once the filter is saved, the parent table is recreated but the filter stored in memory also needs to be updated or else
+  // the changes made to the filter at the column level will be reverted. This function makes sure that the changes made at the
+  // column level are persisted.
   this.updateCurrentFilter = this.data.updateCurrentFilter;
   this.limit = new ReactiveVar(this.data.table.pageLength || 25);
   this.skip = new ReactiveVar(0);
@@ -25,7 +31,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
   };
   this.order = new ReactiveVar(this.data.orders)
   this.selectedColumns = new ReactiveVar([]);
-  // Used when Customizable table used alone witho ut grouped table
+  // Used when Customizable table used alone without grouped table
   if (! this.data.hasContext) {
     // gets custom from the database, sets selected columns
     let stop = false;
@@ -37,7 +43,13 @@ Template.CustomizableTable.onCreated(function onCreated() {
         }
         const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
         this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columnsToUse.map(c => c.id || c.data)));
-        this.advancedFilter.set(custom.filter ? EJSON.fromJSONValue(JSON.parse(custom.filter)) : {});
+
+        // EJSON.fromJSONValue is needed because the JSON object stored uses ESJSON.toJSONValue
+        const advancedFilter = this.advancedFilter.get();
+        if(custom.filter) {
+          advancedFilter.query = EJSON.fromJSONValue(JSON.parse(custom.filter));
+          this.advancedFilter.set(advancedFilter);
+        }
         const oldOrder = Tracker.nonreactive(() => this.order.get());
         if (custom.order && EJSON.stringify(oldOrder) !== EJSON.stringify(custom.order || [])) {
           this.order.set(custom.order);
@@ -94,8 +106,11 @@ Template.CustomizableTable.onCreated(function onCreated() {
       return;
     }
 
+    // If changes to the parent filters or current filter are made, we want those changes
+    // to propagate to the bottom level.
     this.parentFilters.set(data.parentFilters);
     this.advancedFilter.set(data.currentFilter);
+
     // refreshes table when order has been changed
     if (JSON.stringify(Tracker.nonreactive(() => this.order.get())) !== JSON.stringify(data.orders) && data.orders) {
       this.order.set(data.orders);
@@ -155,7 +170,9 @@ Template.CustomizableTable.helpers({
     return (newFilter, newOrder, columns) => {
 
       // Make sure the filter stored in the Customizable table is updated as well.
-      templInstance.advancedFilter.set(newFilter);
+      const currentFilter = templInstance.advancedFilter.get();
+      currentFilter.query = newFilter;
+      templInstance.advancedFilter.set(currentFilter);
 
       if (columns) {
         const currentColumns = templInstance.selectedColumns.get();
@@ -173,6 +190,9 @@ Template.CustomizableTable.helpers({
         }
       }
 
+      // calling changed() will cause the parent of this table to re-render. Use
+      // the callback to ensure changes to the filter are applied to the related filter
+      // in the parent.
       if(_.isFunction(this.updateCurrentFilter)) {
         this.updateCurrentFilter(newFilter);
       }

@@ -17,6 +17,8 @@ function openFiltersModal(templateInstance) {
     columns: templateInstance.data.columns(),
     filter: templateInstance.parentFilter.get() || {},
     triggerUpdateFilter: (newQuery) => {
+
+      // Update the query of the current filter. Trigger changed() which will save the filter.
       const currentFilter = templateInstance.parentFilter.get();
       currentFilter.query = newQuery;
       templateInstance.parentFilter.set(currentFilter);
@@ -342,7 +344,7 @@ Template.GroupedTable.events({
     }
 
     const modalMeta = {
-      template: Template.dynamicTableManageFieldsModal, 
+      template: Template.dynamicTableManageFieldsModal,
       id: "dynamic-table-manage-fields-modal",
       options: manageColumnsOptions
     };

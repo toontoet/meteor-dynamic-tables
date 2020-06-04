@@ -22,30 +22,58 @@ function getSearch(advancedSearch, parentAdvancedSearch) {
 
 Template.dynamicTableHeaderCell.onCreated(function onCreated() {
   this.columnTitle = new ReactiveVar();
-  this.advancedSearch = new ReactiveVar(null);
+  this.advancedFilter = new ReactiveVar(null);
   this.parentAdvancedSearch = new ReactiveVar(null);
   this.autorun(() => {
-    let { advancedSearch, parentFilters, column } = this.data;
-    if(!advancedSearch || !advancedSearch.$and) {
-      advancedSearch = {
-        $and: [advancedSearch || {}]
+    let { advancedFilter, parentFilters, column } = this.data;
+    if(!advancedFilter.query || !advancedFilter.query.$and) {
+      advancedFilter.query = {
+        $and: [advancedFilter.query || {}]
       }
     }
-    this.advancedSearch.set(advancedSearch);
+    this.advancedFilter.set(advancedFilter.query);
     
     // Keep track of expected fields affected by this column.
     const fields = getColumnFields(column);
     const fieldName = (column.filterModal.field && column.filterModal.field.name) || column.data;
     const parentAdvancedSearch = { $and: [{}] };
 
-    // Add parent filter queries to advanced search.
+    let query = formatQuery(advancedFilter.query);
+
+    if(query.$or.length > 1 && query.$or[0].$and) {
+      this.parentFilterData = {
+        label: advancedFilter.label,
+        triggerOpenFiltersModal: advancedFilter.triggerOpenFiltersModal,
+        isMultiOrGroup: true
+      }
+    }
+
+    query.$or.forEach(queryOrGroup => {
+      queryOrGroup.$and.forEach(queryAndGroup => {
+
+        const currentFields = getFields(queryAndGroup);
+        
+        // This logic is done for the advanced search because if the filter has
+        // multiple OR groups, we need another way to mark the column as active.
+        // Slightly different from the logic below because the column can still
+        // change a filter given it's just one OR group. If it's a parent, it can't
+        if(currentFields.length && arrayContains(fields, currentFields)) {
+
+          // We can marked this filter as active.
+          this.hasParentFilter = true;
+        }
+      });
+    });
+
+    // Go through the filters, find affected columns. If found, mark this
+    // column as in use by a parent filter
     if(parentFilters) {
       parentFilters.forEach(filter => {
 
         // Make the structure of the query consistent
-        const query = formatQuery(filter.query);
+        query = formatQuery(filter.query);
 
-        if(query.$or.length > 1) {
+        if(query.$or.length > 1 && query.$or[0].$and) {
           this.parentFilterData = {
             label: filter.label,
             triggerOpenFiltersModal: filter.triggerOpenFiltersModal,
@@ -90,7 +118,7 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
 Template.dynamicTableHeaderCell.helpers({
   hasFilter() {
     const templInstance = Template.instance();
-    let advancedSearch = getSearch(templInstance.advancedSearch.get(), templInstance.parentAdvancedSearch.get());
+    let advancedFilter = getSearch(templInstance.advancedFilter.get(), templInstance.parentAdvancedSearch.get());
 
     if(templInstance.hasParentFilter) {
       return true;
@@ -100,7 +128,7 @@ Template.dynamicTableHeaderCell.helpers({
     const searchFunction = templInstance.data.column.search;
     if (searchFunction) {
       const searchResult = searchFunction("");
-      const advanceSearchAnd = advancedSearch.$and || [advancedSearch];
+      const advanceSearchAnd = advancedFilter.$and || [advancedFilter];
       if (advanceSearchAnd) {
         return advanceSearchAnd.some((query) => {
           const queryElements = query.$or || query.$and || query;
@@ -115,7 +143,7 @@ Template.dynamicTableHeaderCell.helpers({
       }
       return false;
     }
-    const columnSearch = advancedSearch.$and[0][fieldName];
+    const columnSearch = advancedFilter.$and[0][fieldName];
     return columnSearch;
   },
   columnTitle() {
@@ -131,7 +159,7 @@ Template.dynamicTableHeaderCell.events({
     const column = columns.find(c => (templInstance.data.column.id ? c.id === templInstance.data.column.id : c.data === templInstance.data.column.data));
     const columnOrder = _.find(order, col => col[0] === column.idx);
     const fieldName = (templInstance.data.column.filterModal.field && templInstance.data.column.filterModal.field.name) || templInstance.data.column.data;
-    const searchObject = getSearch(templInstance.advancedSearch.get(), templInstance.parentAdvancedSearch.get());;
+    const searchObject = getSearch(templInstance.advancedFilter.get(), templInstance.parentAdvancedSearch.get());;
     const columnSearch = EJSON.fromJSONValue(searchObject.$and && searchObject.$and.length >= 1 ?
       searchObject.$and[0][fieldName] : searchObject[fieldName]);
     let selectedOptions;

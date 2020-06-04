@@ -230,7 +230,7 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
 function canUseAggregate(queries, field) {
   return !queries.find(q => _.isObject(q.query) || q.options.limit);
 }
-export function simpleTablePublicationCounts(tableId, publicationName, field, baseSelector, queries, options = {}) {
+export function simpleTablePublicationCounts(tableId, publicationName, field, baseSelector, queries, options = {}, parentFilters = []) {
   check(tableId, String);
   check(publicationName, String);
   check(baseSelector, Object);
@@ -346,7 +346,10 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
       else {
         subSelector = { [field]: value.query };
       }
-      const selector = { $and: [subSelector, publicationCursor._cursorDescription.selector] };
+
+      // Includes filters applied to table. All parent filters and value's filter as well. Also, we only want filters with keys.
+      const extraSelectors = [value.filter, ...parentFilters].filter(filter => _.keys(filter || {}).length);
+      const selector = { $and: [subSelector, publicationCursor._cursorDescription.selector, ...extraSelectors] };
       const id = JSON.stringify(value.query).replace(/[{}.:]/g, "");
       if (id) {
         let cursor = publicationCursor._mongo.db
