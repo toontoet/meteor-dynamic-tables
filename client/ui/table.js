@@ -563,7 +563,7 @@ Template.DynamicTable.onRendered(function onRendered() {
                 columnIndex: index,
                 table: currentData.table,
                 dataTable: templateInstance.dataTable,
-                advancedSearch: templateInstance.advancedSearch.get(),
+                advancedFilter: templateInstance.advancedFilter.get(),
                 parentFilters: templateInstance.parentFilters.get(),
                 filterModalCallback: filterModalCallback.bind(self),
                 removeColumn: templateInstance.data.removeColumn
@@ -921,7 +921,14 @@ Template.DynamicTable.onCreated(function onCreated() {
   this.selector = new ReactiveVar({});
   this.options = new ReactiveVar({});
   this.query = new ReactiveVar(false);
-  this.advancedSearch = new ReactiveVar(EJSON.fromJSONValue(this.data.advancedFilter));
+
+  // In cases when a column filter can't be used because its filter uses more
+  // than one OR group, we need to include the callback for the filters modal and related label.
+  // table.js uses advancedSearch A LOT, so instead of refactoring the entire thing, having
+  // advancedFilter and advancedSearch and just passing in the advancedFilter to the column filter
+  // is much simpler. 
+  this.advancedFilter = new ReactiveVar(this.data.advancedFilter)
+  this.advancedSearch = new ReactiveVar(this.data.advancedFilter.query);
   this.parentFilters = new ReactiveVar(this.data.parentFilters);
   this.incomingSelector = new ReactiveVar({});
   this.tableId = new ReactiveVar("");
@@ -1033,7 +1040,8 @@ Template.DynamicTable.onCreated(function onCreated() {
       }
     }
     this.parentFilters.set(currentData.parentFilters);
-    this.advancedSearch.set(currentData.advancedFilter);
+    this.advancedFilter.set(currentData.advancedFilter);
+    this.advancedSearch.set(currentData.advancedFilter.query);
   });
   this.blaze = {};
 });

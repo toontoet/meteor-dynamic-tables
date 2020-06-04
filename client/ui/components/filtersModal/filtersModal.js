@@ -616,8 +616,10 @@ export class FiltersModal extends BlazeComponent {
           }
 
           // Possible for options to affect possible operators so update those.
-          if(filter.operators) {
-            filter.operator = this.getOperators(filter.type).find(val => arraysEqual(val.operators, filter.operators))
+          const possibleOperators = this.getOperators(filter.type);
+          if(!filter.operator || !_.contains(possibleOperators.map(x => x.id), filter.operator.id)) {
+            filter.operator = filter.operators ? 
+              possibleOperators.find(val => arraysEqual(val.operators, filter.operators)) : possibleOperators[0];
           }
           resolve(filter);
         }
@@ -825,6 +827,8 @@ export class FiltersModal extends BlazeComponent {
     this.filterGroups.set(filterGroups);
   }
 
+  // Very similar to select2 components update function. I felt that there were enough
+  // differences to not make this a generic update function though.
   updateDatepickerComponents() {
     const filterGroups = this.filterGroups.get();
     const components = $(".dynamic-table-filters-datepicker");

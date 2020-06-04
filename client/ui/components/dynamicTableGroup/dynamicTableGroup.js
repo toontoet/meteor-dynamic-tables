@@ -18,6 +18,15 @@ function openFiltersModal(templateInstance, tableId) {
     filter: templateInstance.currentFilters.get(tableId),
     parentFilters: templateInstance.parentFilters.get(),
     triggerUpdateFilter: newQuery => {
+
+      // We'll update the filter in the values array to trigger re-calculation of the table count.
+      const values = templateInstance.values.get();
+      const value = values.find(value => value.tableId === tableId);
+      if(value) {
+        value.filter = newQuery;
+        templateInstance.values.set(values);
+      }
+
       const currentFilter = templateInstance.currentFilters.get(tableId);
       currentFilter.query = newQuery;
       templateInstance.currentFilters.set(tableId, currentFilter);
@@ -26,7 +35,8 @@ function openFiltersModal(templateInstance, tableId) {
   });
 }
 
-// returns true if a given filter is valid with its parent.
+// returns true if a given filter is valid with its parent. The filter is invalid if any columns in the filter
+// share columns with its parent or if the parent filter uses an OR group.
 function isFilterValid(templateInstance, filter) {
   if(!_.keys(filter || {}).length) {
     return true;
@@ -137,9 +147,13 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   this.nestedGrouping = new ReactiveDict(); // set of groupchains for nested tables
   this.nestedOrder = new ReactiveDict();    // set of orders for nested tables
   this.nestedColumns = new ReactiveDict();  // set of columns for nested tables
-
   this.advancedSearch = new ReactiveDict(); // set of advancedSearches for each group
+
+  // Current filters hold all the filters at the current level. E.g. if the grouping was state, you could have current filters
+  // for ON and AB.
   this.currentFilters = new ReactiveDict();
+
+  // Holds the chain of parent filters. Ordered top down.
   this.parentFilters = new ReactiveVar([]);
 
   // needed for passing number of page and number of records per page
@@ -151,6 +165,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   const groupChain = new ReactiveVar(this.data.groupChain);
   this.autorun(() => {
     const data = Template.currentData();
+
+    // Update the chain of parent filters if they change.
     this.parentFilters.set(data.parentFilters);
     if (JSON.stringify(Tracker.nonreactive(() => this.columns.get())) !== JSON.stringify(data.columns)) {
       this.columns.set(data.columns);
@@ -180,6 +196,8 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         values.push(uncategorized);
       }
       values.forEach((val) => {
+
+        // Store the tableId on the value so it doesn't have to be generated every time it's needed.
         val.tableId = this.data.tableId + getTableIdSuffix.call(Template.instance(), val);
         if (!val._id) {
           val._id = JSON.stringify(val.query || val.selector);
@@ -240,11 +258,20 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           }
           let filter = custom.filter ? EJSON.fromJSONValue(JSON.parse(custom.filter)) : {};
           if(!isFilterValid(this, filter)) {
+
+            // If the filter is invalid save it as an empty filter right away. It can become
+            // invalid if a parent filter it changed while this filter currently exists.
+            // Parent filters always take priority.
             value.filter = {}
             changed(data.customTableSpec.custom, value.tableId, { newFilter: {} })
           } else {
             value.filter = filter
           }
+
+          // Initially, the callback used to open the filters modal was stored here.
+          // A property that is a function is omitted for reactive dictionaries, 
+          // so we don't add the callback until the current filter is passed to
+          // a child table or group.
           this.currentFilters.set(value.tableId, {
             label: value.label,
             query: value.filter
@@ -325,9 +352,11 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   // triggers when values are set
   // does groupCountsSub
   this.autorun(() => {
+
+
     const data = Template.currentData();
     const current = this.grouping;
-    const values = this.values.get();
+    const values = this.values.get().filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues));
     const currentSelector = data.selector;
     const countWithDistinct = false; //current.count && !current.values;
     if (!countWithDistinct && Tracker.nonreactive(() => Meteor.status().status !== "offline" && data.customTableSpec.table.publication)) {
@@ -340,9 +369,11 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         data.customTableSpec.table.publication,
         current.field,
         currentSelector,
-        values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues))
-        .map(v => ({ options: { limit: v.ensureValues || (v.ensureValues === undefined && current.ensureValues) }, query: v.query })),
-        current.countOptions || current.options || {}
+        values.map(v => ({ options: { limit: v.ensureValues || (v.ensureValues === undefined && current.ensureValues) }, query: v.query, filter: v.filter })),
+        current.countOptions || current.options || {},
+
+        // All filters include their parent filters.
+        this.parentFilters.get().map(filter => filter.query)
       ));
     }
   });
@@ -446,7 +477,7 @@ Template.dynamicTableGroup.helpers({
     let currentFilter = templInstance.currentFilters.get(value.tableId);
 
     // Functions don't get stored in reactive dictionaries so set the filters modal callback here.
-    currentFilter.triggerOpenFiltersModal = () => openFiltersModal(templateInstance, value.tableId);
+    currentFilter.triggerOpenFiltersModal = () => openFiltersModal(templInstance, value.tableId);
 
     return _.extend(
       {},
@@ -455,7 +486,7 @@ Template.dynamicTableGroup.helpers({
         hasContext: false,
         selector: newSelector,
         parentFilters,
-        currentFilter: currentFilter.query,
+        currentFilter: currentFilter,
         updateCurrentFilter: newFilter => {
           currentFilter.query = newFilter;
           templInstance.currentFilters.set(value.tableId, currentFilter);
