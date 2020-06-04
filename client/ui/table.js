@@ -928,7 +928,7 @@ Template.DynamicTable.onCreated(function onCreated() {
   // advancedFilter and advancedSearch and just passing in the advancedFilter to the column filter
   // is much simpler. 
   this.advancedFilter = new ReactiveVar(this.data.advancedFilter)
-  this.advancedSearch = new ReactiveVar(this.data.advancedFilter.query);
+  this.advancedSearch = new ReactiveVar(this.data.advancedFilter && this.data.advancedFilter.query);
   this.parentFilters = new ReactiveVar(this.data.parentFilters);
   this.incomingSelector = new ReactiveVar({});
   this.tableId = new ReactiveVar("");
@@ -1041,7 +1041,7 @@ Template.DynamicTable.onCreated(function onCreated() {
     }
     this.parentFilters.set(currentData.parentFilters);
     this.advancedFilter.set(currentData.advancedFilter);
-    this.advancedSearch.set(currentData.advancedFilter.query);
+    this.advancedSearch.set(currentData.advancedFilter && currentData.advancedFilter.query);
   });
   this.blaze = {};
 });
