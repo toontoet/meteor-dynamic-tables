@@ -170,7 +170,7 @@ Template.CustomizableTable.helpers({
     return (newFilter, newOrder, columns) => {
 
       // Make sure the filter stored in the Customizable table is updated as well.
-      const currentFilter = templInstance.advancedFilter.get();
+      const currentFilter = templInstance.advancedFilter.get() || {};
       currentFilter.query = newFilter;
       templInstance.advancedFilter.set(currentFilter);
 
