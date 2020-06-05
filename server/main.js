@@ -228,7 +228,7 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
 }
 
 function canUseAggregate(queries, field) {
-  return !queries.find(q => _.isObject(q.query) || q.options.limit);
+  return !queries.find(q => (_.isObject(q.query) || q.options.limit)) && !queries.find(q => _.keys(q.filter || {}).length);
 }
 export function simpleTablePublicationCounts(tableId, publicationName, field, baseSelector, queries, options = {}, parentFilters = []) {
   check(tableId, String);
@@ -261,6 +261,11 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   const updateRecordsAggregate = () => {
     const changed = {};
     let hasChanges = false;
+
+    // Includes filters applied to table. All parent filters and value's filter as well. Also, we only want filters with keys.
+    const extraSelectors = parentFilters.filter(filter => _.keys(filter || {}).length);
+    const selector = { $and: [publicationCursor._cursorDescription.selector, ...extraSelectors] };
+
     let promise = Promise.resolve();
     if (queries.length) {
       let pipeline;
@@ -269,7 +274,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
         const trimmedField = field.replace(match[0], "");
         pipeline = [
           {
-            $match: publicationCursor._cursorDescription.selector
+            $match: selector
           },
           {
             $project: {
@@ -287,7 +292,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
       else {
         pipeline = [
           {
-            $match: publicationCursor._cursorDescription.selector
+            $match: selector
           },
           {
             $unwind: `$${field}`

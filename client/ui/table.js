@@ -15,6 +15,7 @@ import "./components/singleValueTextEditor/singleValueTextEditor.js";
 import "./components/select2ValueEditor/select2ValueEditor.js";
 import "./components/bulkEditModal/bulkEditModal.js";
 import { getTableRecordsCollection } from "../db.js";
+import { getColumnFields } from "./helpers.js"
 
 function escapeRegExp(string) {
   if (!_.isString(string)) {
@@ -869,7 +870,7 @@ Template.DynamicTable.onRendered(function onRendered() {
 
       // NOTE: we do not want to redraw table if we have sort which is applied to a columns which was not fetched yet.
       const sortKeys = _.keys(queryOptions.sort || {});
-      const fieldsToSort = _.compact(sortKeys.map(sk => _.findWhere(currentData.table.columns, { data: sk })));
+      const fieldsToSort = _.compact(sortKeys.map(sk => currentData.table.columns.find(c => _.contains(getColumnFields(c), sk))));
       if (sortKeys.length === fieldsToSort.length) {
         // NOTE: if we have all the fields we need to sort on, we dont need to use the non-oplog observe call on the server, but we have to sort client side.
         let hasSortableFields = false;
