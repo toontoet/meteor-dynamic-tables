@@ -26,44 +26,48 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
   this.parentAdvancedSearch = new ReactiveVar(null);
   this.autorun(() => {
     let { advancedFilter, parentFilters, column } = this.data;
-    if(!advancedFilter.query || !advancedFilter.query.$and) {
-      advancedFilter.query = {
-        $and: [advancedFilter.query || {}]
-      }
-    }
-    this.advancedFilter.set(advancedFilter.query);
-    
+
     // Keep track of expected fields affected by this column.
     const fields = getColumnFields(column);
     const fieldName = (column.filterModal.field && column.filterModal.field.name) || column.data;
     const parentAdvancedSearch = { $and: [{}] };
-
-    let query = formatQuery(advancedFilter.query);
-
-    if(query.$or.length > 1 && query.$or[0].$and) {
-      this.parentFilterData = {
-        label: advancedFilter.label,
-        triggerOpenFiltersModal: advancedFilter.triggerOpenFiltersModal,
-        isMultiOrGroup: true
-      }
-    }
-
-    query.$or.forEach(queryOrGroup => {
-      queryOrGroup.$and.forEach(queryAndGroup => {
-
-        const currentFields = getFields(queryAndGroup);
-        
-        // This logic is done for the advanced search because if the filter has
-        // multiple OR groups, we need another way to mark the column as active.
-        // Slightly different from the logic below because the column can still
-        // change a filter given it's just one OR group. If it's a parent, it can't
-        if(currentFields.length && arrayContains(fields, currentFields)) {
-
-          // We can marked this filter as active.
-          this.hasParentFilter = true;
+    if(advancedFilter) {
+      if(!advancedFilter.query || !advancedFilter.query.$and) {
+        advancedFilter.query = {
+          $and: [advancedFilter.query || {}]
         }
+      }
+      this.advancedFilter.set(advancedFilter.query);
+
+      let query = formatQuery(advancedFilter.query);
+
+      if(query.$or.length > 1 && query.$or[0].$and) {
+        this.parentFilterData = {
+          label: advancedFilter.label,
+          triggerOpenFiltersModal: advancedFilter.triggerOpenFiltersModal,
+          isMultiOrGroup: true
+        }
+      }
+
+      query.$or.forEach(queryOrGroup => {
+        queryOrGroup.$and.forEach(queryAndGroup => {
+
+          const currentFields = getFields(queryAndGroup);
+          
+          // This logic is done for the advanced search because if the filter has
+          // multiple OR groups, we need another way to mark the column as active.
+          // Slightly different from the logic below because the column can still
+          // change a filter given it's just one OR group. If it's a parent, it can't
+          if(currentFields.length && arrayContains(fields, currentFields)) {
+
+            // We can marked this filter as active.
+            this.hasParentFilter = true;
+          }
+        });
       });
-    });
+    } else {
+      this.advancedFilter.set({});
+    }
 
     // Go through the filters, find affected columns. If found, mark this
     // column as in use by a parent filter
