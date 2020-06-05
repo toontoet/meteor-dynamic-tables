@@ -156,7 +156,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
   }
 
   // NOTE: we only want to run this code when triggered, not by an advanced search change.
-  const advancedSearch = Tracker.nonreactive(() => this.advancedSearch.get());
+  const advancedSearch = Tracker.nonreactive(() => this.advancedSearch.get()) || {};
   const startsWith = !columns[columnIndex].fullSearch;
 
   // NOTE: added .length to ensure correctness when disabling all options (e.g., add diagrams modal)
