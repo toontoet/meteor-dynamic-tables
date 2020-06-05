@@ -46,7 +46,6 @@ Template.CustomizableTable.onCreated(function onCreated() {
 
         // EJSON.fromJSONValue is needed because the JSON object stored uses ESJSON.toJSONValue
         const advancedFilter = this.advancedFilter.get();
-        this.advancedSearch.set(custom.filter ? EJSON.fromJSONValue(JSON.parse(custom.filter)) : {});
         if(custom.filter && advancedFilter) {
           advancedFilter.query = EJSON.fromJSONValue(JSON.parse(custom.filter));
           this.advancedFilter.set(advancedFilter);
