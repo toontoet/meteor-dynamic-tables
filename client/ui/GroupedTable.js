@@ -188,8 +188,8 @@ Template.GroupedTable.helpers({
       this,
       {
         selector,
-        parentFilters: [parentFilter],
-        currentFilter: parentFilter.query,
+        parentFilters: [],
+        currentFilter: parentFilter,
         updateCurrentFilter: newFilter => {
           parentFilter.query = newFilter;
           templInstance.parentFilter.set(parentFilter);
