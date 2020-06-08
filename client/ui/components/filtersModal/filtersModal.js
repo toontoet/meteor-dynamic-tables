@@ -93,7 +93,7 @@ const opMap = {
 
 const typeMap = [
   {
-    type: [Array],
+    type: Array,
     operators: [
       opMap.all,
       opMap.notAll,
@@ -104,7 +104,7 @@ const typeMap = [
     ]
   },
   {
-    type: [String],
+    type: String,
     operators: [
       opMap.contains,
       opMap.notAll,
@@ -169,6 +169,7 @@ export class FiltersModal extends BlazeComponent {
       "isBoolean",
       "isControlDisabled",
       "isFilterDisabled",
+      "isBetween",
 
       "minuteValue",
       "secondValue",
@@ -267,7 +268,7 @@ export class FiltersModal extends BlazeComponent {
           $and: [{}]
         };
 
-        filters.forEach(filter => _.keys(filter || {}).forEach(key => andGroup.$and[0][key] = filter[key]));
+        filters.forEach(filter => _.keys(filter || {}).forEach(key => andGroup.$and[0][key] = _.extend(andGroup.$and[0][key] || {}, filter[key])));
 
         return filters.length == 1 && !filters[0].$or && filterGroups.length == 1 ? filters[0] : andGroup;
       }).filter(filterGroup => filterGroup)
@@ -331,22 +332,42 @@ export class FiltersModal extends BlazeComponent {
         query.$or.forEach((queryAndGroup, i) => {
 
           // If the query has multiple keys, format the query so each field is its own object.
-          if(_.keys(queryAndGroup.$and[0] || {}).length > 1) {
+          if(_.keys(queryAndGroup.$and[0] || {}).length > 0) {
             queryAndGroup = {
-              $and: _.keys(queryAndGroup.$and[0]).map(key => ({[key]: queryAndGroup.$and[0][key]}))
+              $and: _.keys(queryAndGroup.$and[0]).flatMap(key => {
+
+                // The logic here handles a field with multiple operators
+                if(_.keys(queryAndGroup.$and[0][key] || {}).length > 1) {
+                  return _.keys(queryAndGroup.$and[0][key]).map(val => (
+                    {
+                      [key]: { 
+                        [val]: queryAndGroup.$and[0][key][val]
+                      }
+                    }
+                  ));
+                } else {
+                  return [{
+                    [key]: queryAndGroup.$and[0][key]
+                  }];
+                }
+              })
             };
           }
 
           if(queryAndGroup.$and.length) {
             // Format these filters into objects this modal can interpret. Sometimes, there's nested $or groups.
-            // Also make sure the returned filters are unique by checking the field it's affecting.
-            const filters = _.uniq(queryAndGroup.$and.flatMap(query => {
+            // Also make sure the returned filters are unique by checking the field it's affecting with its operators.
+            const filters = _.uniq(queryAndGroup.$and.flatMap(query =>
               // If a field is an OR group, (like in the case of name), we want to flatten those nested fields.
               // If it's not, we don't want any changes to the field so we can just stick the query in an array
               // and have it flattened as well.
-              return query.$or ? query.$or : [query];
-            }).map(query => 
-              this.fromQuery(query, isParent)).filter(filter => !_.isUndefined(filter)), filter => filter.column.data);
+              query.$or ? query.$or : [query]).map(query => 
+              this.fromQuery(query, isParent)).filter(filter => !_.isUndefined(filter)),
+
+              // A filter in this state just has the column and the list of operators ($not, $in) so to
+              // make each filter unique we can use those pieces of information concatenated as a unique identifier.
+              // This value is literally only used to make the list of filters unique.
+              filter => filter.column.data + filter.operators.join());
 
             if(filters.length) {
 
@@ -693,7 +714,14 @@ export class FiltersModal extends BlazeComponent {
   getFiltersData(groupId) {
     const filters = this.getFilters(groupId);
     if (filters) {
-      const usedColumns = filters.filter(filter => filter.column.data).map(filter => filter.column.data);
+
+      // We can have a filter for each operator. Like isAfter in combination with isBefore.
+      // A column is considered used if we're looking for empty values.
+      const usedColumns = filters
+        .filter(filter => 
+          (filters.filter(val => val.column.data === filter.column.date).length === this.getOperators(filter.type).length - 1)
+          || filter.operator.id === opMap.empty.id)
+        .map(filter => filter.column.data);
 
       // Takes the original list of filters and includes a list of columns the filters can choose from.
       // This list changes as the user changes other filters, so it needs to be reactive to that.
@@ -716,15 +744,28 @@ export class FiltersModal extends BlazeComponent {
     return _.isArray(type) ? type[0] : type;
   }
 
-  getOperators(type) {
-    return typeMap.find(value => [].concat(value.type).includes(type)).operators;
+  getOperators(type, filter, filters) {
+    const fullOperatorList = typeMap.find(value => [].concat(value.type).includes(type)).operators;
+    if(filter && filters) {
+      const usedOperators = filters.filter(val => val.column.data === filter.column.data && val.id !== filter.id)
+        .map(val => val.operator.id);
+      if(usedOperators.length > 0) {
+        // If any operators are in use, we can never use the empty operator.
+        return fullOperatorList.filter(val => !_.contains([...usedOperators, opMap.empty.id], val.id));
+      } else {
+        return fullOperatorList;
+      }
+    } else {
+      return fullOperatorList;
+    }
   }
 
   // Returns objects that the select list for options uses.
   getOperatorOptions(groupId, id) {
-    const filter = this.getFilter(groupId, id);
+    const filters = this.getFilters(groupId);
+    const filter = filters.find(val => val.id === id);
     if(filter) {
-      const opList = this.getOperators(filter.type);
+      const opList = this.getOperators(filter.type, filter, filters);
       if(opList) {
         return opList ? opList.map(operator => ({
           label: operator.label,
@@ -936,9 +977,13 @@ export class FiltersModal extends BlazeComponent {
     const { columns, collection, triggerUpdateFilter, filter, parentFilters } = 
       this.nonReactiveData("columns", "collection", "triggerUpdateFilter", "filter", "parentFilters");
 
-    // All of these values shouldn't change while the modal is open so they don't need to be reactive.
-    this.columns = columns.filter(column => column && column.filterModal);
     this.collection = collection;
+
+    // These are the types that the filters modal supports.
+    const acceptedTypes = typeMap.flatMap(val => val.type);
+
+    // All of these values shouldn't change while the modal is open so they don't need to be reactive.
+    this.columns = columns.filter(column => column && column.filterModal && _.contains(acceptedTypes, this.getType(column)));
     this.triggerUpdateFilter = triggerUpdateFilter;
     this.label = filter.label;
 
