@@ -80,7 +80,6 @@ div.dynamic-table-filter>section.dynamic-table-filter-search input {
 div.dynamic-table-filter>section.dynamic-table-filter-selected {
   padding-top: 5px;
   padding-bottom: 0px;
-  margin-bottom: -10px;
 }
 div.dynamic-table-filter>section.dynamic-table-filter-selected>label.label-dynamic-table-selected {
   background-color: #00BAE3;
