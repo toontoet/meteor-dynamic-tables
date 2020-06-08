@@ -435,7 +435,7 @@ export class FilterModal extends BlazeComponent {
   }
 
   curShowOperators() {
-    return this.showOperators.get() || (this.isParentFilter.get() && !this.isMultiOrGroup.get());
+    return this.showOperators.get() || (this.isParentFilter.get() && !this.isComplexFilter.get());
   }
 
   curSearching() {
@@ -588,7 +588,7 @@ export class FilterModal extends BlazeComponent {
     this.asyncOptions = new ReactiveVar(false);
     this.operator = new ReactiveVar(null);
     this.isParentFilter = new ReactiveVar(false);
-    this.isMultiOrGroup = new ReactiveVar(false);
+    this.isComplexFilter = new ReactiveVar(false);
     this.parentFilterLabel = new ReactiveVar(null);
     this.triggerOpenFiltersModal = new ReactiveVar(null);
 
@@ -603,8 +603,8 @@ export class FilterModal extends BlazeComponent {
         this.triggerOpenFiltersModal.set(data.parentFilterData.triggerOpenFiltersModal);
 
         // If this is a filter with multiple OR groups, just return and do nothing.
-        if(data.parentFilterData.isMultiOrGroup) {
-          this.isMultiOrGroup.set(true);
+        if(data.parentFilterData.isComplexFilter) {
+          this.isComplexFilter.set(true);
           return;
         }
       }

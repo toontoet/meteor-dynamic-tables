@@ -41,11 +41,14 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
 
       let query = formatQuery(advancedFilter.query);
 
+      // The isComplexFilter flag changes the appearance of the filter modal
+      // because it can only display the information if the filter is part of an AND group
+      // and the field only has one operator applied to it.
       if(query.$or.length > 1 && query.$or[0].$and) {
         this.parentFilterData = {
           label: advancedFilter.label,
           triggerOpenFiltersModal: advancedFilter.triggerOpenFiltersModal,
-          isMultiOrGroup: true
+          isComplexFilter: true
         }
       }
 
@@ -62,6 +65,19 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
 
             // We can marked this filter as active.
             this.hasParentFilter = true;
+
+            // When a filter is applied with more than one operator, force the use of the filters modal.
+            // We mark it as a complex filter because the modal won't be able to display the information for a filter that has
+            // multiple operators.
+            fields.forEach(field => {
+              if(!this.parentFilterData && queryAndGroup[field] && _.keys(queryAndGroup[field] || {}).length > 1) {
+                this.parentFilterData = {
+                  label: advancedFilter.label,
+                  triggerOpenFiltersModal: advancedFilter.triggerOpenFiltersModal,
+                  isComplexFilter: true
+                }
+              }
+            });
           }
         });
       });
@@ -81,7 +97,7 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
           this.parentFilterData = {
             label: filter.label,
             triggerOpenFiltersModal: filter.triggerOpenFiltersModal,
-            isMultiOrGroup: true
+            isComplexFilter: true
           }
         }
 
@@ -100,7 +116,7 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
                 this.parentFilterData = {
                   label: filter.label,
                   triggerOpenFiltersModal: filter.triggerOpenFiltersModal,
-                  isMultiOrGroup: false
+                  isComplexFilter: false
                 }
               }
             }
