@@ -53,9 +53,11 @@
                       <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="text" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search dynamic-table-filters-datepicker" placeholder="Date..." />
                     {{/if}}
                     {{#if isTime filter}}
-                      <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time minutes" placeholder="Min" value="{{minuteValue filter}}"/>
-                      <span>:</span>
-                      <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time seconds" placeholder="Sec" value="{{secondValue filter}}"/>
+                      <div class="dynamic-table-filters-time-container">
+                        <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time minutes" placeholder="Min" value="{{minuteValue filter}}"/>
+                        <span class="dynamic-table-filters-time-colon">:</span>
+                        <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time seconds" placeholder="Sec" value="{{secondValue filter}}"/>
+                      </div>
                     {{/if}}
                     {{#if isBoolean filter}}
                       <select {{isFilterDisabled filter}} {{isControlDisabled filter}} class="dynamic-table-filters-search">

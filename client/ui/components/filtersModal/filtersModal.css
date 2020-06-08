@@ -2,6 +2,14 @@
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+.minutes {
+  width: 30%
+}
+
+.seconds {
+  width: 100%
+}
+
 .dynamic-table-filters-no-filters {
   border: 1px solid #cccccc;
   border-radius: 3px;
@@ -12,6 +20,16 @@
   width: 100%;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 14px;
+}
+
+.dynamic-table-filters-time-container {
+  display: inline-flex;
+  height: 29px;
+}
+
+.dynamic-table-filters-time-colon {
+  font-size: 25px;
+  padding: 5px;
 }
 
 .modal-large-height .modal-content {
@@ -89,9 +107,14 @@
   width: 28%;
 }
 
+section.dynamic-table-filters-select2-section {
+  width: 100%;
+}
+
 .dynamic-table-filters-search-container {
   margin: auto;
   width: 100%;
+  display: inline-flex;
 }
 
 div.dynamic-table-filters-search-container>.dynamic-table-filters-search {
