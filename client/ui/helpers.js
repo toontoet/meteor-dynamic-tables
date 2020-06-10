@@ -15,6 +15,17 @@ export function nextId(values) {
   return i;
 }
 
+// Parses a value as an integer, returns 0 if it fails to parse, includes a warning if that happens
+export function safeParseInt(value) {
+  try {
+    value = parseInt(value);
+    return isNaN(value) ? 0 : value;
+  } catch (e) {
+    console.warn(e);
+    return 0;
+  }
+}
+
 // Adding helper for easily pulling data from jQuery elements.
 export function jQueryData(element, ...values) {
   return values.map(value => element.currentTarget  ? $(element.currentTarget).data(value) : element.data(value));

@@ -2,14 +2,6 @@
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
-.minutes {
-  width: 30%
-}
-
-.seconds {
-  width: 100%
-}
-
 .dynamic-table-filters-no-filters {
   border: 1px solid #cccccc;
   border-radius: 3px;
@@ -25,11 +17,13 @@
 .dynamic-table-filters-time-container {
   display: inline-flex;
   height: 29px;
+  width: 100%;
 }
 
-.dynamic-table-filters-time-colon {
-  font-size: 25px;
+.dynamic-table-filters-time-span {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   padding: 5px;
+  margin: 0px;
 }
 
 .modal-large-height .modal-content {
@@ -123,8 +117,8 @@ div.dynamic-table-filters-search-container>.dynamic-table-filters-search {
   width: 100%
 }
 
-div.dynamic-table-filters-search-container>.dynamic-table-filters-search.time {
-  width: 49%;
+.dynamic-table-filters-time {
+  width: 100%;
 }
 
 .select2-container--default .select2-selection--multiple .select2-selection__choice{
