@@ -54,9 +54,10 @@
                     {{/if}}
                     {{#if isTime filter}}
                       <div class="dynamic-table-filters-time-container">
-                        <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time minutes" placeholder="Min" value="{{minuteValue filter}}"/>
-                        <span class="dynamic-table-filters-time-colon">:</span>
-                        <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search time seconds" placeholder="Sec" value="{{secondValue filter}}"/>
+                        <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" min="0" class="dynamic-table-filters-search dynamic-table-filters-time dynamic-table-filters-minutes" placeholder="0" value="{{minuteValue filter}}"/>
+                        <span class="dynamic-table-filters-time-span">Minutes</span>
+                        <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="number" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" min="0" class="dynamic-table-filters-search dynamic-table-filters-time dynamic-table-filters-seconds" placeholder="0" value="{{secondValue filter}}"/>
+                        <span class="dynamic-table-filters-time-span">Seconds</span>
                       </div>
                     {{/if}}
                     {{#if isBoolean filter}}

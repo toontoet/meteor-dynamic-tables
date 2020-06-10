@@ -1,5 +1,5 @@
 import { BlazeComponent } from "meteor/znewsham:blaze-component";
-import { nextId, jQueryData, arraysEqual, formatQuery, getColumnFields } from "../../helpers.js";
+import { nextId, jQueryData, arraysEqual, formatQuery, getColumnFields, safeParseInt } from "../../helpers.js";
 import { changed } from "../../../inlineSave.js";
 
 import "./filtersModal.html";
@@ -188,16 +188,27 @@ export class FiltersModal extends BlazeComponent {
       "click .dynamic-table-filters-cancel": "handleCancelClick",
       "change .dynamic-table-filters-search": "handleSearchChange",
       "change .dynamic-table-filters-operator": "handleOperatorChange",
-      "change .dynamic-table-filters-column": "handleColumnChange"
+      "change .dynamic-table-filters-column": "handleColumnChange",
+      "change .dynamic-table-filters-minutes": "handleTimeChange",
+      "change .dynamic-table-filters-seconds": "handleTimeChange"
     };
   }
 
+  handleTimeChange(e) {
+    const secondsComponent = $(".dynamic-table-filters-seconds");
+    const minutesComponent = $(".dynamic-table-filters-minutes");
+
+    const seconds = safeParseInt(secondsComponent.val());
+    const minutes = safeParseInt(minutesComponent.val());
+
+    this.updateTime(...jQueryData(e, "group", "id"), minutes, seconds);
+  }
+
   handleSearchChange(e) {
-    let value = $(e.currentTarget).val();
-    if($(e.currentTarget).hasClass("minutes") || $(e.currentTarget).hasClass("seconds")) {
-      value = $(".minutes").val() * 60 + $(".seconds").val();
+    if(!$(e.currentTarget).hasClass("time")) {
+      const value = $(e.currentTarget).val();
+      this.updateFilter(...jQueryData(e, "group", "id"), [].concat(value));
     }
-    this.updateFilter(...jQueryData(e, "group", "id"), [].concat(value));
   }
 
   handleOperatorChange(e){
@@ -526,14 +537,25 @@ export class FiltersModal extends BlazeComponent {
     return filter.selectedOptions && filter.selectedOptions.length ? filter.selectedOptions[0] : "";
   }
 
+  updateTime(groupId, id, minutes, seconds) {
+    const filter = this.getFilter(groupId, id);
+    if(filter) {
+      if(!filter.selectedOptions || !filter.selectedOptions.length) {
+        filter.selectedOptions = [0];
+      }
+      filter.selectedOptions[0] = Math.max(minutes * 60 + seconds, 0);
+      this.setFilter(groupId, id, filter);
+    }
+  }
+
   minuteValue(filter) {
-    const time = this.searchValue(filter);
-    return time ? Math.floor(time / 60) : 0;
+    let time = safeParseInt(this.searchValue(filter));
+    return Math.floor(time / 60);
   }
 
   secondValue(filter) {
-    const time = this.searchValue(filter);
-    return time ? time % 60 : 0;
+    let time = safeParseInt(this.searchValue(filter));
+    return time % 60;
   }
 
   isControlDisabled(filter) {
@@ -571,11 +593,16 @@ export class FiltersModal extends BlazeComponent {
     const filters = this.getFilters(groupId);
     if (filters) {
       column = this.columns.find(column => !filters.map(filter => filter.column.data).includes(column.data));
-      const newId = nextId(filters.map(filter => filter.id));
-      const type = this.getType(column);
-      if (this.columns.length > filters.length) {
-        const filter = this.createFilter(newId, column, type, this.getOperators(type)[0]);
-        this.getOptions(filter).then(filterWithOptions => {
+      // If we've gone through all columns once
+      if(!column) {
+        const usedColumns = this.usedColumns(filters);
+        column = this.columns.find(column => !_.contains(usedColumns, column.data));
+      }
+      if(column) {
+        const newId = nextId(filters.map(filter => filter.id));
+        const type = this.getType(column);
+        const filter = this.createFilter(newId, column, type, this.getOperators(type, filters, { column })[0]);
+        this.getOptions(filter, filters).then(filterWithOptions => {
           filters.push(filterWithOptions);
           this.setFilters(groupId, filters);
         });
@@ -586,7 +613,7 @@ export class FiltersModal extends BlazeComponent {
   removeFilter(groupId, id) {
     const filters = this.getFilters(groupId);
     const filter = filters.find(val => val.id === id);
-    if (filters && !filter.disabled) {
+    if (filters && filter && !filter.disabled) {
       filters.splice(filters.findIndex(filter => filter.id === id), 1);
       this.setFilters(groupId, filters);
       if (!filters.length) {
@@ -618,7 +645,7 @@ export class FiltersModal extends BlazeComponent {
     return filter.options && filter.options.length;
   }
 
-  getOptions(filter) {
+  getOptions(filter, filters) {
     return new Promise(resolve => {
       if(filter) {
         delete filter.options
@@ -637,7 +664,7 @@ export class FiltersModal extends BlazeComponent {
           }
 
           // Possible for options to affect possible operators so update those.
-          const possibleOperators = this.getOperators(filter.type);
+          const possibleOperators = this.getOperators(filter.type, filters, filter);
           if(!filter.operator || !_.contains(possibleOperators.map(x => x.id), filter.operator.id)) {
             filter.operator = filter.operators ? 
               possibleOperators.find(val => arraysEqual(val.operators, filter.operators)) : possibleOperators[0];
@@ -670,11 +697,12 @@ export class FiltersModal extends BlazeComponent {
   }
 
   updateColumn(groupId, id, columnId) {
+    const filters = this.getFilters(groupId);
     const filter = this.getFilter(groupId, id);
     if (filter && filter.column.data !== columnId) {
       filter.column = this.columns.find(val => val.data === columnId);
       filter.type = this.getType(filter.column);
-      this.getOptions(filter).then(filterWithOptions => this.setFilter(groupId, id, filterWithOptions));
+      this.getOptions(filter, filters).then(filterWithOptions => this.setFilter(groupId, id, filterWithOptions));
     }
   }
 
@@ -711,17 +739,20 @@ export class FiltersModal extends BlazeComponent {
     return this.label;
   }
 
+  usedColumns(filters) {
+    // We can have a filter for each operator. Like isAfter in combination with isBefore.
+    // A column is considered used if we're looking for empty values.
+    return _.uniq(filters.filter(filter => 
+        (filters.filter(val => val.column.data === filter.column.date).length === this.getOperators(filter.type, filters, filter).length - 1)
+        || filter.operator.id === opMap.empty.id)
+      .map(filter => filter.column.data));
+  }
+
   getFiltersData(groupId) {
     const filters = this.getFilters(groupId);
     if (filters) {
 
-      // We can have a filter for each operator. Like isAfter in combination with isBefore.
-      // A column is considered used if we're looking for empty values.
-      const usedColumns = filters
-        .filter(filter => 
-          (filters.filter(val => val.column.data === filter.column.date).length === this.getOperators(filter.type).length - 1)
-          || filter.operator.id === opMap.empty.id)
-        .map(filter => filter.column.data);
+      const usedColumns = this.usedColumns(filters);
 
       // Takes the original list of filters and includes a list of columns the filters can choose from.
       // This list changes as the user changes other filters, so it needs to be reactive to that.
@@ -744,34 +775,37 @@ export class FiltersModal extends BlazeComponent {
     return _.isArray(type) ? type[0] : type;
   }
 
-  getOperators(type, filter, filters) {
+  getOperators(type, filters, filter) {
     const fullOperatorList = typeMap.find(value => [].concat(value.type).includes(type)).operators;
+    let operatorList = fullOperatorList;
     if(filter && filters) {
-      const usedOperators = filters.filter(val => val.column.data === filter.column.data && val.id !== filter.id)
+
+      // Using _.isUndefined(filter.id) instead of !filter.id because an id value of 0 is interpreted as false. Thanks JavaScript. I love you.
+      const usedOperators = filters.filter(val => val.column.data === filter.column.data && ((!filter || _.isUndefined(filter.id)) || val.id !== filter.id))
         .map(val => val.operator.id);
       if(usedOperators.length > 0) {
         // If any operators are in use, we can never use the empty operator.
-        return fullOperatorList.filter(val => !_.contains([...usedOperators, opMap.empty.id], val.id));
-      } else {
-        return fullOperatorList;
+        operatorList = fullOperatorList.filter(val => !_.contains([...usedOperators, opMap.empty.id], val.id));
       }
-    } else {
-      return fullOperatorList;
     }
+
+    return operatorList;
   }
 
   // Returns objects that the select list for options uses.
   getOperatorOptions(groupId, id) {
     const filters = this.getFilters(groupId);
-    const filter = filters.find(val => val.id === id);
-    if(filter) {
-      const opList = this.getOperators(filter.type, filter, filters);
-      if(opList) {
-        return opList ? opList.map(operator => ({
-          label: operator.label,
-          value: operator.id,
-          isSelected: operator === filter.operator
-        })) : [];
+    if(filters) {
+      const filter = filters.find(val => val.id === id);
+      if(filter) {
+        const opList = this.getOperators(filter.type, filters, filter);
+        if(opList) {
+          return opList ? opList.map(operator => ({
+            label: operator.label,
+            value: operator.id,
+            isSelected: operator === filter.operator
+          })) : [];
+        }
       }
     }
     return [];
@@ -806,7 +840,7 @@ export class FiltersModal extends BlazeComponent {
 
   canAddFilters(groupId) {
     const filters = this.getFilters(groupId);
-    return filters && this.columns.length > filters.length && !this.disableAndGroups.get();
+    return filters && this.columns.length > this.usedColumns(filters).length && !this.disableAndGroups.get();
   }
 
   canAddFilterGroups() {
@@ -884,10 +918,12 @@ export class FiltersModal extends BlazeComponent {
             component.data("resolved", true);
           }
           if(!this.isControlDisabled(filter)) {
-            if(component.val() !== filter.selectedOptions[0]) {
+            if(filter.selectedOptions && filter.selectedOptions.length && component.val() !== filter.selectedOptions[0]) {
               component.datepicker("setDate", filter.selectedOptions[0]);
-              component.trigger("change");
+            } else {
+              component.datepicker("setDate", new Date());
             }
+            component.trigger("change");
           } else {
             component.val(null);
             component.trigger("change");
