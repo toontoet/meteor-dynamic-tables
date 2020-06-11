@@ -139,10 +139,7 @@ const typeMap = [
   {
     type: Boolean,
     operators: [
-      opMap.all,
-      opMap.notAll,
-      opMap.empty,
-      opMap.notEmpty
+      opMap.all
     ]
   }
 ];
@@ -169,7 +166,8 @@ export class FiltersModal extends BlazeComponent {
       "isBoolean",
       "isControlDisabled",
       "isFilterDisabled",
-      "isBetween",
+      "isOperatorSelectDisabled",
+      "isSelected",
 
       "minuteValue",
       "secondValue",
@@ -279,9 +277,10 @@ export class FiltersModal extends BlazeComponent {
           $and: [{}]
         };
 
-        filters.forEach(filter => _.keys(filter || {}).forEach(key => andGroup.$and[0][key] = _.extend(andGroup.$and[0][key] || {}, filter[key])));
+        filters.forEach(filter => _.keys(filter || {}).forEach(key => 
+          andGroup.$and[0][key] = _.extend(andGroup.$and[0][key] || {}, filter[key])));
 
-        return filters.length == 1 && !filters[0].$or && filterGroups.length == 1 ? filters[0] : andGroup;
+        return filters.length == 1 && filterGroups.length == 1 ? filters[0] : andGroup;
       }).filter(filterGroup => filterGroup)
     };
 
@@ -347,8 +346,8 @@ export class FiltersModal extends BlazeComponent {
             queryAndGroup = {
               $and: _.keys(queryAndGroup.$and[0]).flatMap(key => {
 
-                // The logic here handles a field with multiple operators
-                if(_.keys(queryAndGroup.$and[0][key] || {}).length > 1) {
+                // The logic here handles a field with multiple operators. This doesn't apply to a nested OR group.
+                if(_.keys(queryAndGroup.$and[0][key] || {}).length > 1 && key !== "$or") {
                   return _.keys(queryAndGroup.$and[0][key]).map(val => (
                     {
                       [key]: { 
@@ -470,9 +469,6 @@ export class FiltersModal extends BlazeComponent {
       if(_.contains(operators, "$regex")) {
         query = query.substr(1);
       }
-      if(query.$date) {
-        query = new Date(query.$date);
-      }
       const selectedOptions = [].concat(query);
 
       if(column) {
@@ -533,6 +529,11 @@ export class FiltersModal extends BlazeComponent {
     return filter.type === Boolean;
   }
 
+  isSelected(filter, value) {
+    const result = filter && filter.selectedOptions && filter.selectedOptions.length && filter.selectedOptions[0].toString() === value.toString();
+    return result ? "selected" : "";
+  }
+
   searchValue(filter) {
     return filter.selectedOptions && filter.selectedOptions.length ? filter.selectedOptions[0] : "";
   }
@@ -564,6 +565,18 @@ export class FiltersModal extends BlazeComponent {
 
   isFilterDisabled(filter) {
     return filter.disabled ? "disabled" : "";
+  }
+
+  isOperatorSelectDisabled(groupId, id) {
+    const filters = this.getFilters(groupId);
+    if(filters) {
+      const filter = filters.find(val => val.id === id);
+      if(filter) {
+        return this.getOperators(filter.type, filters, filter).length > 1 ? "" : "disabled";
+      }
+    }
+
+    return "disabled";
   }
 
   createFilter(id, column, type, operator, selectedOptions, operators, disabled = false, triggerOpenFiltersModal, label) {
@@ -603,6 +616,10 @@ export class FiltersModal extends BlazeComponent {
         const type = this.getType(column);
         const filter = this.createFilter(newId, column, type, this.getOperators(type, filters, { column })[0]);
         this.getOptions(filter, filters).then(filterWithOptions => {
+          
+          // If the filter is a boolean, we can default the selected option to true.
+          filterWithOptions.selectedOptions = [true];
+
           filters.push(filterWithOptions);
           this.setFilters(groupId, filters);
         });
@@ -612,12 +629,14 @@ export class FiltersModal extends BlazeComponent {
   
   removeFilter(groupId, id) {
     const filters = this.getFilters(groupId);
-    const filter = filters.find(val => val.id === id);
-    if (filters && filter && !filter.disabled) {
-      filters.splice(filters.findIndex(filter => filter.id === id), 1);
-      this.setFilters(groupId, filters);
-      if (!filters.length) {
-        this.removeFilterGroup(groupId);
+    if(filters) {
+      const filter = filters.find(val => val.id === id);
+      if (filter && !filter.disabled) {
+        filters.splice(filters.findIndex(filter => filter.id === id), 1);
+        this.setFilters(groupId, filters);
+        if (!filters.length) {
+          this.removeFilterGroup(groupId);
+        }
       }
     }
   }
@@ -669,6 +688,8 @@ export class FiltersModal extends BlazeComponent {
             filter.operator = filter.operators ? 
               possibleOperators.find(val => arraysEqual(val.operators, filter.operators)) : possibleOperators[0];
           }
+
+          // If after getting the options and there's no filter operator, we can disregard this filter.
           resolve(filter);
         }
 
@@ -700,8 +721,12 @@ export class FiltersModal extends BlazeComponent {
     const filters = this.getFilters(groupId);
     const filter = this.getFilter(groupId, id);
     if (filter && filter.column.data !== columnId) {
+
+      // Update column, type and operator as these may have all changed.
       filter.column = this.columns.find(val => val.data === columnId);
       filter.type = this.getType(filter.column);
+      const possibleOperators = this.getOperators(filter.type, filters, filter);
+      filter.operator = possibleOperators && possibleOperators.length && possibleOperators[0];
       this.getOptions(filter, filters).then(filterWithOptions => this.setFilter(groupId, id, filterWithOptions));
     }
   }
@@ -888,8 +913,11 @@ export class FiltersModal extends BlazeComponent {
           )));
         });
         Promise.all(promises).then(filters => {
-          filterGroup.filters = filters;
-          this.filterGroups.set([...filterGroups, filterGroup]);
+          // Disregard any filters that have an undefined operator.
+          filterGroup.filters = filters.filter(filter => filter.operator);
+          if(filterGroup.filters.length > 0) {
+            this.filterGroups.set([...filterGroups, filterGroup]);
+          }
           resolve();
         });
       }

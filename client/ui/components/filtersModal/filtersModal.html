@@ -34,7 +34,7 @@
                   {{/each}}
                 </select>
                 <div class="dynamic-table-filters-filter-container">
-                  <select {{isFilterDisabled filter}} data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-operator">
+                  <select {{isFilterDisabled filter}} {{isOperatorSelectDisabled filterGroup.id filter.id}} data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-operator">
                     {{#each operatorOption in (getOperatorOptions filterGroup.id filter.id)}}
                       <option value="{{operatorOption.value}}" selected="{{#if operatorOption.isSelected}}selected{{/if}}">{{operatorOption.label}}</option>
                     {{/each}}
@@ -61,10 +61,9 @@
                       </div>
                     {{/if}}
                     {{#if isBoolean filter}}
-                      <select {{isFilterDisabled filter}} {{isControlDisabled filter}} class="dynamic-table-filters-search">
-                        <option value="">Choose True/False</option>
-                        <option value="true">True</option>
-                        <option value="false">False</option>
+                      <select {{isFilterDisabled filter}} {{isControlDisabled filter}} data-id="{{filter.id}}" data-group="{{filterGroup.id}}" class="dynamic-table-filters-search">
+                        <option {{isSelected filter true}} value="true">Yes</option>
+                        <option {{isSelected filter false}} value="false">No</option>
                       </select>
                     {{/if}}
                     </div>

@@ -359,6 +359,7 @@ function setup() {
           delete self.blaze[`${row}-${blazeColumnIndex}`];
         }
         const ret = Blaze.renderWithData(Template.dynamicTableTableCell, {
+          alwaysEditing: column.alwaysEditing,
           editable: !!column.editTmpl && enableEdit,
           templateName: templateName.split(".")[1],
           templateData: column.tmpl ? rowData : rawContent,

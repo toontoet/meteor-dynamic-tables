@@ -9,7 +9,10 @@ Template.dynamicTableTableCell.helpers({
     const template = Template.instance();
     return _.extend({
       afterEditCallback() {
-        template.editing.set(false);
+        template.editing.set(template.alwaysEditing);
+        if(template.alwaysEditing) {
+          template.helpers.editTemplateData();
+        }
       }
     }, _.isFunction(this.editTemplateData) ? this.editTemplateData() : this.editTemplateData);
   }
@@ -27,11 +30,14 @@ Template.dynamicTableTableCell.events({
 });
 
 Template.dynamicTableTableCell.onCreated(function onCreated() {
-  this.editing = new ReactiveVar(false);
+  this.alwaysEditing = !!this.data.alwaysEditing;
+  this.editing = new ReactiveVar(this.alwaysEditing);
   this.autorun((comp) => {
     const editing = this.editing.get();
     if (!editing || comp.firstRun) {
       return;
+    } else if(comp.firstRun) {
+      this.helpers.editTemplateData();
     }
     Tracker.afterFlush(() => {
       this.$("input").focus();
