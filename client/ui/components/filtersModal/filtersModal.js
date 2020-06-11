@@ -618,7 +618,9 @@ export class FiltersModal extends BlazeComponent {
         this.getOptions(filter, filters).then(filterWithOptions => {
           
           // If the filter is a boolean, we can default the selected option to true.
-          filterWithOptions.selectedOptions = [true];
+          if(filterWithOptions.type === Boolean) {
+            filterWithOptions.selectedOptions = [true];
+          }
 
           filters.push(filterWithOptions);
           this.setFilters(groupId, filters);
