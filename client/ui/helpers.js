@@ -53,8 +53,9 @@ export function formatQuery(query) {
     query = {};
   }
 
-  // Sometimes the query has a single AND field with one item that has all the fields .
-  if(query.$and && query.$and.length == 1) {
+  // Sometimes the query has a single AND field with one item that has all the fields.
+  // This rule doesn't apply if the field is a nested OR group.
+  if(query.$and && query.$and.length == 1 && !query.$and[0].$or) {
     query = query.$and[0]
   }
 
