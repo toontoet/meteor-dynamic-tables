@@ -5,6 +5,7 @@ import "../manageColumnsForm/manageColumnsForm.js";
 Template.dynamicTableManageFieldsModal.onCreated(function onCreated() {
   this.search = new ReactiveVar();
   this.editing = new ReactiveVar(false);
+  this.selectedColumns = new ReactiveVar(this.data.selectedColumns);
   this.editableField = new ReactiveVar(null);
   this.availableColumns = new ReactiveVar(this.data.availableColumns);
 });
@@ -21,6 +22,12 @@ Template.dynamicTableManageFieldsModal.events({
   },
   "click .add-column"(e, templInstance) {
     templInstance.editing.set(true);
+  },
+  "click .clear-columns"(e, templInstance) {
+    if(_.isFunction(templInstance.data.clearColumnsCallback)) {
+      // The result of the callback should update the selected columns used.
+      templInstance.selectedColumns.set(templInstance.data.clearColumnsCallback());
+    }
   },
   "click li>.fa-pencil"(e, templInstance) {
     e.preventDefault();
@@ -39,6 +46,7 @@ Template.dynamicTableManageFieldsModal.events({
     templInstance.editableField.set(spec);
   },
   "click li"(e, templInstance) {
+    const selectedColumns = templInstance.selectedColumns.get();
     const colId = $(e.currentTarget).attr("data-id");
     const colData = $(e.currentTarget).attr("data-data");
     const selected = $(e.currentTarget).find("i.fa-toggle-on").length;
@@ -51,6 +59,13 @@ Template.dynamicTableManageFieldsModal.events({
     if (column.required) {
       return;
     }
+
+    if(selectedColumns.find(column => column.data === colData || column.id === colId)) {
+      templInstance.selectedColumns.set(selectedColumns.filter(column => column.id !== colId && column.data !== colData));
+    } else {
+      templInstance.selectedColumns.set(selectedColumns.concat(column));
+    }
+
     templInstance.data.changeCallback(column, !selected);
   },
   "click .dynamic-table-manage-fields-group-header"(e, templInstance) {
@@ -151,8 +166,8 @@ Template.dynamicTableManageFieldsModal.helpers({
     return column.required;
   },
   selected(column) {
-    const data = Template.currentData();
-    return _.find(data.selectedColumns, selectedColumn => (column.id ? selectedColumn.id === column.id : selectedColumn.data === column.data));
+    const selectedColumns = Template.instance().selectedColumns.get();
+    return _.find(selectedColumns, selectedColumn => (column.id ? selectedColumn.id === column.id : selectedColumn.data === column.data));
   },
   groups() {
     let availableColumns = Template.instance().availableColumns.get();

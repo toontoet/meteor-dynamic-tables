@@ -4,7 +4,7 @@ import "./dynamicTableGroup.html";
 import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../db.js";
 import { changed, getCustom, getColumns, getValue, createModal } from "../../../inlineSave.js";
-import { getNestedTableIds, selectorToId, getTableIdSuffix, formatQuery, getQueryFields } from "../../helpers.js"
+import { getNestedTableIds, selectorToId, getTableIdSuffix, formatQuery, getQueryFields, arraysEqual } from "../../helpers.js"
 
 import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "../manageOrderModal/manageOrderModal.js";
@@ -159,7 +159,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
   // needed for passing number of page and number of records per page
   this.nestedCustoms = new ReactiveDict();  // set of custom table specs for nested tables
 
-  this.highlitedColumns = new ReactiveDict();
+  this.highlightedColumns = new ReactiveDict();
 
   // reactivity to refresh tables when goups/orders/columns are changed
   const groupChain = new ReactiveVar(this.data.groupChain);
@@ -238,15 +238,25 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
       values.forEach(value => {
         getCustom(data.customTableSpec.custom, value.tableId, (custom) => {
           this.nestedCustoms.set(value.tableId, custom);
-          if (custom.columns) {
-            this.nestedColumns.set(value.tableId, custom.columns);
-            if (custom.root !== true) {
-              this.highlitedColumns.set(value.tableId, true);
+
+          const nestedGroupChain = this.nestedGrouping.get(value.tableId);
+          const groupChain = nestedGroupChain && nestedGroupChain.length ? nestedGroupChain : this.groupChain.get();
+          const hasGrouping =  groupChain && groupChain.length;
+
+          // This is done once on initialization.
+          if(!this.nestedColumns.get(value.tableId)) {
+
+            // Columns can't be changed at the leaf level.
+            if (custom.columns && !hasGrouping) {
+              if (custom.columns.length && !arraysEqual(this.data.columns, custom.columns, column => column.id + column.data)) {
+                this.nestedColumns.set(value.tableId, custom.columns);
+                this.highlightedColumns.set(value.tableId, true);
+              } else {
+                this.nestedColumns.set(value.tableId, this.data.columns);
+              }
+            } else {
+              this.nestedColumns.set(value.tableId, this.data.columns);
             }
-          }
-          else if (! this.data.columns) {
-            const defaultColumns = JSON.parse(JSON.stringify(this.data.customTableSpec.columns().filter(c => c.default).map(c => ({ data: c.data, id: c.id }))));
-            this.nestedColumns.set(value.tableId, defaultColumns);
           }
           if (! custom.root) {
             if (custom.groupChainFields) {
@@ -260,7 +270,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
           if(!isFilterValid(this, filter)) {
 
             // If the filter is invalid save it as an empty filter right away. It can become
-            // invalid if a parent filter it changed while this filter currently exists.
+            // invalid if a parent filter is changed while this filter currently exists.
             // Parent filters always take priority.
             value.filter = {}
             changed(data.customTableSpec.custom, value.tableId, { newFilter: {} })
@@ -277,6 +287,34 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
             query: value.filter
           });
         });
+      });
+    }
+  });
+  
+  // If a parent updates its column selection, we want that propagated to nested tables if
+  // columns haven't been changed in nested tables.
+  this.autorun(() => {
+    const columns = Template.currentData().columns;
+    const values = Tracker.nonreactive(() => this.values.get());
+
+    // If columns haven't been changed and the current columns don't match the columns from the parent,
+    // update the nested columns.
+    if(values.length) {
+      values.forEach(value => {
+
+        // We don't want this to trigger if the nested columns changes.
+        const nestedColumns = Tracker.nonreactive(() => this.nestedColumns.get(value.tableId));
+        if(nestedColumns) {
+          const columnsEqual = arraysEqual(columns, nestedColumns, val => val.id + val.data);
+          if(!this.highlightedColumns.get(value.tableId) && !columnsEqual) {
+            this.nestedColumns.set(value.tableId, _.clone(columns));
+            changed(this.data.customTableSpec.custom, value.tableId, { newColumns: columns });
+          } else if(columnsEqual) {
+            // If the columns are equal (because the parent changed columns to match the nested table)
+            // We can take away the highlighting for the button.
+            this.highlightedColumns.set(value.tableId);
+          }
+        }
       });
     }
   });
@@ -563,7 +601,7 @@ Template.dynamicTableGroup.helpers({
     return Template.instance().nestedOrder.get(tableId);
   },
   columned(tableId) {
-    return Template.instance().highlitedColumns.get(tableId);
+    return Template.instance().highlightedColumns.get(tableId);
   },
   hasFilters(tableId) {
     return _.keys(Template.instance().currentFilters.get(tableId).query || {}).length;
@@ -686,13 +724,21 @@ Template.dynamicTableGroup.events({
   "click .dynamic-table-manage-controller.columns"(e, templInstance) {
     const target = e.currentTarget;
     const tableId = $(target).attr("data-table-id");
-    const compressedColumns = templInstance.nestedColumns.get(tableId) || templInstance.columns.get();
+    const compressedColumns = _.clone(templInstance.nestedColumns.get(tableId) || templInstance.columns.get());
     const selectedColumns = _.compact(compressedColumns.map(c => _.find(getColumns(templInstance.data.customTableSpec.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data)));
 
     const manageColumnsOptions = _.extend({
       availableColumns: getColumns(templInstance.data.customTableSpec.columns),
       selectedColumns: selectedColumns,
       tableData: templInstance.data,
+      clearColumnsCallback() {
+        const columns = _.clone(templInstance.data.columns);
+        templInstance.nestedColumns.set(tableId, columns);
+        templInstance.highlightedColumns.set(tableId);
+        changed(templInstance.data.customTableSpec.custom, tableId, { newColumns: [] });
+
+        return columns;
+      },
       changeCallback(column, add) {
         let unsetField = false;
         const columns = compressedColumns;
@@ -713,9 +759,7 @@ Template.dynamicTableGroup.events({
         }
         changed(templInstance.data.customTableSpec.custom, tableId, { newColumns: columns, unset: unsetField });
         templInstance.nestedColumns.set(tableId, columns);
-        manageColumnsOptions.selectedColumns= columns;
-
-        $("#dynamic-table-manage-fields-modal")[0].__blazeTemplate.dataVar.set(manageColumnsOptions);
+        templInstance.highlightedColumns.set(tableId, !arraysEqual(columns, templInstance.data.columns, val => val.id + val.data));
       }
     }, templInstance.data.manageFieldsOptions || {});
 
