@@ -729,6 +729,12 @@ export class FiltersModal extends BlazeComponent {
       filter.type = this.getType(filter.column);
       const possibleOperators = this.getOperators(filter.type, filters, filter);
       filter.operator = possibleOperators && possibleOperators.length && possibleOperators[0];
+
+      // Default the value to true if the type is a boolean
+      if(filter.type === Boolean) {
+        filter.selectedOptions = [true];
+      }
+
       this.getOptions(filter, filters).then(filterWithOptions => this.setFilter(groupId, id, filterWithOptions));
     }
   }

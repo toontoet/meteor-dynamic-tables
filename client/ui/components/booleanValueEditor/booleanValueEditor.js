@@ -1,4 +1,5 @@
 import "./booleanValueEditor.html";
+import "./booleanValueEditor.css";
 import { inlineSave } from "../../../inlineSave.js";
 
 

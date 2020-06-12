@@ -32,7 +32,11 @@ export function jQueryData(element, ...values) {
 }
 
 // Returns true if arrays are equal, can be out of order.
-export function arraysEqual(arrayA, arrayB) {
+export function arraysEqual(arrayA, arrayB, func) {
+  if(func && _.isFunction(func)) {
+    arrayA = arrayA.map(val => func(val));
+    arrayB = arrayB.map(val => func(val));
+  }
   if(!arrayA || !arrayB) {
     return arrayA === arrayB;
   }

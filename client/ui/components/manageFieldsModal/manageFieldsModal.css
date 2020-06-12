@@ -140,9 +140,20 @@ div.dynamic-table-manage-fields ul {
   color: #f00;
 }
 .dynamic-table-manage-fields input {
-  width:170px;
+  width: 100%;
+}
+.dynamic-table-manage-fields-header {
+  display: inline-flex;
+}
+.dynamic-table-manage-fields-header i {
+  padding: 9px;
 }
 .dynamic-table-manage-fields .add-column {
+  color: #222;
+  margin-left: 5px;
+  cursor: pointer;
+}
+.dynamic-table-manage-fields .clear-columns {
   color: #222;
   margin-left: 5px;
   cursor: pointer;

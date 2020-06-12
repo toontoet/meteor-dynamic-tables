@@ -262,12 +262,13 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
     const changed = {};
     let hasChanges = false;
 
-    // Includes filters applied to table. All parent filters and value's filter as well. Also, we only want filters with keys.
-    const extraSelectors = parentFilters.filter(filter => _.keys(filter || {}).length);
-    const selector = { $and: [publicationCursor._cursorDescription.selector, ...extraSelectors] };
-
     let promise = Promise.resolve();
     if (queries.length) {
+
+      // Includes filters applied to table. All parent filters and value's filter as well. Also, we only want filters with keys.
+      const extraSelectors = parentFilters.filter(filter => _.keys(filter || {}).length);
+      const selector = { $and: [publicationCursor._cursorDescription.selector, ...extraSelectors] };
+      
       let pipeline;
       const match = field.match(/\.(\d+)$/);
       if (match) {

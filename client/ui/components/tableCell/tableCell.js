@@ -10,9 +10,6 @@ Template.dynamicTableTableCell.helpers({
     return _.extend({
       afterEditCallback() {
         template.editing.set(template.alwaysEditing);
-        if(template.alwaysEditing) {
-          template.helpers.editTemplateData();
-        }
       }
     }, _.isFunction(this.editTemplateData) ? this.editTemplateData() : this.editTemplateData);
   }

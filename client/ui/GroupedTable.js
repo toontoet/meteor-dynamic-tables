@@ -9,7 +9,6 @@ import { getColumns, getPosition, changed, getCustom, createModal} from "../inli
 import { EJSON } from "meteor/ejson";
 
 function openFiltersModal(templateInstance) {
-  const tableId = templateInstance.data.id;
   const table = templateInstance.data.table;
 
   Modal.show("dynamicTableFiltersModal", {
@@ -22,7 +21,7 @@ function openFiltersModal(templateInstance) {
       const currentFilter = templateInstance.parentFilter.get();
       currentFilter.query = newQuery;
       templateInstance.parentFilter.set(currentFilter);
-      changed(templateInstance.data.custom, tableId, { newFilter: newQuery });
+      changed(templateInstance.data.custom, templateInstance.data.id, { newFilter: newQuery });
     }
   });
 }
@@ -72,6 +71,7 @@ Template.GroupedTable.onRendered(function onRendered() {
 Template.GroupedTable.onCreated(function onCreated() {
   this.customTableSpec = this.data;
   this.search = new ReactiveVar();
+  this.defaultColumns = new ReactiveVar([]);
   this.customColumns = new ReactiveVar([]);
   this.groupChain = new ReactiveVar(this.data.groupChain || []);
   this.orders = new ReactiveVar(this.data.defaultOrder || []);
@@ -92,11 +92,20 @@ Template.GroupedTable.onCreated(function onCreated() {
   });
 
   this.autorun(() => {
+    const expandedColumns = getColumns(this.data.columns) || [];
+
+    // Using a list of columns that contain either just data or id to find the full version of those columns.
+    const formatColumns = columns => _.compact(columns.map(c => _.find(expandedColumns, c1 => c1.id ? c1.id === c.id : c1.data === c.data)));
+
+    // Keep track of the default columns because we need them to decide if the show/hide columns should be highlighted or not.
+    // Also, we need them to clear the columns (which just reverts them back to the default set of columns)
+    const defaultColumns = formatColumns(this.data.table.columns || this.data.columns().filter(c => c.default));
+    this.defaultColumns.set(defaultColumns);
+
     id.get();
     const stop = getCustom(this.data.custom, this.data.id, (custom) => {
       this.rootCustom.set(custom);
-      const columns = custom.columns || this.data.table.columns || this.data.columns().filter(c => c.default);
-      this.customColumns.set(_.compact(columns.map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
+      this.customColumns.set(formatColumns(custom.columns || defaultColumns));
       if (custom.order) {
         this.orders.set(custom.order);
       }
@@ -112,8 +121,7 @@ Template.GroupedTable.onCreated(function onCreated() {
       }
     });
     if (! stop) {
-      const columns = this.data.table.columns || this.data.columns().filter(c => c.default);
-      this.customColumns.set(_.compact(columns.map(c => _.find(getColumns(this.data.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data))));
+      this.customColumns.set(defaultColumns);
     }
   });
 
@@ -176,6 +184,15 @@ Template.GroupedTable.helpers({
   },
   columns() {
     return Template.instance().customColumns.get().map(c => ({ data: c.data, id: c.id }));
+  },
+  customColumns() {
+    const templateInstance = Template.instance();
+
+    // data + id is the best way to distinguish columns since it can be either one.
+    const customColumns = templateInstance.customColumns.get().map(c => c.data + c.id).sort();
+    const defaultColumns = templateInstance.defaultColumns.get().map(c => c.data + c.id).sort();
+
+    return !_.isEqual(customColumns, defaultColumns)
   },
   table() {
     const templInstance = Template.instance();
@@ -270,6 +287,14 @@ Template.GroupedTable.events({
       availableColumns: getColumns(templInstance.data.columns),
       selectedColumns: templInstance.customColumns.get() || [],
       tableData: templInstance.data,
+      clearColumnsCallback() {
+        const defaultColumns = _.clone(templInstance.defaultColumns.get());
+        templInstance.customColumns.set(defaultColumns);
+        changed(templInstance.data.custom, templInstance.data.id, { newColumns: defaultColumns });
+
+        // Return the default columns so the modal that triggered this knows which columns to select.
+        return defaultColumns;
+      },
       changeCallback(column, add) {
         let unsetField = false;
         const columns = templInstance.customColumns.get();
@@ -312,7 +337,7 @@ Template.GroupedTable.events({
     }, templInstance.data.manageFieldsOptions || {});
 
     // To be changed
-    // It duplicates code in dynamic table group
+    // It duplicates code in dynamic table group.
     if (manageColumnsOptions.edit) {
       manageColumnsOptions.edit.addedCallback = (columnSpec) => {
         if (!_.isFunction(templInstance.data.columns)) {
