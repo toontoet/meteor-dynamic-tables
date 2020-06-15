@@ -551,7 +551,10 @@ Template.dynamicTableGroup.helpers({
       // if we sure that values are sorted by default then sort function may be replaced with .reversed.
       return _.compact(_.union(sortable.sort((a, b) => a.label > b.label ? operator : b.label > a.label ? -1 * operator : 0), uncategorized));
     }
-    return values;
+    return values.map(val => {
+      val.label = val.label.toString();
+      return val;
+    });
   },
   tableIdSuffixChain(value) {
     const current = Template.instance().grouping;

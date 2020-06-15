@@ -228,7 +228,11 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
 }
 
 function canUseAggregate(queries, field) {
-  return !queries.find(q => (_.isObject(q.query) || q.options.limit)) && !queries.find(q => _.keys(q.filter || {}).length);
+  const queryLength = queries.filter(q => !_.isObject(q.query)).length;
+  return !queries.find(q => {
+    const isUncategorized = q.query.$not && q.query.$not.$in && queryLength === q.query.$not.$in.length;
+    return (!isUncategorized && _.isObject(q.query)) || q.options.limit
+  }) && !queries.find(q => _.keys(q.filter || {}).length);
 }
 export function simpleTablePublicationCounts(tableId, publicationName, field, baseSelector, queries, options = {}, parentFilters = []) {
   check(tableId, String);
@@ -296,9 +300,6 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
             $match: selector
           },
           {
-            $unwind: `$${field}`
-          },
-          {
             $group: {
               _id: `$${field}`,
               count: { $sum: 1 }
@@ -314,10 +315,12 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
       .aggregate(pipeline)
       .toArray()
       .then((res) => {
+        const getQueryId = query => !_.isUndefined(query) ? JSON.stringify(query).replace(/[{}.:]/g, "") : false;
+        let uncategorizedCount = 0;
         res.forEach((group) => {
           const query = queries.find(q => q.query === group._id);
           if (query) {
-            const id = JSON.stringify(query.query).replace(/[{}.:]/g, "");
+            const id = getQueryId(query.query);
             if (id) {
               if (result[id] !== group.count && (result[id] !== undefined || group.count !== 0)) {
                 changed[id] = group.count;
@@ -325,8 +328,27 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
                 hasChanges = true;
               }
             }
+          } else {
+
+            // If there is no query attributed to the group, this group will be part of the uncategorized group.
+            uncategorizedCount += group.count;
           }
         });
+        
+        // If the aggregate function is being applied, there will be one or no query that is an object for the uncategorized group.
+        const uncategorizedQuery = queries.find(q => _.isObject(q.query));
+
+        if(uncategorizedQuery) {
+          const uncategorizedId = getQueryId(uncategorizedQuery.query);
+          if(uncategorizedId) {
+            if (result[uncategorizedId] !== uncategorizedCount && (result[uncategorizedId] !== undefined || uncategorizedCount !== 0)) {
+              changed[uncategorizedId] = uncategorizedCount;
+              result[uncategorizedId] = uncategorizedCount;
+              hasChanges = true;
+            }
+          }
+        }
+        
       });
     }
     promise.then(() => {
