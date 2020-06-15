@@ -41,7 +41,7 @@ Template.CustomizableTable.onCreated(function onCreated() {
           const availableColumns = getColumns(this.data.columns);
           custom.columns = mergeRequiredColumns(custom.columns, availableColumns);
         }
-        const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.table.columns;
+        const columnsToUse = custom.columns && custom.columns.length ? custom.columns : this.data.selectedColumns || this.data.table.columns;
         this.selectedColumns.set(filterColumns(getColumns(this.data.columns), columnsToUse.map(c => c.id || c.data)));
 
         // EJSON.fromJSONValue is needed because the JSON object stored uses ESJSON.toJSONValue
