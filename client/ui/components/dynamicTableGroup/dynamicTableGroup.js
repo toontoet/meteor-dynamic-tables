@@ -239,15 +239,11 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
         getCustom(data.customTableSpec.custom, value.tableId, (custom) => {
           this.nestedCustoms.set(value.tableId, custom);
 
-          const nestedGroupChain = this.nestedGrouping.get(value.tableId);
-          const groupChain = nestedGroupChain && nestedGroupChain.length ? nestedGroupChain : this.groupChain.get();
-          const hasGrouping =  groupChain && groupChain.length;
-
           // This is done once on initialization.
           if(!this.nestedColumns.get(value.tableId)) {
 
             // Columns can't be changed at the leaf level.
-            if (custom.columns && !hasGrouping) {
+            if (custom.columns && !custom.groupChainFields) {
               if (custom.columns.length && !arraysEqual(this.data.columns, custom.columns, column => column.id + column.data)) {
                 this.nestedColumns.set(value.tableId, custom.columns);
                 this.highlightedColumns.set(value.tableId, true);
