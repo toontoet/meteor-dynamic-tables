@@ -36,6 +36,12 @@ const opMap = {
     label: "is not empty",
     operators: ["$exists"]
   },
+  booleanEquals: {
+    id: "booleanEquals",
+    label: "is...",
+    operators: ["$eq"],
+    singleValue: true
+  },
   equals: {
     id: "equals",
     label: "=",
@@ -139,7 +145,7 @@ const typeMap = [
   {
     type: Boolean,
     operators: [
-      opMap.all
+      opMap.booleanEquals
     ]
   }
 ];

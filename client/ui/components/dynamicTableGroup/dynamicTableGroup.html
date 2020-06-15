@@ -16,69 +16,71 @@
         {{/if}}
       </div>
     {{/if}}
-    {{#each value in currentGroupValues}}
-      <div class="dynamic-table-panel" style="{{#unless shouldDisplaySection value}}display: none;{{/unless}}">
-        <div class="dynamic-table-header" data-index="{{@index}}" data-table-id="{{value._id}}">
-          {{#if showPrefix}}{{currentGroupLabel}}: {{/if}}{{value.label}} {{#if hasCount value}}({{count value}}){{/if}}
-          <div class="pull-right">
-            {{#if advancedControl "filtering"}}
-              <span class="filters dynamic-table-manage-controller {{#if hasFilters (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
-                <i class="fa fa-filter"></i>
-              </span>
-            {{/if}}
-            {{#if advancedControl "ordering"}}
-              <span class="orders dynamic-table-manage-controller {{#if ordered (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
-                <i class="fa fa-sort"></i>
-              </span>
-            {{/if}}
-            {{#if advancedControl "columning"}}
-              <span class="columns dynamic-table-manage-controller {{#if columned (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
-                <i class="fa fa-eye-slash"></i>
-              </span>
-            {{/if}}
-            {{#if advancedControl "grouping"}}
-              <span class="groups dynamic-table-manage-controller {{#if grouped (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
-                <i class="fa fa-th-list"></i>
-              </span>
+    {{#unless waitingAndLoading}}
+      {{#each value in currentGroupValues}}
+        <div class="dynamic-table-panel" style="{{#unless shouldDisplaySection value}}display: none;{{/unless}}">
+          <div class="dynamic-table-header" data-index="{{@index}}" data-table-id="{{value._id}}">
+            {{#if showPrefix}}{{currentGroupLabel}}: {{/if}}{{value.label}} {{#if hasCount value}}({{count value}}){{/if}}
+            <div class="pull-right">
+              {{#if advancedControl "filtering"}}
+                <span class="filters dynamic-table-manage-controller {{#if hasFilters (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
+                  <i class="fa fa-filter"></i>
+                </span>
+              {{/if}}
+              {{#if advancedControl "ordering"}}
+                <span class="orders dynamic-table-manage-controller {{#if ordered (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
+                  <i class="fa fa-sort"></i>
+                </span>
+              {{/if}}
+              {{#if advancedControl "columning"}}
+                <span class="columns dynamic-table-manage-controller {{#if columned (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
+                  <i class="fa fa-eye-slash"></i>
+                </span>
+              {{/if}}
+              {{#if advancedControl "grouping"}}
+                <span class="groups dynamic-table-manage-controller {{#if grouped (tableId value)}} active {{/if}}" data-table-id="{{tableId value}}">
+                  <i class="fa fa-th-list"></i>
+                </span>
+              {{/if}}
+            </div>
+          </div>
+          <div class="dynamic-table-content" style="{{#if shouldDisplayContent value._id}}display: block;{{/if}}">
+            {{#if shouldDisplayTable value._id}}
+              {{#if hasGrouping (tableId value)}}
+                {{> dynamicTableGroup
+                  forceRefresh=forceRefresh
+                  showPrefix=showPrefix
+                  noGroups=noGroups
+                  loading=loading
+                  expandAll=expandAll
+                  lazy=lazy
+                  customTableSpec=customTableSpec
+                  groupableFields=groupableFields
+                  advanced=advanced
+
+                  tableIdSuffixChain=(tableIdSuffixChain value)
+                  selector=(newSelector value selector)
+                  parentFilters=(parentFilters value)
+                  tableId=(tableId value)
+
+                  groupChain=(groupChain (tableId value))
+                  orders=(orders (tableId value))
+                  columns=(columns (tableId value))
+
+                  custom=custom
+
+                  orderCheckFn=orderCheckFn
+                }}
+              {{else}}
+                {{> CustomizableTable
+                  (table value (newSelector value selector))
+                }}
+              {{/if}}
             {{/if}}
           </div>
         </div>
-        <div class="dynamic-table-content" style="{{#if shouldDisplayContent value._id}}display: block;{{/if}}">
-          {{#if shouldDisplayTable value._id}}
-            {{#if hasGrouping (tableId value)}}
-              {{> dynamicTableGroup
-                forceRefresh=forceRefresh
-                showPrefix=showPrefix
-                noGroups=noGroups
-                loading=loading
-                expandAll=expandAll
-                lazy=lazy
-                customTableSpec=customTableSpec
-                groupableFields=groupableFields
-                advanced=advanced
-
-                tableIdSuffixChain=(tableIdSuffixChain value)
-                selector=(newSelector value selector)
-                parentFilters=(parentFilters value)
-                tableId=(tableId value)
-
-                groupChain=(groupChain (tableId value))
-                orders=(orders (tableId value))
-                columns=(columns (tableId value))
-
-                custom=custom
-
-                orderCheckFn=orderCheckFn
-              }}
-            {{else}}
-              {{> CustomizableTable
-                (table value (newSelector value selector))
-              }}
-            {{/if}}
-          {{/if}}
-        </div>
-      </div>
-    {{/each}}
+      {{/each}}
+    {{/unless}}
     {{#unless hasVisibleGroups}}
       {{#unless showLoadingMessage}}
         <div class="dynamic-table-no-group">
