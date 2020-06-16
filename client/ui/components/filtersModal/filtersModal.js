@@ -761,7 +761,7 @@ export class FiltersModal extends BlazeComponent {
     if (filter) {
       filter.selectedOptions = selectedOptions.map(option => {
         if(filter.options) {
-          const currentOption = filter.options.find(item => item.label.toString() === option.toString());
+          const currentOption = filter.options.find(item => item.label && item.label.toString() === option.toString());
           return currentOption && currentOption.value;
         }
         switch(filter.type) {

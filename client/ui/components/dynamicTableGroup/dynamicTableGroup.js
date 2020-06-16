@@ -345,7 +345,7 @@ Template.dynamicTableGroup.onCreated(function onCreated() {
     const valuesToCount = values.filter(v => v.ensureValues || v.count === true || (v.count === undefined && current.count === true) || (v.ensureValues === undefined && current.ensureValues));
     // if online and there's a publication
     if (Tracker.nonreactive(() => Meteor.status().status !== "offline") && data.customTableSpec.table.publication) {
-      const ids = valuesToCount.map(value => ({ tableId: this.data.tableId + getTableIdSuffix.call(this, value), resultId: JSON.stringify(value.query).replace(/[\{\}.:]/g, "") }));
+      const ids = valuesToCount.map(value => ({ tableId: this.data.tableId + getTableIdSuffix.call(this, value), resultId: JSON.stringify(value.query || "").replace(/[\{\}.:]/g, "") }));
       const count = this.groupInfo.findOne({ _id: data.tableId + getTableIdSuffix.call(this) });
       ids.forEach(({ tableId, resultId }) => {
         if (count && count[resultId]) {
@@ -548,7 +548,7 @@ Template.dynamicTableGroup.helpers({
       return _.compact(_.union(sortable.sort((a, b) => a.label > b.label ? operator : b.label > a.label ? -1 * operator : 0), uncategorized));
     }
     return values.map(val => {
-      val.label = val.label.toString();
+      val.label = (val.label || "").toString();
       return val;
     });
   },
