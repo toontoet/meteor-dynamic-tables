@@ -230,7 +230,7 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
 function canUseAggregate(queries, field) {
   const queryLength = queries.filter(q => !_.isObject(q.query)).length;
   return !queries.find(q => {
-    const isUncategorized = q.query.$not && q.query.$not.$in && queryLength === q.query.$not.$in.length;
+    const isUncategorized = q.query && q.query.$not && q.query.$not.$in && queryLength === q.query.$not.$in.length;
     return (!isUncategorized && _.isObject(q.query)) || q.options.limit
   }) && !queries.find(q => _.keys(q.filter || {}).length);
 }
@@ -441,7 +441,6 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
       }
     });
   }
-
   updateRecords();
 
   this.onStop(() => {

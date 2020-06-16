@@ -159,7 +159,7 @@ export function getTableIdSuffix(value) {
   const current = this.grouping;
 
   const selector = {};
-  if (value && value.query.$nor) {
+  if (value && value.query && value.query.$nor) {
     selector.$and = [value.query];
   }
   else if (value) {
