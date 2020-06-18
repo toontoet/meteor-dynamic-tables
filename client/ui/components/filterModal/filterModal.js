@@ -291,7 +291,9 @@ export class FilterModal extends BlazeComponent {
 
   isBooleanSelected(value) {
     const data = this.nonReactiveData();
-    const search = (data.filter && data.filter.search && data.filter.search.value) || (data.filter.selectedOptions && [].concat(data.filter.selectedOptions)[0]);
+    const search = (data.filter && data.filter.search && data.filter.search.value);
+    const selectedOption = data.filter.selectedOptions && [].concat(data.filter.selectedOptions)[0];
+    const searchValue = _.isUndefined(search) ? selectedOption : search;
     return value === search ? { selected: "selected" } : {};
   }
 

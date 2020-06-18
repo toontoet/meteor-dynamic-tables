@@ -15,7 +15,7 @@ import "./components/singleValueTextEditor/singleValueTextEditor.js";
 import "./components/select2ValueEditor/select2ValueEditor.js";
 import "./components/bulkEditModal/bulkEditModal.js";
 import { getTableRecordsCollection } from "../db.js";
-import { getColumnFields } from "./helpers.js"
+import { getColumnFields, getFields } from "./helpers.js"
 
 function escapeRegExp(string) {
   if (!_.isString(string)) {
@@ -218,6 +218,10 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
         toExtend.$options = columns[columnIndex].searchOptions;
       }
       newAdvancedSearchField = columns[columnIndex].search(_.extend({}, newAdvancedSearchField, toExtend), false);
+      const fields = getFields(newAdvancedSearchField);
+
+      // Make sure after running the search function, matching fields are removed from the advanced search.
+      fields.forEach(field => cleanObject(field, advancedSearch));
       let arrayToReplaceIn = advancedSearch.$and || [];
       let found = false;
       arrayToReplaceIn = arrayToReplaceIn.map((obj) => {

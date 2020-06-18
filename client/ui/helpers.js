@@ -200,14 +200,54 @@ export function getColumnFields(column) {
 export function getFields(...values) {
   let results = [];
   values.forEach(value => {
-    const keys = _.keys(value || {});
-    keys.forEach(key => {
-      if(_.contains(["$and", "$or"], key)) {
-        results = results.concat(getFields(...[].concat(value[key])));
-      } else {
-        results.push(key);
-      }
-    });
+    if(_.isArray(value)) {
+      results = results.concat(getFields(...value));
+    } else if (_.isObject(value)) {
+      _.keys(value || {}).forEach(key => {
+        if(key[0] !== "$") {
+          results.push(key);
+        }
+        if(_.isObject(value[key]) || _.isArray(value[key])) {
+          results = results.concat(getFields(...[].concat(value[key])));
+        }
+      });
+    }
   });
   return results;
+}
+
+// Given a field name and object, find the first property with the same name, return an
+// object that contains only that field and the value of that field.
+export function getFirstFieldValue(fieldName, obj) {
+  const keys = _.keys(obj);
+
+  // Using for loop so we can return without iterating the whole set of keys.
+  for(var i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    if(key === fieldName) {
+      return { [key]: obj[key] };
+    } else if(_.isObject(obj[key]) || _.isArray(obj[key])) {
+      const nestedObj = getFirstFieldValue(fieldName, obj[key]);
+      if(nestedObj) {
+        return nestedObj;
+      }
+    }
+  }
+}
+
+// Returns the nested value of an object that's expected to be a chain of object.
+// E.g. { $not: { $in: { $here: { $but: { $here: value } } } } }
+export function getChainedFieldValue(value) {
+  if(_.isObject(value)) {
+    const keys = _.keys(value || {});
+
+    if(keys.length) {
+      if(_.isObject(value[keys[0]]) || _.isArray(value[keys[0]])) {
+        return getChainedFieldValue(value[keys[0]])
+      } else {
+        return value[keys[0]];
+      }
+    }
+  }
+  return value;
 }
