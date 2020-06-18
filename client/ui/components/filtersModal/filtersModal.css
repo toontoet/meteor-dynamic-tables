@@ -41,7 +41,7 @@
 }
 
 .dynamic-table-filters-group-container {
-  z-index: 9999;
+  z-index: 99;
   padding: 20px;
   border: 1px solid #cccccc;
   border-radius: 3px;
@@ -64,8 +64,9 @@
 .dynamic-table-filters-selector-container {
   padding: 5px;
   display: inline-flex;
-  z-index: 9999;
+  z-index: 99;
   width: 100%;
+  position: relative;
 }
 
 .dynamic-table-filters-column {

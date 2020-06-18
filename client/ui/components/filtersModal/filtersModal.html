@@ -43,7 +43,7 @@
                     {{#unless isComplexDataType filter}}
                       {{#if hasOptions filter}}
                         <section class="dynamic-table-filters-select2-section">
-                          <select {{isFilterDisabled filter}} {{isControlDisabled filter}} data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search dynamic-table-filters-select2" placeholder="Search..." multiple="multiple"></select>
+                          <select style="display:none;" {{isFilterDisabled filter}} {{isControlDisabled filter}} data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search dynamic-table-filters-select2" placeholder="Search..." multiple="multiple"></select>
                         </section>
                       {{else}}
                         <input {{isFilterDisabled filter}} {{isControlDisabled filter}} type="{{#if isNumber filter}}number{{else}}text{{/if}}" data-group="{{filterGroup.id}}" data-id="{{filter.id}}" class="dynamic-table-filters-search" placeholder="Search..." value="{{searchValue filter}}" />
