@@ -24,6 +24,25 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
   this.columnTitle = new ReactiveVar();
   this.advancedFilter = new ReactiveVar(null);
   this.parentAdvancedSearch = new ReactiveVar(null);
+
+  // The most common query is in the format {field1: {query}, field2: {query} $or: [queries]}.
+  // In rare cases if there are multiple $or groups, they'll be put in an $and group.
+  // This extra step ensures that those nested $or groups are pulled out and formatted the same way
+  // as the other fields.
+  const formatQueryAndGroup = queryAndGroup => {
+    const keys = _.keys(queryAndGroup);
+    let results = [];
+    if(queryAndGroup.$and) {
+      results = results.concat(queryAndGroup.$and);
+    }
+    if(keys.length && keys.length > 1) {
+      keys.forEach(key => results.push({[key]: queryAndGroup[key]}));
+    } else {
+      results.push(queryAndGroup); 
+    }
+    return results;
+  };
+
   this.autorun(() => {
     let { advancedFilter, parentFilters, column } = this.data;
 
@@ -51,24 +70,6 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
           isComplexFilter: true
         }
       }
-
-      // The most common query is in the format {field1: {query}, field2: {query} $or: [queries]}.
-      // In rare cases if there are multiple $or groups, they'll be put in an $and group.
-      // This extra step ensures that those nested $or groups are pulled out and formatted the same way
-      // as the other fields.
-      const formatQueryAndGroup = queryAndGroup => {
-        const keys = _.keys(queryAndGroup);
-        let results = [];
-        if(queryAndGroup.$and) {
-          results = results.concat(queryAndGroup.$and);
-        }
-        if(keys.length && keys.length > 1) {
-          keys.forEach(key => results.push({[key]: queryAndGroup[key]}));
-        } else {
-          results.push(queryAndGroup); 
-        }
-        return results;
-      };
 
       query.$or.forEach(queryOrGroup => {
         queryOrGroup.$and.flatMap(queryAndGroup => formatQueryAndGroup(queryAndGroup)).forEach(queryAndGroup => {

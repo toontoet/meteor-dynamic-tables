@@ -893,7 +893,7 @@ export class FiltersModal extends BlazeComponent {
 
           // Selected options could be loaded in as values so adjust if needed.
           if(filter.selectedOptions && filter.selectedOptions.length && filter.options) {
-            filter.selectedOptions = filter.selectedOptions.map(option => {
+            filter.selectedOptions = filter.selectedOptions.filter(option => !_.isUndefined(option)).map(option => {
               const selected = filter.options.find(val => val.value.toString() === option.toString() || val.label.toString() === option.toString())
               return (selected && selected.label) || option;
             });
