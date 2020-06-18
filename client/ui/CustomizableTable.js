@@ -78,9 +78,11 @@ Template.CustomizableTable.helpers({
         changed(tmplInstance.data.custom, tmplInstance.data.id, { newOrder: order });
       }
     };
-    table.colReorder = {
-      fnReorderCallback: Template.instance().fnReorderCallback
-    };
+    if (table.colReorder && typeof table.colReorder === "object") {
+      table.colReorder = _.extend(table.colReorder, {
+        fnReorderCallback: Template.instance().fnReorderCallback
+      });
+    }
     return table;
   },
   allColumns() {
