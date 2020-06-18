@@ -158,6 +158,23 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
 
   // NOTE: we only want to run this code when triggered, not by an advanced search change.
   const advancedSearch = Tracker.nonreactive(() => this.advancedSearch.get()) || {};
+
+  // Clean out old queries using the same field name:
+  const cleanObject = (fieldName, obj) => {
+    _.keys(obj || {}).forEach(key => {
+      if(key === fieldName) {
+        delete obj[key];
+      } else if(_.isObject(obj[key]) || _.isArray(obj[key])) {
+        cleanObject(fieldName, obj[key]);
+        if(!_.keys(obj[key] || {}).length) {
+          delete obj[key];
+        }
+      }
+    });
+  }
+
+  cleanObject(fieldName, advancedSearch);
+
   const startsWith = !columns[columnIndex].fullSearch;
 
   // NOTE: added .length to ensure correctness when disabling all options (e.g., add diagrams modal)
@@ -205,7 +222,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       let found = false;
       arrayToReplaceIn = arrayToReplaceIn.map((obj) => {
         const arr = obj.$or || obj.$and;
-        if (_.isArray(newAdvancedSearchField)) {
+        if (arr && _.isArray(newAdvancedSearchField)) {
           const matches = newAdvancedSearchField.some(searchObj => arr.find(oldObj => _.isEqual(_.sortBy(_.keys(searchObj)), _.sortBy(_.keys(oldObj)))));
           if (matches) {
             found = true;
@@ -223,7 +240,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       });
       if (!found) {
         if (_.isArray(newAdvancedSearchField)) {
-          const someOperator = ["$regex", "$in"].includes(operator) ? "$or" : "$and";
+          const someOperator = ["$regex", "$in", "$eq"].includes(operator) ? "$or" : "$and";
           arrayToReplaceIn.push({ [someOperator]: escapeRegExp(newAdvancedSearchField) });
         }
         else {

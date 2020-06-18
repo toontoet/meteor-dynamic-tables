@@ -199,54 +199,91 @@ export class FiltersModal extends BlazeComponent {
   }
 
   handleTimeChange(e) {
-    const secondsComponent = $(".dynamic-table-filters-seconds");
-    const minutesComponent = $(".dynamic-table-filters-minutes");
+    if(!this.processing.get()) {
+      const secondsComponent = $(".dynamic-table-filters-seconds");
+      const minutesComponent = $(".dynamic-table-filters-minutes");
 
-    const seconds = safeParseInt(secondsComponent.val());
-    const minutes = safeParseInt(minutesComponent.val());
+      const seconds = safeParseInt(secondsComponent.val());
+      const minutes = safeParseInt(minutesComponent.val());
 
-    this.updateTime(...jQueryData(e, "group", "id"), minutes, seconds);
+      this.updateTime(...jQueryData(e, "group", "id"), minutes, seconds);
+    }
   }
 
   handleSearchChange(e) {
-    if(!$(e.currentTarget).hasClass("time")) {
-      const value = $(e.currentTarget).val();
-      this.updateFilter(...jQueryData(e, "group", "id"), [].concat(value));
+    if(!this.processing.get()) {
+      if(!$(e.currentTarget).hasClass("time")) {
+        const value = $(e.currentTarget).val();
+        this.updateFilter(...jQueryData(e, "group", "id"), [].concat(value));
+      }
     }
   }
 
   handleOperatorChange(e){
-    this.updateOperator(...jQueryData(e, "group", "id"), $(e.currentTarget).val());
+    if(!this.processing.get()) {
+      this.updateOperator(...jQueryData(e, "group", "id"), $(e.currentTarget).val());
+    }
   }
 
   handleColumnChange(e) {
-    this.updateColumn(...jQueryData(e, "group", "id"), $(e.currentTarget).val());
+    if(!this.processing.get()) {
+      this.updateColumn(...jQueryData(e, "group", "id"), $(e.currentTarget).val());
+    }
   }
 
   handleOpenFiltersModalClick(e) {
-    const filter = this.getFilter(...jQueryData(e, "group", "id"));
-    if(_.isFunction(filter.triggerOpenFiltersModal)) {
-      $('#dynamicTableFiltersModal').on('hidden.bs.modal', function (e) {
-        $(e.currentTarget).unbind();
-        filter.triggerOpenFiltersModal();
-      });
-      $("#dynamicTableFiltersModal").modal("hide");
+    if(!this.processing.get()) {
+      const filter = this.getFilter(...jQueryData(e, "group", "id"));
+      if(_.isFunction(filter.triggerOpenFiltersModal)) {
+        $('#dynamicTableFiltersModal').on('hidden.bs.modal', function (e) {
+          $(e.currentTarget).unbind();
+          filter.triggerOpenFiltersModal();
+        });
+        $("#dynamicTableFiltersModal").modal("hide");
+      }
     }
   }
 
   handleAddFilterGroupClick() {
-    this.addFilterGroup();
+    if(!this.processing.get()) {
+      this.addFilterGroup();
+    }
   }
 
   handleRemoveFilterClick(e) {
-    this.removeFilter(...jQueryData(e, "group", "id"));
+    if(!this.processing.get()) {
+      this.removeFilter(...jQueryData(e, "group", "id"));
+    }
   }
 
   handleAddFilterClick(e) {
-    this.addFilter(...jQueryData(e, "group"));
+    if(!this.processing.get()) {
+      this.addFilter(...jQueryData(e, "group"));
+    }
   }
 
   handleClearClick() {
+    if(!this.processing.get()) {
+      this.clearFilterGroups();
+    }
+  }
+
+  handleCancelClick() {
+
+    // This is the only handler where we don't need to worry
+    // if things are processing.
+    $("#dynamicTableFiltersModal").modal("hide");
+  }
+
+  handleApplyClick() {
+    if(!this.processing.get()) {
+      this.outputQuery();
+      $("#dynamicTableFiltersModal").modal("hide");
+    }
+  }
+
+  // Clears selected filter groups. This excludes parent filters.
+  clearFilterGroups() {
     const filterGroups = this.filterGroups.get();
     if(filterGroups.length >= 1 && filterGroups[0].filters.filter(val => val.disabled).length) {
       filterGroups[0].filters = filterGroups[0].filters.filter(val => val.disabled);
@@ -256,11 +293,9 @@ export class FiltersModal extends BlazeComponent {
     }
   }
 
-  handleCancelClick() {
-    $("#dynamicTableFiltersModal").modal("hide");
-  }
-
-  handleApplyClick() {
+  // Converts the filter groups and filters into a query that can
+  // be interpreted by mongo and passes it to the provided callback.
+  outputQuery() {
     const filterGroups = this.filterGroups.get();
     filterGroups.forEach(filterGroup => {
       filterGroup.filters.forEach(filter => {
@@ -283,8 +318,26 @@ export class FiltersModal extends BlazeComponent {
           $and: [{}]
         };
 
-        filters.forEach(filter => _.keys(filter || {}).forEach(key => 
-          andGroup.$and[0][key] = _.extend(andGroup.$and[0][key] || {}, filter[key])));
+        // This logic will combine objects for the same column. E.g.
+        // [{a: {in: 2}}, {a: {on: 3}}] -> [{a: {in: 2, on: 3}}] 
+        // however if the filter is an array (like an $or group) don't do this logic
+        filters.forEach(filter => _.keys(filter || {}).forEach(key => {
+          if(_.isArray(filter[key])) {
+            if(andGroup.$and[0][key]) {
+              if(!andGroup.$and[0].$and) {
+                andGroup.$and[0].$and = [{ [key]: andGroup.$and[0][key]}];
+              } else {
+                andGroup.$and[0].$and.push({ [key]: andGroup.$and[0][key]});
+              }
+              delete andGroup.$and[0][key];
+              andGroup.$and[0].$and.push({ [key]: filter[key]});
+            } else {
+              andGroup.$and[0][key] = filter[key];
+            }
+          } else {
+            andGroup.$and[0][key] = _.extend(andGroup.$and[0][key] || {}, filter[key]);
+          }
+        }));
 
         return filters.length == 1 && filterGroups.length == 1 ? filters[0] : andGroup;
       }).filter(filterGroup => filterGroup)
@@ -296,9 +349,9 @@ export class FiltersModal extends BlazeComponent {
     }
 
     this.triggerUpdateFilter(newFilter);
-    $("#dynamicTableFiltersModal").modal("hide");
   }
 
+  // Loads the filter and parent filters when the modal is created.
   loadQuery(filter, parentFilters) {
 
     let filterGroups = [];
@@ -333,7 +386,7 @@ export class FiltersModal extends BlazeComponent {
   }
 
   // Formats the queries within the filters and returns a list of filter groups and filters
-  // which contain the arguments used by methods that create values used by the filters modal.
+  // which contain the arguments used by addFilter and addFilterGroup.
   formatQueries(filterGroups, isParent, ...filters) {
 
     // filterGroups is passed in here because the filters that get created can be placed in the
@@ -353,7 +406,7 @@ export class FiltersModal extends BlazeComponent {
               $and: _.keys(queryAndGroup.$and[0]).flatMap(key => {
 
                 // The logic here handles a field with multiple operators. This doesn't apply to a nested OR group.
-                if(_.keys(queryAndGroup.$and[0][key] || {}).length > 1 && key !== "$or") {
+                if(_.keys(queryAndGroup.$and[0][key] || {}).length > 1 && !~["$or", "$and"].indexOf(key)) {
                   return _.keys(queryAndGroup.$and[0][key]).map(val => (
                     {
                       [key]: { 
@@ -361,6 +414,12 @@ export class FiltersModal extends BlazeComponent {
                       }
                     }
                   ));
+                } else if(key === "$and") {
+                  // There's one special case that may appear if there are multiple nested OR groups.
+                  // If there's one, there will be exactly one $or field and we can process that as such.
+                  // If there are multiple OR groups, they'll appear in exactly one AND group. They'll already be
+                  // in the correct format so we can just return the contents of the AND group.
+                  return queryAndGroup.$and[0][key];
                 } else {
                   return [{
                     [key]: queryAndGroup.$and[0][key]
@@ -406,6 +465,7 @@ export class FiltersModal extends BlazeComponent {
     return filterGroups;
   }
 
+  // Converts a filter into a query.
   toQuery(filter) {
     query = {};
     let currentItem = query;
@@ -447,6 +507,8 @@ export class FiltersModal extends BlazeComponent {
     }
   }
 
+  // Converts a query into a filter. "disabled" is used for parent queries as those
+  // can't be changed in the modal.
   fromQuery(query, disabled) {
     let item = this.getFirstKey(query);
     if(item) {
@@ -486,9 +548,8 @@ export class FiltersModal extends BlazeComponent {
             operator,
 
             // We want to keep track of the operators list (which is just the combination of values like [$not, $in] from the original query)
-            // because there's cases where the type is marked as String, 
-            // for example, but once the options are resolved (which can be asynchronous), it could end up
-            // being an Array instead if a list of options are returned. 
+            // because there's cases where the type is marked as String for example, but once the options are resolved (which can be asynchronous), 
+            // it could end up being an Array instead, if a list of options are returned. 
             // At that point the operators list is needed to find the proper operator.
             operators,
             selectedOptions,
@@ -501,10 +562,15 @@ export class FiltersModal extends BlazeComponent {
     }
   }
 
+  // Returns true if the provided key is an operator ($in, $not, $all).
+  // This check doesn't necessarily cover every operator, just ones used by this modal.
   isAnOperator(key) {
     return _.contains(Object.keys(opMap).flatMap(val => opMap[val].operators), key);
   }
 
+  // Gets the first key and value of an object.
+  // This method is used when parsing queries as
+  // a query is usually in the format { $not: { $in: [1,2,3] }}
   getFirstKey(item) {
     const keys = Object.keys(item);
     if(keys && keys.length) {
@@ -536,6 +602,8 @@ export class FiltersModal extends BlazeComponent {
   }
 
   isSelected(filter, value) {
+
+    // Only used by the boolean select list.
     const result = filter && filter.selectedOptions && filter.selectedOptions.length && filter.selectedOptions[0].toString() === value.toString();
     return result ? "selected" : "";
   }
@@ -570,7 +638,7 @@ export class FiltersModal extends BlazeComponent {
   }
 
   isFilterDisabled(filter) {
-    return filter.disabled ? "disabled" : "";
+    return filter.disabled || filter.processing ? "disabled" : "";
   }
 
   isOperatorSelectDisabled(groupId, id) {
@@ -583,6 +651,90 @@ export class FiltersModal extends BlazeComponent {
     }
 
     return "disabled";
+  }
+
+  addFilterGroup(filters) {
+    return new Promise(resolve => {
+      const filterGroups = this.filterGroups.get();
+      const newId = nextId(filterGroups.map(val => val.id));
+      const filterGroup = {
+        id: newId,
+        _id: `${newId}`,
+        filters: []
+      };
+      if(!filters) {
+        this.filterGroups.set([...filterGroups, filterGroup]);
+        this.addFilter(newId);
+        resolve();
+      } else {
+        const promises = [];
+        filters.forEach((filter, i) => {
+          const newFilter = this.createFilter(
+            i, 
+            filter.column, 
+            this.getType(filter.column), 
+            filter.operator, 
+            filter.selectedOptions,
+            filter.operators, 
+            filter.disabled,
+            filter.triggerOpenFiltersModal,
+            filter.label
+          );
+          newFilter.processing = true;
+          filterGroup.filters.push(newFilter);
+          promises.push(this.getOptions(newFilter)
+            .then(filterWithOptions => {
+              if(filterWithOptions) {
+                filterWithOptions.processing = false;
+              }
+              return filterWithOptions;
+            }));
+        });
+        this.filterGroups.set([filterGroup, ...filterGroups]);
+        this.processing.set(true);
+        Promise.all(promises).then(filters => {
+          this.processing.set(false);
+          // Disregard any filters that have an undefined operator.
+          const filteredFilters = filters.filter(filter => filter.operator);
+          if(filteredFilters.length > 0) {
+            this.setFilters(newId, filteredFilters);
+          }
+          resolve();
+        });
+      }
+    });
+  }
+
+  addFilter(groupId) {
+    const filters = this.getFilters(groupId);
+    if (filters) {
+      column = this.columns.find(column => !filters.map(filter => filter.column.data).includes(column.data));
+      // If we've gone through all columns once
+      if(!column) {
+        const usedColumns = this.usedColumns(filters);
+        column = this.columns.find(column => !_.contains(usedColumns, column.data));
+      }
+      if(column) {
+        const newId = nextId(filters.map(filter => filter.id));
+        const type = this.getType(column);
+        const filter = this.createFilter(newId, column, type, this.getOperators(type, filters, { column })[0]);
+        filter.processing = true;
+        filters.push(filter);
+        this.setFilters(groupId, filters);
+        this.processing.set(true);
+        this.getOptions(filter, filters).then(filterWithOptions => {
+          this.processing.set(false);
+          filterWithOptions.processing = false;
+          
+          // If the filter is a boolean, we can default the selected option to true.
+          if(filterWithOptions.type === Boolean) {
+            filterWithOptions.selectedOptions = [true];
+          }
+          
+          this.setFilters(groupId, filters);
+        });
+      }
+    }
   }
 
   createFilter(id, column, type, operator, selectedOptions, operators, disabled = false, triggerOpenFiltersModal, label) {
@@ -607,33 +759,6 @@ export class FiltersModal extends BlazeComponent {
       label
     };
   }
-
-  addFilter(groupId) {
-    const filters = this.getFilters(groupId);
-    if (filters) {
-      column = this.columns.find(column => !filters.map(filter => filter.column.data).includes(column.data));
-      // If we've gone through all columns once
-      if(!column) {
-        const usedColumns = this.usedColumns(filters);
-        column = this.columns.find(column => !_.contains(usedColumns, column.data));
-      }
-      if(column) {
-        const newId = nextId(filters.map(filter => filter.id));
-        const type = this.getType(column);
-        const filter = this.createFilter(newId, column, type, this.getOperators(type, filters, { column })[0]);
-        this.getOptions(filter, filters).then(filterWithOptions => {
-          
-          // If the filter is a boolean, we can default the selected option to true.
-          if(filterWithOptions.type === Boolean) {
-            filterWithOptions.selectedOptions = [true];
-          }
-
-          filters.push(filterWithOptions);
-          this.setFilters(groupId, filters);
-        });
-      }
-    }
-  }
   
   removeFilter(groupId, id) {
     const filters = this.getFilters(groupId);
@@ -646,6 +771,55 @@ export class FiltersModal extends BlazeComponent {
           this.removeFilterGroup(groupId);
         }
       }
+    }
+  }
+
+  updateColumn(groupId, id, columnId) {
+    const filters = this.getFilters(groupId);
+    const filter = this.getFilter(groupId, id);
+    if (filter && filter.column.data !== columnId) {
+
+      // Update column, type and operator as these may have all changed.
+      filter.column = this.columns.find(val => val.data === columnId);
+      filter.type = this.getType(filter.column);
+      const possibleOperators = this.getOperators(filter.type, filters, filter);
+      filter.operator = possibleOperators && possibleOperators.length && possibleOperators[0];
+
+      // Default the value to true if the type is a boolean
+      if(filter.type === Boolean) {
+        filter.selectedOptions = [true];
+      }
+
+      this.getOptions(filter, filters).then(filterWithOptions => this.setFilter(groupId, id, filterWithOptions));
+    }
+  }
+
+  updateOperator(groupId, id, operatorId) {
+    const filter = this.getFilter(groupId, id);
+    if (filter) {
+      filter.operator = opMap[operatorId];
+      if(_.contains(filter.operator.operators, "$exists")) {
+        filter.selectedOptions = [];
+      }
+      this.setFilter(groupId, id, filter)
+    }
+  }
+
+  updateFilter(groupId, id, selectedOptions) {
+    const filter = this.getFilter(groupId, id);
+    if (filter) {
+      filter.selectedOptions = selectedOptions.map(option => {
+        if(filter.options) {
+          const currentOption = filter.options.find(item => item.label && item.label.toString() === option.toString());
+          return currentOption && currentOption.value;
+        }
+        switch(filter.type) {
+          case Date:
+            return new Date(option);
+          default:
+            return option;
+        }
+      });
     }
   }
 
@@ -671,7 +845,7 @@ export class FiltersModal extends BlazeComponent {
   hasOptions(filter) {
     return filter.options && filter.options.length;
   }
-
+  
   getOptions(filter, filters) {
     return new Promise(resolve => {
       if(filter) {
@@ -725,55 +899,6 @@ export class FiltersModal extends BlazeComponent {
     });
   }
 
-  updateColumn(groupId, id, columnId) {
-    const filters = this.getFilters(groupId);
-    const filter = this.getFilter(groupId, id);
-    if (filter && filter.column.data !== columnId) {
-
-      // Update column, type and operator as these may have all changed.
-      filter.column = this.columns.find(val => val.data === columnId);
-      filter.type = this.getType(filter.column);
-      const possibleOperators = this.getOperators(filter.type, filters, filter);
-      filter.operator = possibleOperators && possibleOperators.length && possibleOperators[0];
-
-      // Default the value to true if the type is a boolean
-      if(filter.type === Boolean) {
-        filter.selectedOptions = [true];
-      }
-
-      this.getOptions(filter, filters).then(filterWithOptions => this.setFilter(groupId, id, filterWithOptions));
-    }
-  }
-
-  updateOperator(groupId, id, operatorId) {
-    const filter = this.getFilter(groupId, id);
-    if (filter) {
-      filter.operator = opMap[operatorId];
-      if(_.contains(filter.operator.operators, "$exists")) {
-        filter.selectedOptions = [];
-      }
-      this.setFilter(groupId, id, filter)
-    }
-  }
-
-  updateFilter(groupId, id, selectedOptions) {
-    const filter = this.getFilter(groupId, id);
-    if (filter) {
-      filter.selectedOptions = selectedOptions.map(option => {
-        if(filter.options) {
-          const currentOption = filter.options.find(item => item.label && item.label.toString() === option.toString());
-          return currentOption && currentOption.value;
-        }
-        switch(filter.type) {
-          case Date:
-            return new Date(option);
-          default:
-            return option;
-        }
-      });
-    }
-  }
-
   getFilterLabel() {
     return this.label;
   }
@@ -820,7 +945,7 @@ export class FiltersModal extends BlazeComponent {
     if(filter && filters) {
 
       // Using _.isUndefined(filter.id) instead of !filter.id because an id value of 0 is interpreted as false. Thanks JavaScript. I love you.
-      const usedOperators = filters.filter(val => val.column.data === filter.column.data && ((!filter || _.isUndefined(filter.id)) || val.id !== filter.id))
+      const usedOperators = filters.filter(val => !val.processing && (val.column.data === filter.column.data && ((!filter || _.isUndefined(filter.id)) || val.id !== filter.id)))
         .map(val => val.operator.id);
       if(usedOperators.length > 0) {
         // If any operators are in use, we can never use the empty operator.
@@ -836,7 +961,7 @@ export class FiltersModal extends BlazeComponent {
     const filters = this.getFilters(groupId);
     if(filters) {
       const filter = filters.find(val => val.id === id);
-      if(filter) {
+      if(filter && !filter.processing) {
         const opList = this.getOperators(filter.type, filters, filter);
         if(opList) {
           return opList ? opList.map(operator => ({
@@ -898,53 +1023,13 @@ export class FiltersModal extends BlazeComponent {
     return items.findIndex(val => val.id === id) > 0;
   }
 
-  addFilterGroup(filters) {
-    return new Promise(resolve => {
-      const filterGroups = this.filterGroups.get();
-      const newId = nextId(filterGroups.map(val => val.id));
-      const filterGroup = {
-        id: newId,
-        _id: `${newId}`,
-        filters: []
-      };
-      if(!filters) {
-        this.filterGroups.set([...filterGroups, filterGroup]);
-        this.addFilter(newId);
-        resolve();
-      } else {
-        const promises = [];
-        filters.forEach((filter, i) => {
-          promises.push(this.getOptions(this.createFilter(
-            i, 
-            filter.column, 
-            this.getType(filter.column), 
-            filter.operator, 
-            filter.selectedOptions,
-            filter.operators, 
-            filter.disabled,
-            filter.triggerOpenFiltersModal,
-            filter.label
-          )));
-        });
-        Promise.all(promises).then(filters => {
-          // Disregard any filters that have an undefined operator.
-          filterGroup.filters = filters.filter(filter => filter.operator);
-          if(filterGroup.filters.length > 0) {
-            this.filterGroups.set([...filterGroups, filterGroup]);
-          }
-          resolve();
-        });
-      }
-    });
-  }
-
   removeFilterGroup(groupId) {
     const filterGroups = this.filterGroups.get();
     filterGroups.splice(filterGroups.findIndex(filterGroup => filterGroup.id === groupId), 1);
     this.filterGroups.set(filterGroups);
   }
 
-  // Very similar to select2 components update function. I felt that there were enough
+  // Very similar to select2 components update function. There were enough
   // differences to not make this a generic update function though.
   updateDatepickerComponents() {
     const filterGroups = this.filterGroups.get();
@@ -995,6 +1080,7 @@ export class FiltersModal extends BlazeComponent {
           const filter = this.getFilter(...jQueryData(component, "group", "id"));
           const options = component.data("options");
           if(!arraysEqual(filter.options, options)) {
+            component.css("display", "block");
             component.empty().select2({
               placeholder: "Search...",
               data: filter.options.map(option => ({
@@ -1007,7 +1093,8 @@ export class FiltersModal extends BlazeComponent {
           const selectedOptions = component.val();
           if(!this.isControlDisabled(filter)) {
             if(!arraysEqual(selectedOptions, filter.selectedOptions)) {
-              component.val((filter.selectedOptions || []).map(option => filter.options.find(val => val.value.toString() === option.toString() || val.label.toString() === option.toString()).label));
+              component.val((filter.selectedOptions || []).map(option => 
+                filter.options.find(val => val.value.toString() === option.toString() || val.label.toString() === option.toString()).label));
               component.trigger("change");
             }
           } else {
@@ -1051,6 +1138,7 @@ export class FiltersModal extends BlazeComponent {
     this.filterGroups = new ReactiveVar([]);
     this.disableOrGroups = new ReactiveVar(false);
     this.disableAndGroups = new ReactiveVar(false);
+    this.processing = new ReactiveVar(false);
     
     const { columns, collection, triggerUpdateFilter, filter, parentFilters } = 
       this.nonReactiveData("columns", "collection", "triggerUpdateFilter", "filter", "parentFilters");

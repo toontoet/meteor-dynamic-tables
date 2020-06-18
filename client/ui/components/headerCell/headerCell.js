@@ -3,7 +3,7 @@ import "../filterModal/filterModal.js";
 
 import { EJSON } from "meteor/ejson";
 import { getPosition } from "../../../inlineSave.js";
-import { getColumnFields, formatQuery, getFields, arrayContains } from "../../helpers.js";
+import { getColumnFields, formatQuery, getFields, arrayContains, arraysEqual } from "../../helpers.js";
 
 function getSearch(advancedSearch, parentAdvancedSearch) {
   const getAndValue = value => {
@@ -220,7 +220,15 @@ Template.dynamicTableHeaderCell.events({
       const searchFunction = templInstance.data.column.search;
       if (searchFunction) {
         const searchResult = searchFunction("custom_String--Match_ME-JUSTPLAYSS");
-        const advanceSearchColQuery = orColumnPreviousSearch.find(query => _.isEqual(_.sortBy(_.keys(query.$or || query.$and || query)), _.sortBy(_.keys(searchResult))));
+        let advanceSearchColQuery = orColumnPreviousSearch.find(query => _.isEqual(_.sortBy(_.keys(query.$or || query.$and || query)), _.sortBy(_.keys(searchResult))));
+
+        // In the case that the structure of the data is different, we can compare the first nested query and check if it matches the search result.
+        if(!advanceSearchColQuery) {
+          const getFirstItem = (arr,prop) => arr && arr[prop] && arr[prop].length && arr[prop][0];
+          const getQueryItem = arr => getFirstItem(arr, "$or") || getFirstItem(arr, "$and");
+          advanceSearchColQuery = orColumnPreviousSearch.map(query => getQueryItem(query)).filter(query => query)
+              .find(query => arraysEqual(_.keys(query), _.keys(searchResult)));
+        }
         const previousSearchObj = advanceSearchColQuery ? _.deepToFlat(advanceSearchColQuery.$or || advanceSearchColQuery.$and || advanceSearchColQuery) : {};
         const newSearchObject = _.deepToFlat(searchResult);
         let madeUpField = _.find(_.keys(newSearchObject), k => newSearchObject[k] === "custom_String--Match_ME-JUSTPLAYSS");

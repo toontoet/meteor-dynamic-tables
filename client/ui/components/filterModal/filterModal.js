@@ -58,6 +58,7 @@ export class FilterModal extends BlazeComponent {
       "isStringOrCustom",
       "isBoolean",
       "isSelected",
+      "isBooleanSelected",
       "isControlDisabledForParent",
       "shouldShowControl",
 
@@ -288,9 +289,9 @@ export class FilterModal extends BlazeComponent {
     return found ? { checked: "checked" } : {};
   }
 
-  isSelected(value) {
+  isBooleanSelected(value) {
     const data = this.nonReactiveData();
-    const search = data.filter && data.filter.search && data.filter.search.value;
+    const search = (data.filter && data.filter.search && data.filter.search.value) || (data.filter.selectedOptions && [].concat(data.filter.selectedOptions)[0]);
     return value === search ? { selected: "selected" } : {};
   }
 

@@ -58,8 +58,9 @@ export function formatQuery(query) {
   }
 
   // Sometimes the query has a single AND field with one item that has all the fields.
-  // This rule doesn't apply if the field is a nested OR group.
-  if(query.$and && query.$and.length == 1 && !query.$and[0].$or) {
+  // This rule doesn't apply if the field is a nested OR group. An AND group means there's multiple OR groups. 
+  // Ignore those too.
+  if(query.$and && query.$and.length == 1 && !query.$and[0].$or && !query.$and[0].$and) {
     query = query.$and[0]
   }
 
