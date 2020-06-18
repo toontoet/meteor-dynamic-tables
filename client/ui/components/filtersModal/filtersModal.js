@@ -93,7 +93,14 @@ const opMap = {
   contains: {
     id: "contains",
     label: "is...",
-    operators: ["$regex"]
+    operators: ["$regex"],
+    singleValue: true
+  },
+  notContains: {
+    id: "notContains",
+    label: "is not...",
+    operators: ["$not"],
+    singleValue: true
   }
 };
 
@@ -113,7 +120,7 @@ const typeMap = [
     type: String,
     operators: [
       opMap.contains,
-      opMap.notAll,
+      opMap.notContains,
       opMap.empty,
       opMap.notEmpty
     ]
@@ -305,9 +312,20 @@ export class FiltersModal extends BlazeComponent {
     let newFilter = {
       $or: filterGroups.filter(filterGroup => filterGroup.filters && filterGroup.filters.length).map(filterGroup => {
 
-        // If the query has multiple fields, it should be in an $or group.
+        // If the query has multiple fields, it should be in an $or/$and group. Use an $and group if the operator list contains $not.
         const filters = filterGroup.filters.filter(filter => !filter.disabled)
-          .map(filter => filter.query.length && filter.query.length > 1 ? {$or: filter.query} : filter.query);
+          .flatMap(filter => {
+            if (filter.query.length && filter.query.length > 1) {
+              if(_.contains(filter.operator.operators, "$not")) {
+                return filter.query;
+              } else {
+                return [{
+                  $or: filter.query
+                }];
+              }
+            }
+            return [filter.query];
+          });
         if(!filters.length) {
           return undefined;
         }
@@ -483,11 +501,17 @@ export class FiltersModal extends BlazeComponent {
         }
       }
     }
-    if(_.contains(filter.operator.operators, "$exists")) {
+
+    if(_.contains([opMap.empty.id, opMap.notEmpty.id], filter.operator.id)) {
       value = true;
     }
-    if(_.contains(filter.operator.operators, "$regex")) {
-      value = `^${value[0] || ""}`;
+
+    if(opMap.contains.id === filter.operator.id) {
+      value = `^${value}`;
+    }
+
+    if(opMap.notContains.id === filter.operator.id) {
+      value = new RegExp(`^${value}`);
     }
 
     filter.operator.operators.forEach((val, i) => {
@@ -534,15 +558,26 @@ export class FiltersModal extends BlazeComponent {
       // instead of just $exists: false so it's distinguishable from "exists" and it can be resolved without adding a special case
       // to check the value if the operator is $exists: true or $exists: false.
       const column = this.columns.find(val => _.contains(getColumnFields(val), columnId));
-      if(_.contains(operators, "$regex")) {
-        query = query.substr(1);
-      }
-      const selectedOptions = [].concat(query);
 
       if(column) {
         const possibleOperators = this.getOperators(this.getType(column));
         if(possibleOperators) {
           const operator = possibleOperators.find(val => arraysEqual(val.operators, operators));
+
+          if(operator && (_.isString(query) || (_.isObject(query) && query.source))) {
+            // If the query is a regular expression, this will make sure we're dealing with
+            // the string value.
+            if(query && query.source) {
+              query = query.source;
+            }
+
+            // In the current implementation, The only pattern used is ^value, so we can make this assumption for string values.
+            if(_.contains([opMap.contains.id, opMap.notContains.id], operator.id)) {
+              query = query.substr(1);
+            }
+          }
+
+          const selectedOptions = [].concat(query);
           return {
             column,
             operator,
@@ -857,7 +892,7 @@ export class FiltersModal extends BlazeComponent {
           }
 
           // Selected options could be loaded in as values so adjust if needed.
-          if(filter.selectedOptions && filter.selectedOptions.length) {
+          if(filter.selectedOptions && filter.selectedOptions.length && filter.options) {
             filter.selectedOptions = filter.selectedOptions.map(option => {
               const selected = filter.options.find(val => val.value.toString() === option.toString() || val.label.toString() === option.toString())
               return (selected && selected.label) || option;

@@ -3,7 +3,7 @@ import "../filterModal/filterModal.js";
 
 import { EJSON } from "meteor/ejson";
 import { getPosition } from "../../../inlineSave.js";
-import { getColumnFields, formatQuery, getFields, arrayContains, arraysEqual } from "../../helpers.js";
+import { getColumnFields, formatQuery, getFields, getFirstFieldValue, getChainedFieldValue, arrayContains, arraysEqual } from "../../helpers.js";
 
 function getSearch(advancedSearch, parentAdvancedSearch) {
   const getAndValue = value => {
@@ -52,8 +52,26 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
         }
       }
 
+      // The most common query is in the format {field1: {query}, field2: {query} $or: [queries]}.
+      // In rare cases if there are multiple $or groups, they'll be put in an $and group.
+      // This extra step ensures that those nested $or groups are pulled out and formatted the same way
+      // as the other fields.
+      const formatQueryAndGroup = queryAndGroup => {
+        const keys = _.keys(queryAndGroup);
+        let results = [];
+        if(queryAndGroup.$and) {
+          results = results.concat(queryAndGroup.$and);
+        }
+        if(keys.length && keys.length > 1) {
+          keys.forEach(key => results.push({[key]: queryAndGroup[key]}));
+        } else {
+          results.push(queryAndGroup); 
+        }
+        return results;
+      };
+
       query.$or.forEach(queryOrGroup => {
-        queryOrGroup.$and.forEach(queryAndGroup => {
+        queryOrGroup.$and.flatMap(queryAndGroup => formatQueryAndGroup(queryAndGroup)).forEach(queryAndGroup => {
 
           const currentFields = getFields(queryAndGroup);
           
@@ -64,7 +82,7 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
           if(currentFields.length && arrayContains(fields, currentFields)) {
 
             // We can marked this filter as active.
-            this.hasParentFilter = true;
+            this.filterActive = true;
 
             // When a filter is applied with more than one operator, force the use of the filters modal.
             // We mark it as a complex filter because the modal won't be able to display the information for a filter that has
@@ -102,7 +120,7 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
         }
 
         query.$or.forEach(queryOrGroup => {
-          queryOrGroup.$and.forEach(queryAndGroup => {
+          queryOrGroup.$and.flatMap(queryAndGroup => formatQueryAndGroup(queryAndGroup)).forEach(queryAndGroup => {
 
             const currentFields = getFields(queryAndGroup);
             
@@ -111,7 +129,7 @@ Template.dynamicTableHeaderCell.onCreated(function onCreated() {
             if(currentFields.length && arrayContains(fields, currentFields)) {
 
               // We can marked this filter as active if there's a column affected by the parent filter.
-              this.hasParentFilter = true;
+              this.filterActive = true;
               if(!this.parentFilterData) {
                 this.parentFilterData = {
                   label: filter.label,
@@ -140,7 +158,7 @@ Template.dynamicTableHeaderCell.helpers({
     const templInstance = Template.instance();
     let advancedFilter = getSearch(templInstance.advancedFilter.get(), templInstance.parentAdvancedSearch.get());
 
-    if(templInstance.hasParentFilter) {
+    if(templInstance.filterActive) {
       return true;
     }
 
@@ -219,53 +237,33 @@ Template.dynamicTableHeaderCell.events({
       const orColumnPreviousSearch = searchObject.$and || [];
       const searchFunction = templInstance.data.column.search;
       if (searchFunction) {
-        const searchResult = searchFunction("custom_String--Match_ME-JUSTPLAYSS");
-        let advanceSearchColQuery = orColumnPreviousSearch.find(query => _.isEqual(_.sortBy(_.keys(query.$or || query.$and || query)), _.sortBy(_.keys(searchResult))));
-
-        // In the case that the structure of the data is different, we can compare the first nested query and check if it matches the search result.
-        if(!advanceSearchColQuery) {
-          const getFirstItem = (arr,prop) => arr && arr[prop] && arr[prop].length && arr[prop][0];
-          const getQueryItem = arr => getFirstItem(arr, "$or") || getFirstItem(arr, "$and");
-          advanceSearchColQuery = orColumnPreviousSearch.map(query => getQueryItem(query)).filter(query => query)
-              .find(query => arraysEqual(_.keys(query), _.keys(searchResult)));
-        }
-        const previousSearchObj = advanceSearchColQuery ? _.deepToFlat(advanceSearchColQuery.$or || advanceSearchColQuery.$and || advanceSearchColQuery) : {};
-        const newSearchObject = _.deepToFlat(searchResult);
-        let madeUpField = _.find(_.keys(newSearchObject), k => newSearchObject[k] === "custom_String--Match_ME-JUSTPLAYSS");
-        if (!madeUpField) {
-          madeUpField = _.keys(searchResult)[0];
-        }
-        if (previousSearchObj[`${madeUpField}.$not`]) {
-          operator = "$not";
-          searchValue = previousSearchObj[`${madeUpField}.$not`].toString().split("/").join("").slice(1);
-        }
-        else if (previousSearchObj[`${madeUpField}.$regex`]) {
-          operator = "$regex";
-          searchValue = previousSearchObj[`${madeUpField}.$regex`].slice(1);
-        }
-        else if (previousSearchObj[`${madeUpField}.$eq`] !== undefined) {
-          operator = "$eq";
-          searchValue = previousSearchObj[`${madeUpField}.$eq`];
-        }
-        else if (previousSearchObj[`${madeUpField}.$in`]) {
-          operator = "$in";
-          selectedOptions = previousSearchObj[`${madeUpField}.$in`];
-        }
-        else if (previousSearchObj[`${madeUpField}.$nin`]) {
-          operator = "$nin";
-          selectedOptions = previousSearchObj[`${madeUpField}.$nin`];
-        }
-        else if (previousSearchObj[`${madeUpField}.$gte`] && previousSearchObj[`${madeUpField}.$lte`]) {
-          operator = "$eq";
-          searchValue = previousSearchObj[`${madeUpField}.$gte`];
-        }
-        else if (previousSearchObj[`${madeUpField}.$gte`]) {
-          operator = "$gte";
-          searchValue = previousSearchObj[`${madeUpField}.$gte`];
-        }
-        else if (previousSearchObj[`${madeUpField}.$gte`]) {
-          operator = "lgte";
-          searchValue = previousSearchObj[`${madeUpField}.$lte`];
+        // Some search functions look at properties on the argument, so use an empty object.
+        const searchResult = searchFunction({});
+        const possibleQueries = getFields(searchResult).map(field => ({
+            item: getFirstFieldValue(field, orColumnPreviousSearch),
+            field
+          })).filter(item => item);
+        if(possibleQueries.length) {
+          advanceSearchColQuery = possibleQueries[0].item;
+          const field = possibleQueries[0].field;
+          const operators = _.keys(advanceSearchColQuery[field] || {});
+          if(operators.length) {
+            operator = operators[0];
+            value = getChainedFieldValue(advanceSearchColQuery[field][operator]);
+            switch(operator) {
+              case "$not":
+                searchValue = value.toString().split("/").join("").slice(1);
+                break;
+              case "$regex":
+                searchValue = value.substr(1);
+                break;
+              default:
+                searchValue = value;
+            }
+            if(arraysEqual(["$gte", "$lte"], operators)) {
+              operator = "$eq"
+            }
+          }
         }
       }
     }
