@@ -223,7 +223,7 @@ Template.dynamicTableHeaderCell.events({
       }
     };
     const target = $(e.currentTarget).closest("th");
-    const bounds = getPosition(target[0]);
+    const bounds = $(target[0]).offset();
     const div = $("#dynamic-table-filter-modal").length ? $("#dynamic-table-filter-modal") : $("<div>");
     const left = Math.max((bounds.left + target.outerWidth()) - 250, 0);
     div.attr("id", "dynamic-table-filter-modal")
