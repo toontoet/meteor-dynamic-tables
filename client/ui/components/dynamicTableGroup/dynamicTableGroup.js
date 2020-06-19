@@ -603,7 +603,8 @@ Template.dynamicTableGroup.helpers({
     return Template.instance().highlightedColumns.get(tableId);
   },
   hasFilters(tableId) {
-    return _.keys(Template.instance().currentFilters.get(tableId).query || {}).length;
+    const currentFilter = Template.instance().currentFilters.get(tableId);
+    return _.keys(currentFilter && currentFilter.query || {}).length;
   },
   orders(tableId) {
     const nestedOrder = Template.instance().nestedOrder.get(tableId);
