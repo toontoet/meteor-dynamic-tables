@@ -480,6 +480,17 @@ function getOptions(currentData, columns) {
   }
   return options;
 }
+
+function ordinalSort(column1, column2) {
+  if (
+    (column1 && column1.ordinalPosition === "last") ||
+    (column2 && column2.ordinalPosition === "first")
+  ) {
+    return 1;
+  }
+  return 0;
+}
+
 Template.DynamicTable.onRendered(function onRendered() {
   const self = this;
   const templateInstance = this;
@@ -609,7 +620,8 @@ Template.DynamicTable.onRendered(function onRendered() {
           templateInstance.ajaxCallback = callback;
         }
       }
-    }, currentData.table, { columns: templateInstance.columns });
+    }, currentData.table, { columns: templateInstance.columns.sort(ordinalSort) });
+
     if (templateInstance.dataTable) {
       templateInstance.dataTable.isReady = false;
       templateInstance.dataTable.api().destroy();
