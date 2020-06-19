@@ -398,7 +398,7 @@ function setup() {
 
       if (!column.render && column.data) {
         column.render = function render(data, type) {
-          // NOTE: changing this causes problems above with rawContent, why it needs to be "" (versus the value or undefined) is anyones guess.
+          // NOTE: changing this causes problems above with rawContent, why it needs to be "" (versus the value or undefined) is anyone's guess.
           return data; // type === "display" ? "" : data;
         };
       }
