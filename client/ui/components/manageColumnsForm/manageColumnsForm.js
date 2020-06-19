@@ -27,7 +27,7 @@ export class ManageColumnsForm extends BlazeComponent {
   }
 
   selectedIfEquals(val1, val2) {
-    return val1 == val2 ? { selected: "selected" } : {};
+    return val1 == [val2.type, val2.modifier].join(";") ? { selected: "selected" } : {};
   }
 
   checkedIfTrue(val) {
@@ -38,7 +38,10 @@ export class ManageColumnsForm extends BlazeComponent {
     const types = this.nonReactiveData().manageFieldsEditContext.types || [];
     return types.map((t) => {
       if (_.isObject(t)) {
-        return t;
+        return {
+          value: [t.value, t.modifier].join(";"),
+          label: t.label
+        };
       }
       return {
         value: t,

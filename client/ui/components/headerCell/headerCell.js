@@ -243,7 +243,7 @@ Template.dynamicTableHeaderCell.events({
         const possibleQueries = getFields(searchResult).map(field => ({
             item: getFirstFieldValue(field, orColumnPreviousSearch),
             field
-          })).filter(item => item);
+          })).filter(item => item && item.item && item.field);
         if(possibleQueries.length) {
           advanceSearchColQuery = possibleQueries[0].item;
           const field = possibleQueries[0].field;
