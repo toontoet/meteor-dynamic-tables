@@ -380,5 +380,3 @@ Template.GroupedTable.events({
     openFiltersModal(Template.instance());
   }
 });
-
-//recruitablePlayers-tablelocationcityKitchenerlocationstateOntario
