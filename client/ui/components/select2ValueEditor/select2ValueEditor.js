@@ -74,20 +74,10 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
   let options = this.data.options;
   const val = this.data.value || getValue(this.data.doc, this.data.column.data) || [];
   const origOptions = options;
-  let promise = Promise.resolve(options);
-  if (_.isFunction(options)) {
-    promise = new Promise((resolve) => {
-      options = options(this.data.doc, this.data.column, val, undefined, (_options) => {
-        resolve(_options);
-      });
-      if (options) {
-        resolve(options);
-      }
-    });
-  }
-  promise.then((asyncOptions) => {
+
+  const resolveOptions = (asyncOptions) => {
     const select = this.$("select");
-    select.select2({
+    select.empty().select2({
       minimumInputLength: this.data.minimumInputLength !== undefined ? this.data.minimumInputLength : (_.isArray(options) ? 0 : 1),
       language: {
         inputTooShort: () => this.data.emptyInputMessage || "Start Typing..."
@@ -125,7 +115,20 @@ Template.dynamicTableSelect2ValueEditor.onRendered(function onRendered() {
     if (this.data.openSelect2Immediately !== false) {
       select.select2("open");
     }
-  });
+  }
+
+  let promise = Promise.resolve(options);
+  if (_.isFunction(options)) {
+    options = options(this.data.doc, this.data.column, val, undefined, (_options) => {
+      resolveOptions(_options);
+    });
+    if (options) {
+      resolveOptions(options);
+    }
+  }
+
+  promise.then((asyncOptions) => resolveOptions(asyncOptions));
+
   if (this.data.saveOnBlur !== false) {
     if (this.handler) {
       document.removeEventListener("mousedown", this.handler, false);
