@@ -348,7 +348,6 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
             }
           }
         }
-        
       });
     }
     promise.then(() => {
@@ -416,7 +415,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
     updateRecords = updateRecordsMap;
   }
   else {
-    updateRecords = canUseAggregate(queries) ? updateRecordsAggregate : updateRecordsMap;
+    updateRecords = canUseAggregate(queries) && !options.disableAggregateCount ? updateRecordsAggregate : updateRecordsMap;
   }
   const throttledUpdateRecords = options.throttleRefresh ? _.throttle(updateRecords, options.throttleRefresh, { leading: true, trailing: true }) : updateRecords;
 
