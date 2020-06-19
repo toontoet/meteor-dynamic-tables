@@ -39,6 +39,17 @@ Template.dynamicTableManageGroupFieldsModal.events({
       $(e.currentTarget).closest("div").remove();
     }
     templInstance.maybeCallback();
+  },
+  "click .remove-all"(e, templInstance) {
+    templInstance.data.changeCallback([]);
+    [...$("select")].forEach(val => {
+      const element = $(val);
+      if(element.data("index")) {
+        element.closest("div").remove();
+      } else {
+        element.val("");
+      }
+    })
   }
 });
 Template.dynamicTableManageGroupFieldsModal.helpers({
