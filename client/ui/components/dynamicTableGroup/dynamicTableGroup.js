@@ -4,7 +4,7 @@ import "./dynamicTableGroup.html";
 import "./dynamicTableGroup.css";
 import { getGroupedInfoCollection, getDistinctValuesCollection } from "../../../db.js";
 import { changed, getCustom, getColumns, getValue, createModal } from "../../../inlineSave.js";
-import { getNestedTableIds, selectorToId, getTableIdSuffix, formatQuery, getQueryFields, arraysEqual } from "../../helpers.js"
+import { selectorToId, getTableIdSuffix, formatQuery, getQueryFields, arraysEqual } from "../../helpers.js"
 
 import "../manageGroupFieldsModal/manageGroupFieldsModal.js";
 import "../manageOrderModal/manageOrderModal.js";
