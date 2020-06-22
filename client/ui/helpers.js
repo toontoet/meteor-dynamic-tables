@@ -79,8 +79,15 @@ export function formatQuery(query) {
   
   // Single OR group, multiple fields set.
   } else if(!query.$or) {
-    query = {
-      $or: [query]
+
+    // This is a special case where there is an OR group, but it's nested inside of an AND group.
+    if(query.$and && query.$and.length == 1 && query.$and[0].$or && 
+      query.$and[0].$or.length && query.$and[0].$or.every(val => val.$and)) {
+      query = query.$and[0];
+    } else {
+      query = {
+        $or: [query]
+      }
     }
 
   // Multiple OR groups, each with a single field set.
