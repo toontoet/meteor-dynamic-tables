@@ -488,6 +488,12 @@ function ordinalSort(column1, column2) {
   ) {
     return 1;
   }
+  else if (
+    (column1 && column1.ordinalPosition === "first") ||
+    (column2 && column2.ordinalPosition === "last")
+  ) {
+    return -1;
+  }
   return 0;
 }
 
