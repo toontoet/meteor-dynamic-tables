@@ -942,8 +942,8 @@ export class FiltersModal extends BlazeComponent {
     // We can have a filter for each operator. Like isAfter in combination with isBefore.
     // A column is considered used if we're looking for empty values.
     return _.uniq(filters.filter(filter => 
-        (filters.filter(val => val.column.data === filter.column.date).length === this.getOperators(filter.type, filters, filter).length - 1)
-        || filter.operator.id === opMap.empty.id)
+        (filters.filter(val => val.column.data === filter.column.data && val.operator).length === this.getOperators(filter.type, filters, filter).length - 1)
+        || (filter.operator && filter.operator.id === opMap.empty.id))
       .map(filter => filter.column.data));
   }
 
