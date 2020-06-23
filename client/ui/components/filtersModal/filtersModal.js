@@ -388,19 +388,7 @@ export class FiltersModal extends BlazeComponent {
       }
     }
 
-    filterGroups = this.formatQueries(filterGroups || [], false, filter)
-
-    // The final step of creating the filter groups is to resolve all the options, which is an asynchronous process.
-    // Because the filter groups aren't updated until the options for all its filters are resolved, we need to make
-    // sure that the promises for each filter group being created are done sequentially as the ids used for the filter
-    // groups are dependant on the previous groups that were created.
-    const sequencePromises = (items, promiseFunc, i = 0) => {
-      if(i < items.length) {
-        promiseFunc(items[i]).then(() => sequencePromises(items, val => promiseFunc(val), i+1));
-      }
-    }
-
-    sequencePromises(filterGroups, val => this.addFilterGroup(val));
+    this.formatQueries(filterGroups || [], false, filter).forEach(filters => this.addFilterGroup(filters));
   }
 
   // Formats the queries within the filters and returns a list of filter groups and filters
@@ -689,55 +677,52 @@ export class FiltersModal extends BlazeComponent {
   }
 
   addFilterGroup(filters) {
-    return new Promise(resolve => {
-      const filterGroups = this.filterGroups.get();
-      const newId = nextId(filterGroups.map(val => val.id));
-      const filterGroup = {
-        id: newId,
-        _id: `${newId}`,
-        filters: []
-      };
-      if(!filters) {
-        this.filterGroups.set([...filterGroups, filterGroup]);
-        this.addFilter(newId);
-        resolve();
-      } else {
-        const promises = [];
-        filters.forEach((filter, i) => {
-          const newFilter = this.createFilter(
-            i, 
-            filter.column, 
-            this.getType(filter.column), 
-            filter.operator, 
-            filter.selectedOptions,
-            filter.operators, 
-            filter.disabled,
-            filter.triggerOpenFiltersModal,
-            filter.label
-          );
-          newFilter.processing = true;
-          filterGroup.filters.push(newFilter);
-          promises.push(this.getOptions(newFilter)
-            .then(filterWithOptions => {
-              if(filterWithOptions) {
-                filterWithOptions.processing = false;
-              }
-              return filterWithOptions;
-            }));
-        });
-        this.filterGroups.set([filterGroup, ...filterGroups]);
-        this.processing.set(true);
-        Promise.all(promises).then(filters => {
-          this.processing.set(false);
-          // Disregard any filters that have an undefined operator.
-          const filteredFilters = filters.filter(filter => filter.operator);
-          if(filteredFilters.length > 0) {
-            this.setFilters(newId, filteredFilters);
-          }
-          resolve();
-        });
-      }
-    });
+    const filterGroups = this.filterGroups.get();
+    const newId = nextId(filterGroups.map(val => val.id));
+    const filterGroup = {
+      id: newId,
+      _id: `${newId}`,
+      filters: []
+    };
+    if(!filters) {
+      this.filterGroups.set([...filterGroups, filterGroup]);
+      this.addFilter(newId);
+      resolve();
+    } else {
+      const promises = [];
+      filters.forEach((filter, i) => {
+        const newFilter = this.createFilter(
+          i, 
+          filter.column, 
+          this.getType(filter.column), 
+          filter.operator, 
+          filter.selectedOptions,
+          filter.operators, 
+          filter.disabled,
+          filter.triggerOpenFiltersModal,
+          filter.label
+        );
+        newFilter.processing = true;
+        filterGroup.filters.push(newFilter);
+        promises.push(this.getOptions(newFilter)
+          .then(filterWithOptions => {
+            if(filterWithOptions) {
+              filterWithOptions.processing = false;
+            }
+            return filterWithOptions;
+          }));
+      });
+      this.filterGroups.set([filterGroup, ...filterGroups]);
+      this.processing.set(true);
+      Promise.all(promises).then(filters => {
+        this.processing.set(false);
+        // Disregard any filters that have an undefined operator.
+        const filteredFilters = filters.filter(filter => filter.operator);
+        if(filteredFilters.length > 0) {
+          this.setFilters(newId, filteredFilters);
+        }
+      });
+    }
   }
 
   addFilter(groupId) {
