@@ -230,7 +230,9 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
           const matches = newAdvancedSearchField.some(searchObj => arr.find(oldObj => _.isEqual(_.sortBy(_.keys(searchObj)), _.sortBy(_.keys(oldObj)))));
           if (matches) {
             found = true;
-            return { [obj.$or ? "$or" : "$and"]: newAdvancedSearchField };
+            return {
+              $and: { [obj.$or ? "$or" : "$and"]: newAdvancedSearchField }
+            };
           }
         }
         else {
@@ -245,7 +247,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
       if (!found) {
         if (_.isArray(newAdvancedSearchField)) {
           const someOperator = ["$regex", "$in", "$eq"].includes(operator) ? "$or" : "$and";
-          arrayToReplaceIn.push({ [someOperator]: escapeRegExp(newAdvancedSearchField) });
+          arrayToReplaceIn.push({ $and: [{ [someOperator]: escapeRegExp(newAdvancedSearchField) }]});
         }
         else {
           arrayToReplaceIn.push(newAdvancedSearchField);
