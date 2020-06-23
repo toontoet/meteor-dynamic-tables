@@ -357,7 +357,7 @@ export class FiltersModal extends BlazeComponent {
           }
         }));
 
-        return filters.length == 1 && filterGroups.length == 1 ? filters[0] : andGroup;
+        return andGroup;
       }).filter(filterGroup => filterGroup)
     };
 
@@ -687,7 +687,6 @@ export class FiltersModal extends BlazeComponent {
     if(!filters) {
       this.filterGroups.set([...filterGroups, filterGroup]);
       this.addFilter(newId);
-      resolve();
     } else {
       const promises = [];
       filters.forEach((filter, i) => {
