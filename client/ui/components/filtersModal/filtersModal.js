@@ -406,34 +406,37 @@ export class FiltersModal extends BlazeComponent {
         query = formatQuery(item.query);
         query.$or.forEach((queryAndGroup, i) => {
 
-          // If the query has multiple keys, format the query so each field is its own object.
-          if(_.keys(queryAndGroup.$and[0] || {}).length > 0) {
-            queryAndGroup = {
-              $and: _.keys(queryAndGroup.$and[0]).flatMap(key => {
+          queryAndGroup.$and = queryAndGroup.$and.flatMap(val => {
 
-                // The logic here handles a field with multiple operators. This doesn't apply to a nested OR group.
-                if(_.keys(queryAndGroup.$and[0][key] || {}).length > 1 && !~["$or", "$and"].indexOf(key)) {
-                  return _.keys(queryAndGroup.$and[0][key]).map(val => (
-                    {
-                      [key]: { 
-                        [val]: queryAndGroup.$and[0][key][val]
+            // If the query has multiple keys, format the query so each field is its own object.
+            if(_.keys(val || {}).length > 0) {
+              return _.keys(val || {}).flatMap(key => {
+
+                  // The logic here handles a field with multiple operators. This doesn't apply to a nested OR group.
+                  if(_.keys(val[key] || {}).length > 1 && !~["$or", "$and"].indexOf(key)) {
+                    return _.keys(val[key]).map(nestedKey => (
+                      {
+                        [key]: { 
+                          [nestedKey]: val[key][nestedKey]
+                        }
                       }
-                    }
-                  ));
-                } else if(key === "$and") {
-                  // There's one special case that may appear if there are multiple nested OR groups.
-                  // If there's one, there will be exactly one $or field and we can process that as such.
-                  // If there are multiple OR groups, they'll appear in exactly one AND group. They'll already be
-                  // in the correct format so we can just return the contents of the AND group.
-                  return queryAndGroup.$and[0][key];
-                } else {
-                  return [{
-                    [key]: queryAndGroup.$and[0][key]
-                  }];
-                }
-              })
-            };
-          }
+                    ));
+                  } else if(key === "$and") {
+                    // There's one special case that may appear if there are multiple nested OR groups.
+                    // If there's one, there will be exactly one $or field and we can process that as such.
+                    // If there are multiple OR groups, they'll appear in exactly one AND group. They'll already be
+                    // in the correct format so we can just return the contents of the AND group.
+                    return val[key];
+                  } else {
+                    return [{
+                      [key]: val[key]
+                    }];
+                  }
+                });
+            } else {
+              return [val];
+            }
+          });
 
           if(queryAndGroup.$and.length) {
             // Format these filters into objects this modal can interpret. Sometimes, there's nested $or groups.
