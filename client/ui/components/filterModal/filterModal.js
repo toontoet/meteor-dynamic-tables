@@ -404,11 +404,15 @@ export class FilterModal extends BlazeComponent {
 
   hasOptions() {
     if (this.asyncOptions.get()) {
-      return !this.isParentFilter.get() && !~this.operator.get().indexOf("$exists");
+      return !this.isParentFilter.get() 
+        && (!this.operator.get() || !~this.operator.get().indexOf("$exists")) 
+        && this.fieldType.get() !== Boolean;
     }
 
     const options = this.allOptions.get();
-    return options && options.length && !this.isParentFilter.get() && !~this.operator.get().indexOf("$exists");
+    return options && options.length && !this.isParentFilter.get()
+      && (!this.operator.get() || !~this.operator.get().indexOf("$exists")) 
+      && this.fieldType.get() !== Boolean;
   }
 
   shouldShowControl() {
