@@ -871,7 +871,7 @@ export class FiltersModal extends BlazeComponent {
         delete filter.options
         const optionsCallback = (options) => {
           filter.options = this.formatOptions(options);
-          if(filter.options.length > 0) {
+          if(filter.options.length > 0 && filter.type != Boolean) {
             filter.type = Array;
           }
 
