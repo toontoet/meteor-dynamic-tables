@@ -870,9 +870,11 @@ export class FiltersModal extends BlazeComponent {
       if(filter) {
         delete filter.options
         const optionsCallback = (options) => {
-          filter.options = this.formatOptions(options);
-          if(filter.options.length > 0 && filter.type != Boolean) {
-            filter.type = Array;
+          if(filter.type != Boolean) {
+            filter.options = this.formatOptions(options);
+            if(filter.options.length > 0) {
+              filter.type = Array;
+            }
           }
 
           // Selected options could be loaded in as values so adjust if needed.
