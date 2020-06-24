@@ -146,7 +146,7 @@ Template.dynamicTableManageFieldsModal.helpers({
     if (Template.instance().data.search !== undefined) {
       return Template.instance().data.search;
     }
-    return Template.instance().availableColumns.get().length >= 15;
+    return Template.instance().availableColumns.get().length >= 10;
   },
   add() {
     return Template.instance().data.edit;
