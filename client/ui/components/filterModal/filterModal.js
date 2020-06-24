@@ -413,7 +413,7 @@ export class FilterModal extends BlazeComponent {
 
   shouldShowControl() {
     const searchValue = this.searchValue();
-    return (!this.isParentFilter.get() || searchValue && searchValue.length) && !~this.operator.get().indexOf("$exists");
+    return (!this.isParentFilter.get() || searchValue && searchValue.length) && (!this.operator.get() || !~this.operator.get().indexOf("$exists"));
   }
 
   getOptions() {
