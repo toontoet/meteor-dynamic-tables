@@ -36,6 +36,16 @@ const opMap = {
     label: "is not empty",
     operators: ["$exists"]
   },
+  emptyArray: {
+    id: "emptyArray",
+    label: "is empty",
+    operators: ["$not", "$elemMatch",  "$exists"]
+  },
+  notEmptyArray: {
+    id: "notEmptyArray",
+    label: "is not empty",
+    operators: ["$elemMatch", "$exists"]
+  },
   booleanEquals: {
     id: "booleanEquals",
     label: "is...",
@@ -494,6 +504,13 @@ export class FiltersModal extends BlazeComponent {
     }
 
     if(_.contains([opMap.empty.id, opMap.notEmpty.id], filter.operator.id)) {
+      if(filter.column.isArray) {
+        if(filter.operator.id === opMap.empty.id) {
+          filter.operator = opMap.emptyArray;
+        } else {
+          filter.operator = opMap.notEmptyArray;
+        }
+      }
       value = true;
     }
 
@@ -536,8 +553,10 @@ export class FiltersModal extends BlazeComponent {
 
       while(collecting) {
         item = this.getFirstKey(query);
-        if(item && this.isAnOperator(item.key)) {
-          operators.push(item.key);
+        if(item) {
+          if(this.isAnOperator(item.key)) {
+            operators.push(item.key);
+          }
           query = item.value;
         } else {
           collecting = false;
@@ -591,18 +610,20 @@ export class FiltersModal extends BlazeComponent {
   // Returns true if the provided key is an operator ($in, $not, $all).
   // This check doesn't necessarily cover every operator, just ones used by this modal.
   isAnOperator(key) {
-    return _.contains(Object.keys(opMap).flatMap(val => opMap[val].operators), key);
+    return _.contains(typeMap.flatMap(type => type.operators).flatMap(operator => operator.operators), key);
   }
 
   // Gets the first key and value of an object.
   // This method is used when parsing queries as
   // a query is usually in the format { $not: { $in: [1,2,3] }}
   getFirstKey(item) {
-    const keys = Object.keys(item);
-    if(keys && keys.length) {
-      return {
-        key: keys[0],
-        value: item[keys[0]]
+    if(_.isObject(item) && !_.isArray(item)) {
+      const keys = _.keys(item);
+      if(keys && keys.length) {
+        return {
+          key: keys[0],
+          value: item[keys[0]]
+        }
       }
     }
   }
@@ -951,9 +972,6 @@ export class FiltersModal extends BlazeComponent {
   }
 
   getType(column) {
-    if(column.isArray) {
-      return Array;
-    }
     const name = (column.filterModal && column.filterModal.field && column.filterModal.field.name) || column.data;
     const obj = this.collection._c2 && this.collection._c2._simpleSchema && this.collection._c2._simpleSchema.schema(name);
     let type = (obj && obj.type) || (column.filterModal && column.filterModal.field && column.filterModal.field.type) || String;
