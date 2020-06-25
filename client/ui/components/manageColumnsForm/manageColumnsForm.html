@@ -22,7 +22,7 @@
         Type
         <select type="text" class="dynamic-table-manage-fields-edit-type">
           {{#each type in types}}
-            <option value="{{type.value}}" {{selectedIfEquals type.value editableField}}>{{type.label}}</option>
+            <option value="{{type.value}}{{type.modifier}}" {{selectedIfEquals type.value editableField}}>{{type.label}}</option>
           {{/each}}
         </select>
       </label>
@@ -36,7 +36,6 @@
     <div class="dynamic-table-manage-fields-edit-row">
       <label class="short">Searchable? <input type="checkbox" class="dynamic-table-manage-fields-edit-searchable" {{checkedIfTrue editableField.indexedNumber}} /></label>   
     </div>
-    <input type="hidden" class="dynamic-table-manage-fields-edit-modifier" {{editableField.modifier}} />
     {{/unless}}
   </section>
 </template>

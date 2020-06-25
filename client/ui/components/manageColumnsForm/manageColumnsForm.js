@@ -27,7 +27,8 @@ export class ManageColumnsForm extends BlazeComponent {
   }
 
   selectedIfEquals(val1, val2) {
-    return val1 == [val2.type, val2.modifier].join(";") ? { selected: "selected" } : {};
+    return val2 && val2.type && !_.isUndefined(val2.modifier) && 
+      val1 == [val2.type, val2.modifier].join(";") ? { selected: "selected" } : {};
   }
 
   checkedIfTrue(val) {

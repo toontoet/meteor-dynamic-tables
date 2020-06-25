@@ -200,7 +200,7 @@ Template.dynamicTableManageFieldsModal.helpers({
   editable(column) {
     const editable = (column && column.manageFieldsModal && column.manageFieldsModal.field && column.manageFieldsModal.field.edit) ||
                   (column && column.filterModal && column.filterModal.field && column.filterModal.field.edit);
-    return editable;
+    return editable && Template.instance().data.edit;
   },
   availableColumns() {
     const availableColumns = Template.instance().availableColumns.get();
