@@ -393,6 +393,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
           }
         });
       }
+
       return Promise.resolve();
     }))
     .then(() => {

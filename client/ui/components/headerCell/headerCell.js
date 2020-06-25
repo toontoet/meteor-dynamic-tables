@@ -199,8 +199,8 @@ Template.dynamicTableHeaderCell.events({
     const columnOrder = _.find(order, col => col[0] === column.idx);
     const fieldName = (templInstance.data.column.filterModal.field && templInstance.data.column.filterModal.field.name) || templInstance.data.column.data;
     const searchObject = getSearch(templInstance.advancedFilter.get(), templInstance.parentAdvancedSearch.get());;
-    const columnSearch = EJSON.fromJSONValue(searchObject.$and && searchObject.$and.length >= 1 ?
-      searchObject.$and[0][fieldName] : searchObject[fieldName]);
+    let columnSearch = EJSON.fromJSONValue(getFirstFieldValue(fieldName, searchObject));
+    columnSearch = columnSearch && columnSearch[fieldName];
     let selectedOptions;
     let operator = "$in";
     let searchValue;
@@ -230,8 +230,11 @@ Template.dynamicTableHeaderCell.events({
       else if (operator === "$gte") {
         searchValue = columnSearch.$gte;
       }
-      else if (columnSearch[operator]) {
-        selectedOptions = columnSearch[operator];
+      else if (!_.isUndefined(columnSearch[operator])) {
+        selectedOptions = [].concat(columnSearch[operator]);
+        if(!searchValue && selectedOptions.length) {
+          searchValue = selectedOptions[0];
+        }
       }
     }
     else {
