@@ -123,7 +123,7 @@ export class FilterModal extends BlazeComponent {
 
   handleSaveClick(e) {
     this.$(".btn-dynamic-table-save").attr("disabled", "disabled");
-    this.nonReactiveData().data.field.edit.callback(e, this).then((newSpec) => {
+    this.nonReactiveData().field.edit.callback(e, this).then((newSpec) => {
       this.$(".btn-dynamic-table-save").removeAttr("disabled");
       this.updateSpec(newSpec);
     }).catch(err => console.log(err));
@@ -134,8 +134,8 @@ export class FilterModal extends BlazeComponent {
   }
 
   handleRemoveClick() {
-    this.nonReactiveData().data.callback([], "$in", undefined, false);
-    this.nonReactiveData().data.removeColumn();
+    this.nonReactiveData().callback([], "$in", undefined, false);
+    this.nonReactiveData().removeColumn();
     closeModal();
   }
 
@@ -228,7 +228,7 @@ export class FilterModal extends BlazeComponent {
               allowClear: true,
               data: _.union(
                 [{ id: "", value: "" }],
-                this.nonReactiveData().data.groupNames.map(g => ({ id: g, text: g }))
+                this.nonReactiveData().groupNames.map(g => ({ id: g, text: g }))
               )
             });
             this.$(".dynamic-table-filter-edit-group").val(this.editableField.get().groupName).trigger("change");
