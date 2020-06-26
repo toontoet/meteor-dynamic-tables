@@ -15,14 +15,24 @@ export class ManageColumnsForm extends BlazeComponent {
       "isDynamicFieldForm",
       "types",
       "selectedType",
-      "configContext"
+      "configContext",
+      "isFormula"
     ];
   }
 
   static EventMap() {
     return {
-      "change .dynamic-table-manage-fields-edit-type": "changeType"
+      "change .dynamic-table-manage-fields-edit-type": "changeType",
+      "change .dynamic-table-manage-fields-edit-isFormula": "changeIsFormula"
     };
+  }
+
+  changeIsFormula(e) {
+    const isChecked = $(e.currentTarget).is(":checked");
+    this.set("isFormula", isChecked);
+  }
+  isFormula() {
+    return this.get("isFormula");
   }
 
   configContext(selectedType, context) {
@@ -89,6 +99,7 @@ export class ManageColumnsForm extends BlazeComponent {
     if (data.editableField && data.editableField.type) {
       const type = this.types().find(t => t.value === data.editableField.type);
       this.set("selectedType", type);
+      this.set("isFormula", data.editableField.isFormula);
     }
   }
 
