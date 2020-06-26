@@ -1,5 +1,3 @@
-import { DynamicTableSpecs } from "meteor/znewsham:justplay-common";
-
 // Find lowest useable integer starting at 0, given a list of used integers.
 export function nextId(values) {
   let found = false;
