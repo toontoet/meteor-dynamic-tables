@@ -423,7 +423,7 @@ export class FiltersModal extends BlazeComponent {
               return _.keys(val || {}).flatMap(key => {
 
                   // The logic here handles a field with multiple operators. This doesn't apply to a nested OR group.
-                  if(_.keys(val[key] || {}).length > 1 && !~["$or", "$and"].indexOf(key)) {
+                  if(_.keys(val[key] || {}).length > 1 && !["$or", "$and"].includes(key)) {
                     return _.keys(val[key]).map(nestedKey => (
                       {
                         [key]: { 

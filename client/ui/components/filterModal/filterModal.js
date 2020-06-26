@@ -142,7 +142,7 @@ export class FilterModal extends BlazeComponent {
   handleClearClick() {
     this.search.set(undefined);
     this.selectedOptions.set([]);
-    if(!!~this.operator.get().indexOf("$exists")) {
+    if(this.operator.get().includes("$exists")) {
       // By changing the operator in this case, it triggers the filter to properly reset.
       this.operator.set("$in");
     }
@@ -170,7 +170,7 @@ export class FilterModal extends BlazeComponent {
         operator = "$not";
       }
     }
-    if (!!~operator.indexOf("$exists")) {
+    if (operator.includes("$exists")) {
       this.search.set(true);
       this.selectedOptions.set([]);
     }
@@ -405,19 +405,19 @@ export class FilterModal extends BlazeComponent {
   hasOptions() {
     if (this.asyncOptions.get()) {
       return !this.isParentFilter.get() 
-        && (!this.operator.get() || !~this.operator.get().indexOf("$exists")) 
+        && (!this.operator.get() || !this.operator.get().includes("$exists")) 
         && this.fieldType.get() !== Boolean;
     }
 
     const options = this.allOptions.get();
     return options && options.length && !this.isParentFilter.get()
-      && (!this.operator.get() || !~this.operator.get().indexOf("$exists")) 
+      && (!this.operator.get() || !this.operator.get().includes("$exists")) 
       && this.fieldType.get() !== Boolean;
   }
 
   shouldShowControl() {
     const searchValue = this.searchValue();
-    return (!this.isParentFilter.get() || searchValue && searchValue.length) && (!this.operator.get() || !~this.operator.get().indexOf("$exists"));
+    return (!this.isParentFilter.get() || searchValue && searchValue.length) && (!this.operator.get() || !this.operator.get().includes("$exists"));
   }
 
   getOptions() {
@@ -503,7 +503,7 @@ export class FilterModal extends BlazeComponent {
       default:
       }
     }
-    if (!!~operator.indexOf("$exists")) {
+    if (operator.includes("$exists")) {
       this.search.set(true);
       this.selectedOptions.set([]);
     }

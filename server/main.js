@@ -416,7 +416,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
     updateRecords = updateRecordsMap;
   }
   else {
-    updateRecords = canUseAggregate(queries) && !options.disableAggregateCount ? updateRecordsAggregate : updateRecordsMap;
+    updateRecords = canUseAggregate(queries) ? updateRecordsAggregate : updateRecordsMap;
   }
   const throttledUpdateRecords = options.throttleRefresh ? _.throttle(updateRecords, options.throttleRefresh, { leading: true, trailing: true }) : updateRecords;
 
