@@ -497,6 +497,30 @@ function ordinalSort(column1, column2) {
   return 0;
 }
 
+function attachBulkActionCheckboxObserver(tableElement) {
+  const bulkActionCheckboxObserver = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === "attributes" && mutation.attributeName === "class"){
+        const target = mutation.target;
+        if ($(target).hasClass("bulkActionCheckbox")) {
+          if ($(target).hasClass("active")) {
+            $(target).closest("td").css("z-index", 2);
+          } else {
+            $(target).closest("td").css("z-index", 1);
+          }
+        }
+      }
+    });
+  });
+  if (tableElement && tableElement[0]) {
+    bulkActionCheckboxObserver.observe(tableElement[0], {
+      attributes: true,
+      subtree: true
+    });
+  }
+  return bulkActionCheckboxObserver;
+}
+
 Template.DynamicTable.onRendered(function onRendered() {
   const self = this;
   const templateInstance = this;
@@ -504,6 +528,8 @@ Template.DynamicTable.onRendered(function onRendered() {
   let lastId;
 
   this.$tableElement.data("get-selector", () => getSelector.apply(templateInstance));
+
+  this.bulkActionCheckboxObserver = attachBulkActionCheckboxObserver(this.$tableElement);
 
   if (this.data.table.export) {
     this.$tableElement.data("do-export", (...args) => {
@@ -1015,6 +1041,9 @@ Template.DynamicTable.onDestroyed(function onDestroyed() {
   }
   if (this.handle) {
     this.handle.stop();
+  }
+  if (this.bulkActionCheckboxObserver){
+    this.bulkActionCheckboxObserver.disconnect();
   }
   if (this.tableElement && this.$tableElement.length) {
     const dt = this.$tableElement.DataTable();
