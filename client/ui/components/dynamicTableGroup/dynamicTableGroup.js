@@ -734,7 +734,7 @@ Template.dynamicTableGroup.events({
       clearColumnsCallback() {
         const columns = _.clone(templInstance.data.columns);
         templInstance.nestedColumns.set(tableId, columns);
-        compressedColumns = _.clone(templInstance.nestedColumns.get(tableId) || templInstance.columns.get());
+        compressedColumns = _.clone(columns || templInstance.columns.get());
         templInstance.highlightedColumns.set(tableId);
         changed(templInstance.data.customTableSpec.custom, tableId, { newColumns: [] });
 
