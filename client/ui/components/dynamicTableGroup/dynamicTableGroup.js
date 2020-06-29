@@ -724,7 +724,7 @@ Template.dynamicTableGroup.events({
   "click .dynamic-table-manage-controller.columns"(e, templInstance) {
     const target = e.currentTarget;
     const tableId = $(target).attr("data-table-id");
-    const compressedColumns = _.clone(templInstance.nestedColumns.get(tableId) || templInstance.columns.get());
+    let compressedColumns = _.clone(templInstance.nestedColumns.get(tableId) || templInstance.columns.get());
     const selectedColumns = _.compact(compressedColumns.map(c => _.find(getColumns(templInstance.data.customTableSpec.columns) || [], c1 => c1.id ? c1.id === c.id : c1.data === c.data)));
 
     const manageColumnsOptions = _.extend({
@@ -734,6 +734,7 @@ Template.dynamicTableGroup.events({
       clearColumnsCallback() {
         const columns = _.clone(templInstance.data.columns);
         templInstance.nestedColumns.set(tableId, columns);
+        compressedColumns = _.clone(templInstance.nestedColumns.get(tableId) || templInstance.columns.get());
         templInstance.highlightedColumns.set(tableId);
         changed(templInstance.data.customTableSpec.custom, tableId, { newColumns: [] });
 
