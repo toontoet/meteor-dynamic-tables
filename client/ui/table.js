@@ -297,7 +297,7 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     let arrayToReplaceIn = advancedSearch.$and || [];
     arrayToReplaceIn = arrayToReplaceIn.map((obj) => {
       const arr = obj.$or || obj.$and;
-      if (_.isArray(searchResult)) {
+      if (_.isArray(searchResult) && arr) {
         const matches = searchResult.some(searchObj => arr.find(oldObj => _.isEqual(_.sortBy(_.keys(searchObj)), _.sortBy(_.keys(oldObj)))));
         if (matches) {
           return null;
