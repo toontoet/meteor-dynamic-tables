@@ -371,7 +371,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
         subSelector = value.query;
       }
       else {
-        subSelector = { [field]: value.query };
+        subSelector = { $or: [{ [field]: value.query }, { [field]: { $elemMatch:  { $all: [value.query] } } }] };
       }
 
       // Includes filters applied to table. All parent filters and value's filter as well. Also, we only want filters with keys.
