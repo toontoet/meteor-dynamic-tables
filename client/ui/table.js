@@ -164,10 +164,12 @@ function filterModalCallback(columnIndex, optionsOrQuery, operator, sortDirectio
     _.keys(obj || {}).forEach(key => {
       if(key === fieldName) {
         delete obj[key];
+        changed = true;
       } else if(_.isObject(obj[key]) || _.isArray(obj[key])) {
         cleanObject(fieldName, obj[key]);
         if(!_.keys(obj[key] || {}).length) {
           delete obj[key];
+          changed = true;
         }
       }
     });
