@@ -167,7 +167,7 @@ Template.dynamicTableManageFieldsModal.helpers({
   },
   selected(column) {
     const selectedColumns = Template.instance().selectedColumns.get();
-    return _.find(selectedColumns, selectedColumn => (column.id ? selectedColumn.id === column.id : selectedColumn.data === column.data));
+    return column.required || _.find(selectedColumns, selectedColumn => (column.id ? selectedColumn.id === column.id : selectedColumn.data === column.data));
   },
   groups() {
     let availableColumns = Template.instance().availableColumns.get();
