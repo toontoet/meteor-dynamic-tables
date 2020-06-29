@@ -29,3 +29,7 @@ div.dynamic-table-manage-group-fields .add-group {
   color: #0088cc;
   cursor: pointer;
 }
+
+div.dynamic-table-manage-group-fields .remove-all {
+  cursor: pointer;
+}
