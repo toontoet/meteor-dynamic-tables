@@ -2,8 +2,12 @@
   {{#unless editing}}
     <span class="dynamic-table-cell-wrapper">
       {{> Template.dynamic template=templateName data=templateData}}
-      {{#if editable}}
-        <span class="dynamic-table-enable-editing"><i class="fa fa-pencil"></i></span>
+      {{#if isLocked}}
+        <span class="dynamic-table-enable-editing"><i class="fa fa-lock" title="This field is locked, you can't edit it"></i></span>
+      {{else}}
+        {{#if editable}}
+          <span class="dynamic-table-enable-editing"><i class="fa fa-pencil"></i></span>
+        {{/if}}
       {{/if}}
     </span>
   {{else}}

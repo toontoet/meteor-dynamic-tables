@@ -18,7 +18,7 @@ Template.dynamicTableTableCell.helpers({
 
 Template.dynamicTableTableCell.events({
   "click .dynamic-table-enable-editing"(e, templInstance) {
-    if (templInstance.data.editable) {
+    if (templInstance.data.editable && !templInstance.data.isLocked) {
       const td = $(e.currentTarget).closest("td");
       td.width(td.width());
       templInstance.editing.set(true);

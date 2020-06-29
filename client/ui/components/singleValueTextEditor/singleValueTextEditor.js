@@ -1,7 +1,11 @@
 import "./singleValueTextEditor.html";
+import "./singleValueTextEditor.css";
 import { inlineSave, getValue, nextField } from "../../../inlineSave.js";
 
 Template.dynamicTableSingleValueTextEditor.helpers({
+  isOverwritten() {
+    return this.formula && this.formula.isFormula && this.formula.value && this.formula.value.overwritten !== undefined;
+  },
   editableValue() {
     return this.value !== undefined ? this.value : getValue(this.doc, this.column.data);
   },
@@ -16,6 +20,11 @@ Template.dynamicTableSingleValueTextEditor.helpers({
   }
 });
 Template.dynamicTableSingleValueTextEditor.events({
+  "mousedown .fa-times"(e, templInstance) {
+    const computed = this.formula && this.formula.isFormula && this.formula.value && this.formula.value.computed;
+    inlineSave(templInstance, computed, { isComputed: true, isOverwrite: false });
+    templInstance.data.saveOnBlur = false;
+  },
   "keydown input"(e, templInstance) {
     if (templInstance.data.saveOnEnter !== false && e.keyCode === 13) {
       inlineSave(templInstance, $(e.currentTarget).val());
@@ -26,9 +35,9 @@ Template.dynamicTableSingleValueTextEditor.events({
       nextField(templInstance);
     }
   },
-  "blur input"(e, templInstance) {
+  "blur span"(e, templInstance) {
     if (templInstance.data.saveOnBlur !== false) {
-      inlineSave(templInstance, $(e.currentTarget).val());
+      inlineSave(templInstance, $(e.currentTarget).find('input').val());
     }
   }
 });

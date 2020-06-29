@@ -1,3 +1,8 @@
 <template name="dynamicTableSingleValueTextEditor">
-  <input type="{{type}}" class={{inputClass}} value="{{editableValue}}" placeholder={{placeholder}} style="width: 100%; max-width: unset;font-size: medium;font-family: 'Economica', sans-serif;" />
+  <span class='dynamic-table-single-value-editor'>
+    <input type="{{type}}" class={{inputClass}} value="{{editableValue}}" placeholder={{placeholder}} />
+    {{#if isOverwritten}}
+      <i class="fa fa-times" title="This value has been overwritten and won't recompute. Click here to reset the value to: {{formula.value.computed}}"></i>
+    {{/if}}
+  </span>
 </template>

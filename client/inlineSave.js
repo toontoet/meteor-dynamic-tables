@@ -8,7 +8,7 @@ export function nextField(templInstance) {
     const editableColumns = _.sortBy(
       tableTmplInstance.columns,
       column => actualColumns.indexOf(actualColumns.find(c => (c.id && c.id === column.id) || c.data === column.data))
-    ).filter(c => c.editTmpl || c.editable);
+    ).filter(c => (c.editTmpl || c.editable) && !c.isLocked);
     const currentColumnIndex = editableColumns.indexOf(templInstance.data.column);
     let useNextRow = false;
     if (currentColumnIndex === -1) {

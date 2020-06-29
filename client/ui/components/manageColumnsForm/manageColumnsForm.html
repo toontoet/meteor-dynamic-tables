@@ -42,6 +42,9 @@
     <div class="dynamic-table-manage-fields-edit-row">
       <label class="short">Is Formula? <input type="checkbox" class="dynamic-table-manage-fields-edit-isFormula" {{checkedIfTrue isFormula}} /></label>
     </div>
+    <div class="dynamic-table-manage-fields-edit-row">
+      <label class="short">Is Locked? <input type="checkbox" class="dynamic-table-manage-fields-edit-isLocked" {{checkedIfTrue editableField.isLocked}} /></label>
+    </div>
     {{/unless}}
   </section>
 </template>

@@ -349,6 +349,7 @@ function setup() {
           collection: currentData.table.collection
         };
         const enableEdit = column.enableEdit ? column.enableEdit(rawRowData) : true;
+        const isLocked = (_.isFunction(column.isLocked) ? column.isLocked(rawRowData) : column.isLocked) || false;
         const actualColumn = self.dataTable.api().context[0].aoColumns[col];
         const blazeColumnIndex = actualColumn._ColReorder_iOrigCol || col;
         if (self.blaze[`${row}-${blazeColumnIndex}`]) {
@@ -356,6 +357,7 @@ function setup() {
             td.parentElement.replaceChild(self.blaze[`${row}-${blazeColumnIndex}`].cell, td);
             self.blaze[`${row}-${blazeColumnIndex}`].tmpl.dataVar.set({
               editable: !!column.editTmpl && enableEdit,
+              isLocked,
               templateName: templateName.split(".")[1],
               templateData: column.tmpl ? rowData : rawContent,
               editTemplateName: column.editTmpl && column.editTmpl.viewName.split(".")[1],
@@ -367,6 +369,7 @@ function setup() {
         }
         const ret = Blaze.renderWithData(Template.dynamicTableTableCell, {
           editable: !!column.editTmpl && enableEdit,
+          isLocked,
           templateName: templateName.split(".")[1],
           templateData: column.tmpl ? rowData : rawContent,
           editTemplateName: column.editTmpl && column.editTmpl.viewName.split(".")[1],

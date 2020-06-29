@@ -1,0 +1,19 @@
+.dynamic-table-single-value-editor {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+}
+
+.dynamic-table-single-value-editor i {
+  cursor: pointer;
+}
+.dynamic-table-single-value-editor input {
+  width: 100%;
+  max-width: unset;
+  font-size: medium;
+  font-family: 'Economica', sans-serif;
+  margin-bottom: 0px;
+}
+.dynamic-table-single-value-editor input.overwritten {
+  background-color: yellow;
+}
