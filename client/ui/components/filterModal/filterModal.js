@@ -823,7 +823,10 @@ export class FilterModal extends BlazeComponent {
             operator = "$eq";
           }
 
-          Tracker.nonreactive(() => callback(_.isArray(selectedOptions) ? selectedOptions.map(option => options.find(item => item.label.toString() === option.toString() || item.value.toString() === option.toString()).value) : selectedOptions, operator, direction, false, originalOperator));
+          Tracker.nonreactive(() => callback(_.isArray(selectedOptions) ? selectedOptions.map(option => {
+            const mappedOption = options.find(item => item.label.toString() === option.toString() || item.value.toString() === option.toString());
+            return mappedOption && mappedOption.value
+          }).filter(option => !_.isUndefined(option)) : selectedOptions, operator, direction, false, originalOperator));
         });
       }
     });
