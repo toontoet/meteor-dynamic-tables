@@ -1025,17 +1025,13 @@ Template.DynamicTable.onCreated(function onCreated() {
       this.dataTable.api().context[0].aoData[0].anCells.splice(index, 1);
       this.blaze = {};
     }
-    else if (columns.length > oldColumns.length) {
+    else if (columns.length >= oldColumns.length) {
       Tracker.afterFlush(() => {
         this.tableId.dep.changed();
         if (self.dataTable) {
           self.dataTable.api().ajax.reload();
         }
       });
-    }
-    else if (columns && columns.length) {
-      // fixes looping order after column reorder
-      this.columns = columns;
     }
     oldColumns = columns;
   });
