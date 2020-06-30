@@ -40,7 +40,7 @@ export function arraysEqual(arrayA, arrayB, func) {
   }
   arrayA = arrayA.filter(val => !_.isUndefined(val));
   arrayB = arrayB.filter(val => !_.isUndefined(val));
-  return _.isEqual(_.sortBy(arrayA), _.sortBy(arrayB));
+  return _.isEqual(arrayA.sort(), arrayB.sort());
 }
 
 // Returns true if the elements of arrayB are in arrayA.
