@@ -30,6 +30,7 @@
     {{#if isFormula}}
       {{> dynamicTableFlexFormulaSpecifier (configContext selectedType this)}}
     {{/if}}
+    {{> dynamicTableFlexPermissionSpecifier editableField=editableField}}
     <div class="dynamic-table-manage-fields-edit-row">
       <label class="short">Allow multiple values? <input type="checkbox" class="dynamic-table-manage-fields-edit-isArray" {{checkedIfTrue editableField.isArray}} /></label>
     </div>
