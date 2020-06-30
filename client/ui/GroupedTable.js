@@ -320,7 +320,7 @@ Template.GroupedTable.events({
               delete search[actualColumn.sortField];
               unsetField = actualColumn.sortField || actualColumn.sortableField;
             }
-            else {
+            else if(search && search[actualColumn.data]) {
               unsetField = actualColumn.data;
               delete search[actualColumn.data];
             }
