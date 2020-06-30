@@ -15,7 +15,7 @@ import "./components/singleValueTextEditor/singleValueTextEditor.js";
 import "./components/select2ValueEditor/select2ValueEditor.js";
 import "./components/bulkEditModal/bulkEditModal.js";
 import { getTableRecordsCollection } from "../db.js";
-import { getColumnFields, getFields } from "./helpers.js"
+import { getColumnFields, getFields, arraysEqual } from "./helpers.js"
 
 function escapeRegExp(string) {
   if (!_.isString(string)) {
@@ -991,41 +991,43 @@ Template.DynamicTable.onCreated(function onCreated() {
     if (columns.length < oldColumns.length) {
       const context = this.dataTable.api().context[0];
       const missingColumn = context.aoColumns.find(nc => !_.find(columns, oc => (oc.id ? oc.id === nc.id : oc.data === nc.data)));
-      let index = missingColumn.idx;
-      const tdorh = this.$("thead").find(`td[data-column-index=${index}],th[data-column-index=${index}]`)[0];
-      if (tdorh) { // NOTE: data-column-index is only added when colReorder is used
-        index = _.toArray(this.$("thead>tr")[0].children).indexOf(tdorh);
-      }
-      this.filterModalCallback(index, [], "$in", undefined, false);
-      this.$("thead").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
-      this.$("tbody>tr").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
-      // HACK: the worst part of this file starts here. Making sure we can sort after removeing columns
-      for (let i = index + 1; i < this.dataTable.api().context[0].aoColumns.length; i++) {
-        // updating idx and aDataSort of every columns which goes after removed column
-        const idx = i - 1;
-        const settings = this.dataTable.api().settings()[0];
-        const header = this.$("thead").find(`td:nth-child(${i}),th:nth-child(${i})`);
-        header.attr("data-column-index", `${idx}`);
-        this.dataTable.api().context[0].aoColumns[i].idx = idx;
-        this.dataTable.api().context[0].aoColumns[i].aDataSort = [idx];
-        // unbinding old event listeners
-        const events = jQuery._data(header[0], "events");
-        for (const eventType of ["click", "keypress", "selectstart"]) {
-          const tounbind = events[eventType].filter(e => e.namespace === "DT");
-          header.unbind(eventType, tounbind.handler);
+      let index = missingColumn && missingColumn.idx;
+      if(index) {
+        const tdorh = this.$("thead").find(`td[data-column-index=${index}],th[data-column-index=${index}]`)[0];
+        if (tdorh) { // NOTE: data-column-index is only added when colReorder is used
+          index = _.toArray(this.$("thead>tr")[0].children).indexOf(tdorh);
         }
-        this.dataTable.oApi._fnSortAttachListener(settings, header, idx); // adding new event listener to the cell, so we can sort
-      }
-      this.dataTable.api().context[0].aaSorting.forEach((aasort) => {
-        if (aasort[0] > index) {
-          aasort[0] -= 1;
+        this.filterModalCallback(index, [], "$in", undefined, false);
+        this.$("thead").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
+        this.$("tbody>tr").find(`td:nth-child(${index + 1}),th:nth-child(${index + 1})`).remove();
+        // HACK: the worst part of this file starts here. Making sure we can sort after removeing columns
+        for (let i = index + 1; i < this.dataTable.api().context[0].aoColumns.length; i++) {
+          // updating idx and aDataSort of every columns which goes after removed column
+          const idx = i - 1;
+          const settings = this.dataTable.api().settings()[0];
+          const header = this.$("thead").find(`td:nth-child(${i}),th:nth-child(${i})`);
+          header.attr("data-column-index", `${idx}`);
+          this.dataTable.api().context[0].aoColumns[i].idx = idx;
+          this.dataTable.api().context[0].aoColumns[i].aDataSort = [idx];
+          // unbinding old event listeners
+          const events = jQuery._data(header[0], "events");
+          for (const eventType of ["click", "keypress", "selectstart"]) {
+            const tounbind = events[eventType].filter(e => e.namespace === "DT");
+            header.unbind(eventType, tounbind.handler);
+          }
+          this.dataTable.oApi._fnSortAttachListener(settings, header, idx); // adding new event listener to the cell, so we can sort
         }
-      });
-      this.dataTable.api().context[0].aoColumns.splice(index, 1);
-      this.dataTable.api().context[0].aoData[0].anCells.splice(index, 1);
-      this.blaze = {};
+        this.dataTable.api().context[0].aaSorting.forEach((aasort) => {
+          if (aasort[0] > index) {
+            aasort[0] -= 1;
+          }
+        });
+        this.dataTable.api().context[0].aoColumns.splice(index, 1);
+        this.dataTable.api().context[0].aoData[0].anCells.splice(index, 1);
+        this.blaze = {};
+      }
     }
-    else if (columns.length >= oldColumns.length) {
+    else if (columns.length > oldColumns.length || !arraysEqual(columns, oldColumns, c => `${c.id}${c.data}`)) {
       Tracker.afterFlush(() => {
         this.tableId.dep.changed();
         if (self.dataTable) {
