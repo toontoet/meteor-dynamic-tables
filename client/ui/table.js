@@ -1012,8 +1012,10 @@ Template.DynamicTable.onCreated(function onCreated() {
           // unbinding old event listeners
           const events = jQuery._data(header[0], "events");
           for (const eventType of ["click", "keypress", "selectstart"]) {
-            const tounbind = events[eventType].filter(e => e.namespace === "DT");
-            header.unbind(eventType, tounbind.handler);
+            const tounbind = events[eventType] && events[eventType].filter(e => e.namespace === "DT");
+            if(tounbind) {
+              header.unbind(eventType, tounbind.handler);
+            }
           }
           this.dataTable.oApi._fnSortAttachListener(settings, header, idx); // adding new event listener to the cell, so we can sort
         }
