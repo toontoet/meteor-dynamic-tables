@@ -136,7 +136,8 @@ Template.GroupedTable.events({
     .html("")
     .css("position", "absolute")
     .css("top", bounds.top + $(target).outerHeight())
-    .css("left", left);
+    .css("left", left)
+    .css("z-index", 4);
 
     if (div[0].__blazeTemplate) {
       Blaze.remove(div[0].__blazeTemplate);
