@@ -1,8 +1,10 @@
 <template name="dynamicTableHeaderCell">
+  <div>
     <span data-title="{{columnTitle}}">
       {{columnTitle}}
     </span>
     {{#if column.filterModal}}
       <i style="cursor: pointer; margin-top: 5px; {{#if hasFilter}}color: #0088cc;{{/if}}" class="pull-right fa fa-filter"></i>
     {{/if}}
+  </div>
 </template>
