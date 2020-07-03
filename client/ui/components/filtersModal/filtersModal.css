@@ -14,6 +14,21 @@
   font-size: 14px;
 }
 
+.dynamic-table-filters-help-text {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  float: right;
+}
+
+.dynamic-table-filters-help-text-column {
+  font-weight: bold;
+}
+
+.dynamic-table-filters-help-text-operator {
+  font-weight: bold;
+  color: #49afcd;
+}
+
 .dynamic-table-filters-time-container {
   display: inline-flex;
   height: 29px;
