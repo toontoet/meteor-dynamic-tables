@@ -68,10 +68,17 @@
                     {{/if}}
                     </div>
                 </div>
-                  <button class="dynamic-table-filters-remove-filter" style="{{#if filter.disabled}}visibility: hidden;{{/if}}" data-group="{{filterGroup.id}}" data-id="{{filter.id}}">                      
-                    <i class="fa fa-times"></i>
-                  </button>
+                <button class="dynamic-table-filters-remove-filter" style="{{#if filter.disabled}}visibility: hidden;{{/if}}" data-group="{{filterGroup.id}}" data-id="{{filter.id}}">                      
+                  <i class="fa fa-times"></i>
+                </button>
               </div>
+              {{#if hasHelpText filter}}
+                <div class="dynamic-table-filters-help-text">
+                  <span class="dynamic-table-filters-help-text-column">{{filter.column.title}} </span>
+                  <span class="dynamic-table-filters-help-text-operator">{{filter.operator.helpText.operator}} </span>
+                  <span class="dynamic-table-filters-help-text-selected-options">{{getSelectedOptionsHelpText filter}}</span>
+                </div>
+              {{/if}}
             {{/each}}
             {{#if canAddFilters filterGroup.id}}
               <button class="btn-link dynamic-table-filters-add-filter" data-group="{{filterGroup.id}}">              

@@ -9,21 +9,37 @@ const opMap = {
   all: {
     id: "all",
     label: "is...",
+    helpText: {
+      operator: "is",
+      delimiter: "and"
+    },
     operators: ["$all"]
   },
   notAll: {
     id: "notAll",
     label: "is not...",
+    helpText: {
+      operator: "is not",
+      delimiter: "and"
+    },
     operators: ["$not", "$all"]
   },
   in: {
     id: "in",
     label: "is any of...",
+    helpText: {
+      operator: "is any of",
+      delimiter: "or"
+    },
     operators: ["$in"]
   },
   notIn: {
     id: "notIn",
     label: "is none of...",
+    helpText: {
+      operator: "is none of",
+      delimiter: "or"
+    },
     operators: ["$nin"]
   },
   empty: {
@@ -118,10 +134,10 @@ const typeMap = [
   {
     type: Array,
     operators: [
-      opMap.all,
-      opMap.notAll,
       opMap.in,
       opMap.notIn,
+      opMap.all,
+      opMap.notAll,
       opMap.empty,
       opMap.notEmpty
     ]
@@ -174,6 +190,8 @@ export class FiltersModal extends BlazeComponent {
       "hasFilterGroups",
 
       "requiresDelimiter",
+      "hasHelpText",
+      "getSelectedOptionsHelpText",
       "canAddFilters",
       "canAddFilterGroups",
       "getFiltersData",
@@ -850,20 +868,30 @@ export class FiltersModal extends BlazeComponent {
 
   updateFilter(groupId, id, selectedOptions) {
     const filter = this.getFilter(groupId, id);
-    if (filter) {
-      filter.selectedOptions = selectedOptions.map(option => {
-        if(filter.options) {
-          const currentOption = filter.options.find(item => item.label && item.label.toString() === option.toString());
-          return currentOption && currentOption.value;
-        }
-        switch(filter.type) {
-          case Date:
-            return new Date(option);
-          default:
-            return option;
-        }
-      });
+    if(filter) {
+      selectedOptions = this.formatSelectedOptions(selectedOptions, filter.options).map(option => option.value);
+      if (!arraysEqual(filter.selectedOptions, selectedOptions)) {
+        filter.selectedOptions = selectedOptions;
+        this.setFilter(groupId, id, filter);
+      }
     }
+  }
+
+  formatSelectedOptions(selectedOptions, options) {
+    return (selectedOptions && selectedOptions.length && selectedOptions.map(option => {
+      if(option && options) {
+        const currentOption = options.find(item => {
+          return item.label && item.label.toString() === option || item.value && item.value.toString() === option;
+        });
+        if(currentOption) {
+          return currentOption;
+        }
+      }
+      return {
+        value: option,
+        label: option
+      }
+    })) || [];
   }
 
   formatOptions(options) {
@@ -903,10 +931,7 @@ export class FiltersModal extends BlazeComponent {
 
           // Selected options could be loaded in as values so adjust if needed.
           if(filter.selectedOptions && filter.selectedOptions.length && filter.options) {
-            filter.selectedOptions = filter.selectedOptions.filter(option => !_.isUndefined(option)).map(option => {
-              const selected = filter.options.find(val => val.value.toString() === option.toString() || val.label.toString() === option.toString())
-              return (selected && selected.label) || option;
-            });
+            filter.selectedOptions = this.formatSelectedOptions(filter.selectedOptions, filter.options).map(option => option.label);
           }
 
           // Possible for options to affect possible operators so update those.
@@ -1065,6 +1090,19 @@ export class FiltersModal extends BlazeComponent {
     return items.findIndex(val => val.id === id) > 0;
   }
 
+  hasHelpText(filter) {
+    return filter && filter.operator && filter.operator.helpText && filter.selectedOptions && filter.selectedOptions.map(option => !_.isUndefined(option)).length;
+  }
+
+  getSelectedOptionsHelpText(filter) {
+    // We want reactivity on the help text as filters change.
+    this.filterGroups.get();
+    if(filter && filter.selectedOptions && filter.operator.helpText && filter.operator.helpText.delimiter) {
+      return this.formatSelectedOptions(filter.selectedOptions, filter.options).map(option => option.label).join(` ${filter.operator.helpText.delimiter} `);
+    }
+    return "";
+  }
+
   removeFilterGroup(groupId) {
     const filterGroups = this.filterGroups.get();
     filterGroups.splice(filterGroups.findIndex(filterGroup => filterGroup.id === groupId), 1);
@@ -1133,10 +1171,10 @@ export class FiltersModal extends BlazeComponent {
             component.data("options", filter.options);
           }
           const selectedOptions = component.val();
+          const formattedSelectedOptions = this.formatSelectedOptions(filter.selectedOptions, filter.options).map(option => option.label);
           if(!this.isControlDisabled(filter)) {
-            if(!arraysEqual(selectedOptions, filter.selectedOptions)) {
-              component.val((filter.selectedOptions || []).map(option => 
-                filter.options.find(val => val.value.toString() === option.toString() || val.label.toString() === option.toString()).label));
+            if(!arraysEqual(selectedOptions, formattedSelectedOptions)) {
+              component.val(formattedSelectedOptions);
               component.trigger("change");
             }
           } else {
