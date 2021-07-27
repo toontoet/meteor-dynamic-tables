@@ -153,8 +153,7 @@ function getDataHandleAndInterval(tableId, publicationCursor, options, canOverri
   return { dataHandle, interval, recordIds };
 }
 
-function getPublicationCursor(publicationName, selector, options) {
-  const fn = publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName];
+function getPublicationCursor(fn, selector, options) {
   const publicationResult = fn.call(this, selector, options);
   let publicationCursor;
   // NOTE: if we haven't explicitly stated whether we can override the default publication, lets figure it out
@@ -179,16 +178,27 @@ function getPublicationCursor(publicationName, selector, options) {
   return { publicationResult, publicationCursor, canOverride };
 }
 
+function getPublicationFn(publicationName) {
+  if (publicationFunctions[publicationName]) {
+    return publicationFunctions[publicationName];
+  }
+  if (Meteor.server) {
+    return Meteor.server.publish_handlers[publicationName]
+  }
+  return Meteor.default_server.publish_handlers[publicationName];
+}
+
 export function simpleTablePublication(tableId, publicationName, compositePublicationNames, selector, options) {
   check(tableId, String);
   check(publicationName, String);
   check(selector, Object);
   check(options, Object);
-  check(publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName], Function);
+  const fn = getPublicationFn(publicationName);
+  check(fn, Function);
   if (typeof Kadira !== "undefined" && Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
   }
-  const { publicationCursor } = getPublicationCursor.call(this, publicationName, selector, options);
+  const { publicationCursor } = getPublicationCursor.call(this, fn, selector, options);
   const { dataHandle, interval, recordIds } = getDataHandleAndInterval.call(this, tableId, publicationCursor, options, false);
 
   this.onStop(() => {
@@ -199,11 +209,10 @@ export function simpleTablePublication(tableId, publicationName, compositePublic
       return publicationCursor;
     },
     children: (compositePublicationNames || []).map((pubName) => {
-      const fn = publicationFunctions[pubName] || Meteor.default_server.publish_handlers[pubName];
+      const fn = getPublicationFn(pubName);;
       check(fn, Function);
       return {
         find(play) {
-          const fn = publicationFunctions[pubName] || Meteor.default_server.publish_handlers[pubName];
           return fn.call(this, play);
         }
       };
@@ -215,11 +224,12 @@ export function simpleTablePublicationArrayNew(tableId, publicationName, selecto
   check(publicationName, String);
   check(selector, Object);
   check(options, Object);
-  check(publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName], Function);
+  const fn = getPublicationFn(publicationName);
+  check(fn, Function);
   if (typeof Kadira !== "undefined" && Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
   }
-  const { publicationResult, publicationCursor, canOverride } = getPublicationCursor.call(this, publicationName, selector, options);
+  const { publicationResult, publicationCursor, canOverride } = getPublicationCursor.call(this, fn, selector, options);
   const { dataHandle, interval, recordIds } = getDataHandleAndInterval.call(this, tableId, publicationCursor, options, canOverride);
   this.onStop(() => {
     onStop.call(this, recordIds, publicationCursor, dataHandle, interval);
@@ -235,7 +245,8 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   check(publicationName, String);
   check(baseSelector, Object);
   check(options, Object);
-  check(publicationFunctions[publicationName] || Meteor.default_server.publish_handlers[publicationName], Function);
+  const fn = getPublicationFn(publicationName);
+  check(fn, Function);
 
   if (options.throttleRefresh === undefined) {
     options.throttleRefresh = 10000;
@@ -251,7 +262,7 @@ export function simpleTablePublicationCounts(tableId, publicationName, field, ba
   let init = true;
   const { publicationCursor } = !queries.length ? { publicationCursor: null } : getPublicationCursor.call(
     this,
-    publicationName,
+    fn,
     baseSelector,
     { fields: { [field]: true, _id: true } }
   );
@@ -428,6 +439,8 @@ function simpleTablePublicationDistinctValuesForField(tableId, publicationName, 
   if (typeof Kadira !== "undefined" && Kadira && Kadira._getInfo()) {
     Kadira._getInfo().trace.name += "_" + publicationName;
   }
+  const fn = getPublicationFn(publicationName);
+  check(fn, Function);
 
   if (options.throttleRefresh === undefined) {
     options.throttleRefresh = 10000;
@@ -435,7 +448,7 @@ function simpleTablePublicationDistinctValuesForField(tableId, publicationName, 
 
   const { publicationCursor } = getPublicationCursor.call(
     this,
-    publicationName,
+    fn,
     selector,
     { fields: { _id: true, [field]: true } }
   );
