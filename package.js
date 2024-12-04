@@ -24,6 +24,7 @@ Package.onUse((api) => {
     "mongo",
     "blaze",
     "templating",
+    "znewsham:blaze-component",
     "reactive-var",
     "tracker",
     "session"
@@ -35,7 +36,7 @@ Package.onUse((api) => {
   api.use(["jquery"], "client", { weak: true });
   //api.use(["aldeed:simple-schema"], "client", { weak: true });
   api.mainModule("server/main.js", "server");
-  api.mainModule("client/main.js", "client", { lazy: true });
+  api.mainModule("client/main.js", "client");
 });
 
 Package.onTest((api) => {
